@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/pages/tripulationbus.dart';
 
 class MedicalRecordScreen extends StatefulWidget {
   @override
@@ -228,7 +229,11 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                         Center(
                           child: ElevatedButton(
                             onPressed: () {
-                              // Acción para guardar la ficha médica
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => BusCrewScreen()),
+                              );
                             },
                             child: Text('Guardar Ficha Médica'),
                             style: ElevatedButton.styleFrom(
@@ -251,18 +256,36 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                   ),
                 ),
               ),
-              // Barra de navegación inferior
+              // Barra de navegación inferior con sombreado
               Container(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                color: Colors.white,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 5,
+                      blurRadius: 10,
+                      offset: Offset(0, -3), // Sombra hacia arriba
+                    ),
+                  ],
+                ),
+                child: Column(
                   children: [
-                    buildBottomButton(Icons.book, 'Bitácora del Viaje', '1'),
-                    buildBottomButton(
-                        Icons.directions_bus, 'Bus & Tripulación', null),
-                    buildBottomButton(
-                        Icons.folder_open, 'Mis Documentos', null),
+                    Divider(height: 1, color: Colors.grey[300]),
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          buildBottomButton(
+                              Icons.book, 'Bitácora del Viaje', '1'),
+                          buildBottomButton(
+                              Icons.directions_bus, 'Bus & Tripulación', null),
+                          buildBottomButton(
+                              Icons.folder_open, 'Mis Documentos', null),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),

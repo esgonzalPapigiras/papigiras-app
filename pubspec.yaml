@@ -59,6 +59,10 @@ flutter:
     - assets/logo-letras-papigiras.png
     - assets/logo-papigiras.png
     - assets/profile.jpg
+    - assets/bus.jpg
+    - assets/conductor_one.jpg
+    - assets/conductor_two.jpg
+    - assets/conductor_three.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
