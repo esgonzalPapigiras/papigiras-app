@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/pages/binnacle.dart';
 
 class BusCrewScreen extends StatefulWidget {
   @override
@@ -402,6 +403,13 @@ class _BusCrewScreenState extends State<BusCrewScreen> {
     return GestureDetector(
       onTap: () {
         print('$label presionado');
+
+        if (label == 'Bitácora del Viaje') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => BitacoraScreen()),
+          );
+        }
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,

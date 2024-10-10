@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:papigiras_app/pages/attorney/fatherMedicalFile.dart';
 import 'package:papigiras_app/pages/attorney/fatherWelcome.dart';
+import 'package:papigiras_app/pages/binnacle.dart';
 import 'package:papigiras_app/pages/index.dart';
 import 'package:papigiras_app/pages/login.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
@@ -25,7 +26,8 @@ class MyApp extends StatelessWidget {
           'dashboardTour': (BuildContext context) => TravelDashboard(),
           'welcomeFather': (BuildContext context) => WelcomeFatherScreen(),
           'medicalRecords': (BuildContext context) => MedicalRecordScreen(),
-          'busCrewScreen': (BuildContext context) => BusCrewScreen()
+          'busCrewScreen': (BuildContext context) => BusCrewScreen(),
+          'bitacoraScreen': (BuildContext context) => BitacoraScreen()
         }));
   }
 }
