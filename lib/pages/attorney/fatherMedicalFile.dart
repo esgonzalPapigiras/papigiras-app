@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/pages/index.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 
 class MedicalRecordScreen extends StatefulWidget {
@@ -232,7 +233,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => BusCrewScreen()),
+                                    builder: (context) => TravelDashboard()),
                               );
                             },
                             child: Text('Guardar Ficha Médica'),
