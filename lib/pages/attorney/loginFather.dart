@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/pages/attorney/fatherWelcome.dart';
 
 class LoginFather extends StatelessWidget {
   @override
@@ -88,7 +89,13 @@ class LoginFather extends StatelessWidget {
                       ),
                       SizedBox(height: 30.0),
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => WelcomeFatherScreen()),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.symmetric(
                               horizontal: 50.0, vertical: 15.0),
