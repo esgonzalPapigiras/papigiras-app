@@ -15,23 +15,56 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
         key: _scaffoldKey,
         backgroundColor: Color(0xFF3AC5C9),
         endDrawer: Drawer(
-          // Cambia a endDrawer para que se abra desde la derecha
           child: ListView(
             padding: EdgeInsets.zero,
             children: <Widget>[
-              UserAccountsDrawerHeader(
-                accountName: Text('Arancibia Carlos'),
-                accountEmail: Text('20.457.748-k'),
-                currentAccountPicture: CircleAvatar(
-                  backgroundImage: AssetImage('assets/profile.jpg'),
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
+              // Encabezado personalizado
+              Container(
+                color: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(4), // Ancho del borde
+                      decoration: BoxDecoration(
+                        color: Colors.teal, // Color del borde
+                        shape: BoxShape.circle,
+                      ),
+                      child: CircleAvatar(
+                        radius: 35, // Tamaño de la imagen
+                        backgroundImage: AssetImage('assets/profile.jpg'),
+                      ),
+                    ),
+                    SizedBox(width: 16), // Espacio entre la imagen y el texto
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Arancibia Carlos',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '20.457.748-k',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
               ListTile(
                 leading: Icon(Icons.phone, color: Colors.teal),
-                title: Text('Contactar Agencia'),
+                title: Text(
+                  'Contactar Agencia',
+                  style: TextStyle(color: Colors.grey[800]),
+                ),
                 onTap: () {
                   // Acción para contactar agencia
                 },
@@ -40,21 +73,26 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                   children: [
                     Icon(Icons.phone, color: Colors.teal),
                     SizedBox(width: 10),
-                    Icon(FontAwesomeIcons.whatsapp,
-                        color: Colors.teal), // Ícono de WhatsApp
+                    Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
                   ],
                 ),
               ),
               ListTile(
                 leading: Icon(Icons.report_problem, color: Colors.teal),
-                title: Text('Reportar un Problema'),
+                title: Text(
+                  'Reportar un Problema',
+                  style: TextStyle(color: Colors.grey[800]),
+                ),
                 onTap: () {
                   // Acción para reportar un problema
                 },
               ),
               ListTile(
                 leading: Icon(Icons.logout, color: Colors.teal),
-                title: Text('Cerrar Sesión'),
+                title: Text(
+                  'Cerrar Sesión',
+                  style: TextStyle(color: Colors.grey[800]),
+                ),
                 onTap: () {
                   // Acción para cerrar sesión
                 },
@@ -136,13 +174,13 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: EdgeInsets.all(4),
+                              padding: EdgeInsets.all(4), // Ancho del borde
                               decoration: BoxDecoration(
-                                color: Colors.teal,
+                                color: Colors.teal, // Color del borde
                                 shape: BoxShape.circle,
                               ),
                               child: CircleAvatar(
-                                radius: 45,
+                                radius: 60,
                                 backgroundImage:
                                     AssetImage('assets/profile.jpg'),
                               ),
