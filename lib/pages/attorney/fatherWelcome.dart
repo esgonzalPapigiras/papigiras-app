@@ -39,9 +39,16 @@ class WelcomeFatherScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
                 // Imagen de perfil
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage: AssetImage('assets/profile.jpg'),
+                Container(
+                  padding: EdgeInsets.all(4), // Ancho del borde
+                  decoration: BoxDecoration(
+                    color: Colors.white, // Color del borde
+                    shape: BoxShape.circle,
+                  ),
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundImage: AssetImage('assets/profile.jpg'),
+                  ),
                 ),
                 SizedBox(height: 20),
                 Text(
