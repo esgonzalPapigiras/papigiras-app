@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/pages/attorney/indexFather.dart';
+import 'package:papigiras_app/pages/binnacle.dart';
 import 'package:papigiras_app/pages/index.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 
@@ -233,7 +235,8 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => TravelDashboard()),
+                                    builder: (context) =>
+                                        TravelFatherDashboard()),
                               );
                             },
                             child: Text('Guardar Ficha Médica'),
@@ -267,25 +270,6 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                       spreadRadius: 5,
                       blurRadius: 10,
                       offset: Offset(0, -3), // Sombra hacia arriba
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Divider(height: 1, color: Colors.grey[300]),
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          buildBottomButton(
-                              Icons.book, 'Bitácora del Viaje', '1'),
-                          buildBottomButton(
-                              Icons.directions_bus, 'Bus & Tripulación', null),
-                          buildBottomButton(
-                              Icons.folder_open, 'Mis Documentos', null),
-                        ],
-                      ),
                     ),
                   ],
                 ),
@@ -336,6 +320,13 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
     return GestureDetector(
       onTap: () {
         print('$label presionado');
+
+        if (label == 'Bitácora del Viaje') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => BitacoraScreen()),
+          );
+        }
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,

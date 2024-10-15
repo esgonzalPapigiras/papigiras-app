@@ -3,12 +3,12 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart'; // Importa el paquete
 
-class TravelDashboard extends StatefulWidget {
+class TravelFatherDashboard extends StatefulWidget {
   @override
-  _TravelDashboardState createState() => _TravelDashboardState();
+  _TravelFatherDashboardState createState() => _TravelFatherDashboardState();
 }
 
-class _TravelDashboardState extends State<TravelDashboard> {
+class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override

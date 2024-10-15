@@ -63,6 +63,7 @@ flutter:
     - assets/conductor_one.jpg
     - assets/conductor_two.jpg
     - assets/conductor_three.png
+    - assets/bitacora.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

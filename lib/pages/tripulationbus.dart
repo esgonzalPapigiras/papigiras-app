@@ -324,12 +324,12 @@ class _BusCrewScreenState extends State<BusCrewScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
+                          buildBottomButton(Icons.book, 'Bitácora del Viaje',
+                              null, BitacoraScreen()),
+                          buildBottomButton(Icons.directions_bus,
+                              'Bus & Tripulación', null, BusCrewScreen()),
                           buildBottomButton(
-                              Icons.book, 'Bitácora del Viaje', '1'),
-                          buildBottomButton(
-                              Icons.directions_bus, 'Bus & Tripulación', null),
-                          buildBottomButton(
-                              Icons.folder_open, 'Mis Documentos', null),
+                              Icons.folder_open, 'Mis Documentos', null, null),
                         ],
                       ),
                     ),
@@ -399,16 +399,12 @@ class _BusCrewScreenState extends State<BusCrewScreen> {
     );
   }
 
-  Widget buildBottomButton(IconData icon, String label, String? badge) {
+  Widget buildBottomButton(
+      IconData icon, String label, String? badge, Widget? destination) {
     return GestureDetector(
       onTap: () {
-        print('$label presionado');
-
-        if (label == 'Bitácora del Viaje') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => BitacoraScreen()),
-          );
+        if (destination != null) {
+          Navigator.of(context).push(_createRoute(destination));
         }
       },
       child: Column(
@@ -453,6 +449,28 @@ class _BusCrewScreenState extends State<BusCrewScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // Método para crear la ruta personalizada de transición desde abajo hacia arriba
+  Route _createRoute(Widget destination) {
+    return PageRouteBuilder(
+      transitionDuration: Duration(milliseconds: 1000),
+      pageBuilder: (context, animation, secondaryAnimation) => destination,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(0.0, 1.0); // Desde abajo
+        const end = Offset.zero;
+        const curve = Curves.ease;
+
+        var tween =
+            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var offsetAnimation = animation.drive(tween);
+
+        return SlideTransition(
+          position: offsetAnimation,
+          child: child,
+        );
+      },
     );
   }
 }
