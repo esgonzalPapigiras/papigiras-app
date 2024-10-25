@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 
 class LoginCoordinator extends StatelessWidget {
   @override
@@ -73,7 +74,14 @@ class LoginCoordinator extends StatelessWidget {
                     ),
                     SizedBox(height: 30.0),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  TravelCoordinatorDashboard()),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.symmetric(
                             horizontal: 50.0, vertical: 15.0),
