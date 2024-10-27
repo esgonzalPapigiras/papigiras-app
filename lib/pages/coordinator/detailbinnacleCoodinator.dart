@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:papigiras_app/pages/coordinator/addHito.dart';
-import 'package:papigiras_app/pages/coordinator/detailbinnacleCoodinator.dart';
+import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 
-class BitacoraCoordScreen extends StatefulWidget {
+class DetalleBitacoraCoordScreen extends StatefulWidget {
   @override
-  _BitacoraCoordScreenState createState() => _BitacoraCoordScreenState();
+  _DetalleBitacoraCoordScreenState createState() =>
+      _DetalleBitacoraCoordScreenState();
 }
 
-class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
+class _DetalleBitacoraCoordScreenState
+    extends State<DetalleBitacoraCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -204,13 +205,7 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             trailing: TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => DetalleBitacoraCoordScreen()),
-                );
-              },
+              onPressed: () {},
               child: Text('Ver más', style: TextStyle(color: Colors.teal)),
             ),
           ),
@@ -241,12 +236,12 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               buildBottomButton(Icons.connect_without_contact_sharp,
-                  'Actividades', null, BitacoraCoordScreen()),
+                  'Actividades', null, DetalleBitacoraCoordScreen()),
               Transform.translate(
                 offset:
                     Offset(0, -20), // Ajuste de posición para el botón central
                 child: buildBottomButtonHito(
-                    Icons.add_circle, 'Hito', null, HitoAddCoordScreen()),
+                    Icons.add_circle, 'Hito', null, BusCrewCoorScreen()),
               ),
               buildBottomButton(Icons.person_add_alt_1, 'Contador', null, null),
             ],

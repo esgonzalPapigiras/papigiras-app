@@ -1,19 +1,85 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
-import 'package:papigiras_app/pages/coordinator/detailbinnacleCoodinator.dart';
+import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 
-class BitacoraCoordScreen extends StatefulWidget {
+class MedicalCoordScreen extends StatefulWidget {
   @override
-  _BitacoraCoordScreenState createState() => _BitacoraCoordScreenState();
+  _MedicalCoordScreenState createState() => _MedicalCoordScreenState();
 }
 
-class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
+class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  bool _isAscending = true; // Bandera para ordenación
+
+  List<Map<String, dynamic>> documents = [
+    {'name': 'Arancibia Carlos', 'id': '20.457.748-k'},
+    {'name': 'Armas Pedro', 'id': '20.457.748-k'},
+    {'name': 'Arenas Juan', 'id': '20.457.748-k'},
+    {'name': 'Acuña David', 'id': '20.457.748-k'},
+    {'name': 'Altamirano Julián', 'id': '20.457.748-k'},
+    {'name': 'Bravo Andrés', 'id': '20.457.748-k'},
+  ];
+
+  void _sortDocuments() {
+    setState(() {
+      documents.sort((a, b) => _isAscending
+          ? a['name'].compareTo(b['name'])
+          : b['name'].compareTo(a['name']));
+      _isAscending = !_isAscending;
+    });
+  }
+
+  Widget _buildFilterOptions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            'Fichas Médicas',
+            textAlign:
+                TextAlign.center, // Centramos el texto dentro del Expanded
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: _sortDocuments,
+          child: Row(
+            children: [
+              Text(
+                'De la A a la Z',
+                style: TextStyle(
+                  fontSize: 8, // Tamaño de fuente reducido
+                  color: Colors.teal,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(width: 4), // Espacio entre el texto y los iconos
+              Icon(
+                _isAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                color: Colors.teal,
+                size: 10,
+              ),
+              SizedBox(width: 2), // Espacio pequeño entre los dos iconos
+              Icon(
+                _isAscending ? Icons.arrow_downward : Icons.arrow_downward,
+                color: Colors.teal,
+                size: 10,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,61 +224,37 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
     );
   }
 
-  Widget _buildFilterOptions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Ver:',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-        ),
-        ElevatedButton(
-          onPressed: () {},
-          child: Text('Todos'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            shape: StadiumBorder(),
-          ),
-        ),
-        Text(
-          'Más recientes',
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-        ),
-        Icon(Icons.filter_list, color: Colors.teal),
-      ],
-    );
-  }
-
   List<Widget> _buildBinnacleEntries() {
-    List<Map<String, String>> entries = [
-      {'time': '18:30', 'activity': 'Torneo Bowling'},
-      {'time': '14:30', 'activity': 'City Tour Bariloche'},
-      {'time': '13:00', 'activity': 'Almuerzo en el Hotel'},
-      {'time': '09:30', 'activity': 'Llegamos a Bariloche, Argentina.'},
-      {'time': '08:30', 'activity': 'Control de Aduana sin inconvenientes'},
-    ];
-
-    return entries.map((entry) {
+    return documents.map((document) {
       return Card(
-        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Más ancho
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: ListTile(
-            leading: Icon(Icons.access_time, color: Colors.teal),
-            title: Text(
-              '${entry['time']} - ${entry['activity']}', // Hora y actividad en una línea
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            trailing: TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => DetalleBitacoraCoordScreen()),
-                );
-              },
-              child: Text('Ver más', style: TextStyle(color: Colors.teal)),
-            ),
+        margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        child: ListTile(
+          leading: Icon(
+            Icons.medical_services,
+            color: Colors.teal,
+            size: 40,
+          ),
+          title: Text(
+            document['name'],
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(document['id']),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(Icons.remove_red_eye, color: Colors.teal),
+                onPressed: () {
+                  // Acción para visualizar el documento
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.download, color: Colors.teal),
+                onPressed: () {
+                  // Acción para descargar el documento
+                },
+              ),
+            ],
           ),
         ),
       );

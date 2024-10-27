@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
+import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 
 class BusCrewCoorScreen extends StatefulWidget {
   @override
@@ -336,11 +338,11 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         buildBottomButton(Icons.medical_information,
-                            'Fichas Medicas', null, BitacoraScreen()),
+                            'Fichas Medicas', null, MedicalCoordScreen()),
                         buildBottomButton(Icons.directions_bus,
                             'Bus & Tripulación', null, BusCrewCoorScreen()),
-                        buildBottomButton(
-                            Icons.folder_open, 'Mis Documentos', null, null),
+                        buildBottomButton(Icons.folder_open, 'Mis Documentos',
+                            null, DocumentCoordScreen()),
                         buildBottomButton(Icons.book, 'Bitácora del Viaje',
                             null, BitacoraScreen()),
                       ],
