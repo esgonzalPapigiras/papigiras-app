@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
+import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
@@ -588,7 +589,7 @@ class _TravelCoordinatorDashboardState
               Transform.translate(
                   offset: Offset(0, -30),
                   child: buildBottomButtonHito(
-                      Icons.add_circle, 'Hito', null, BusCrewCoorScreen())),
+                      Icons.add_circle, 'Hito', null, HitoAddCoordScreen())),
               buildBottomButton(Icons.person_add_alt_1, 'Contador', null, null),
             ],
           ),

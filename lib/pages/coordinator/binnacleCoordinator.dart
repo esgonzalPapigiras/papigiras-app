@@ -205,11 +205,8 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
             ),
             trailing: TextButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => DetalleBitacoraCoordScreen()),
-                );
+                Navigator.of(context)
+                    .push(_createRoute(DetalleBitacoraCoordScreen()));
               },
               child: Text('Ver más', style: TextStyle(color: Colors.teal)),
             ),
