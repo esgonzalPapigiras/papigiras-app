@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
+import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 
-class TravelCoordinatorDashboard extends StatelessWidget {
+class TravelCoordinatorDashboard extends StatefulWidget {
+  @override
+  _TravelCoordinatorDashboardState createState() =>
+      _TravelCoordinatorDashboardState();
+}
+
+class _TravelCoordinatorDashboardState
+    extends State<TravelCoordinatorDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -10,6 +20,92 @@ class TravelCoordinatorDashboard extends StatelessWidget {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Color(0xFF3AC5C9),
+      endDrawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            // Encabezado personalizado
+            Container(
+              color: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(4), // Ancho del borde
+                    decoration: BoxDecoration(
+                      color: Colors.teal, // Color del borde
+                      shape: BoxShape.circle,
+                    ),
+                    child: CircleAvatar(
+                      radius: 35, // Tamaño de la imagen
+                      backgroundImage: AssetImage('assets/profile.jpg'),
+                    ),
+                  ),
+                  SizedBox(width: 16), // Espacio entre la imagen y el texto
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Arancibia Carlos',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '20.457.748-k',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.phone, color: Colors.teal),
+              title: Text(
+                'Contactar Agencia',
+                style: TextStyle(color: Colors.grey[800]),
+              ),
+              onTap: () {
+                // Acción para contactar agencia
+              },
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.phone, color: Colors.teal),
+                  SizedBox(width: 10),
+                  Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.report_problem, color: Colors.teal),
+              title: Text(
+                'Reportar un Problema',
+                style: TextStyle(color: Colors.grey[800]),
+              ),
+              onTap: () {
+                // Acción para reportar un problema
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.teal),
+              title: Text(
+                'Cerrar Sesión',
+                style: TextStyle(color: Colors.grey[800]),
+              ),
+              onTap: () {
+                // Acción para cerrar sesión
+              },
+            ),
+          ],
+        ),
+      ),
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
@@ -468,7 +564,7 @@ class TravelCoordinatorDashboard extends StatelessWidget {
 
   Widget buildBottomBar() {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 10),
+      padding: EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -480,15 +576,34 @@ class TravelCoordinatorDashboard extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Column(
         children: [
-          buildBottomButton(
-              Icons.book, 'Bitácora del Viaje', null, BitacoraScreen()),
-          buildBottomButton(
-              Icons.directions_bus, 'Bus & Tripulación', null, BusCrewScreen()),
-          buildBottomButton(Icons.folder_open, 'Mis Documentos', null, null),
-          // Botón contador
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              buildBottomButton(Icons.connect_without_contact_sharp,
+                  'Actividades', null, BitacoraScreen()),
+              Transform.translate(
+                  offset: Offset(0, -30),
+                  child: buildBottomButtonHito(
+                      Icons.add_circle, 'Hito', null, BusCrewCoorScreen())),
+              buildBottomButton(Icons.person_add_alt_1, 'Contador', null, null),
+            ],
+          ),
+          SizedBox(height: 5), // Espacio entre las filas
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              buildBottomButton(Icons.medical_information, 'Fichas Medicas',
+                  null, BitacoraScreen()),
+              buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
+                  BusCrewCoorScreen()),
+              buildBottomButton(
+                  Icons.folder_open, 'Mis Documentos', null, null),
+              buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
+                  BitacoraCoordScreen()),
+            ],
+          ),
         ],
       ),
     );
@@ -498,7 +613,9 @@ class TravelCoordinatorDashboard extends StatelessWidget {
       IconData icon, String label, String? badge, Widget? destination) {
     return GestureDetector(
       onTap: () {
-        if (destination != null) {}
+        if (destination != null) {
+          Navigator.of(context).push(_createRoute(destination));
+        }
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -513,11 +630,61 @@ class TravelCoordinatorDashboard extends StatelessWidget {
             label,
             style: TextStyle(
               color: Colors.teal,
-              fontSize: 14,
+              fontSize: 8,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget buildBottomButtonHito(
+      IconData icon, String label, String? badge, Widget? destination) {
+    return GestureDetector(
+      onTap: () {
+        if (destination != null) {
+          Navigator.of(context).push(_createRoute(destination));
+        }
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 70,
+            color: Colors.teal,
+          ),
+          SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.teal,
+              fontSize: 8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Route _createRoute(Widget destination) {
+    return PageRouteBuilder(
+      transitionDuration: Duration(milliseconds: 1000),
+      pageBuilder: (context, animation, secondaryAnimation) => destination,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(0.0, 1.0); // Desde abajo
+        const end = Offset.zero;
+        const curve = Curves.ease;
+
+        var tween =
+            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var offsetAnimation = animation.drive(tween);
+
+        return SlideTransition(
+          position: offsetAnimation,
+          child: child,
+        );
+      },
     );
   }
 }
