@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
@@ -236,7 +237,7 @@ class _DetalleBitacoraCoordScreenState
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               buildBottomButton(Icons.connect_without_contact_sharp,
-                  'Actividades', null, DetalleBitacoraCoordScreen()),
+                  'Actividades', null, ActivitiesCoordScreen()),
               Transform.translate(
                 offset:
                     Offset(0, -20), // Ajuste de posición para el botón central

@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 
-class DocumentCoordScreen extends StatefulWidget {
+class ActivitiesCoordScreen extends StatefulWidget {
   @override
-  _DocumentCoordScreenState createState() => _DocumentCoordScreenState();
+  _ActivitiesCoordScreenState createState() => _ActivitiesCoordScreenState();
 }
 
-class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
+class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  String? selectedActivity;
+  final TextEditingController participantsController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,7 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
             children: [
               _buildAppBar(context),
               Expanded(
-                child: _buildBinnacleContent(),
+                child: _buildActivityContent(),
               ),
             ],
           ),
@@ -133,7 +135,7 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
     );
   }
 
-  Widget _buildBinnacleContent() {
+  Widget _buildActivityContent() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -142,76 +144,126 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
           topRight: Radius.circular(40),
         ),
       ),
-      padding: EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildFilterOptions(),
-          SizedBox(height: 20),
-          Expanded(
-            child: ListView(
-              children: _buildBinnacleEntries(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'Actividades',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87),
             ),
-          ),
-        ],
+            SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: selectedActivity,
+              items: ['Rafting', 'Bowling Bariloche', 'Cabalgata Osorno']
+                  .map((activity) => DropdownMenuItem(
+                        value: activity,
+                        child: Text(activity),
+                      ))
+                  .toList(),
+              onChanged: (value) => setState(() => selectedActivity = value),
+              decoration: InputDecoration(
+                labelText: 'Selecciona Actividad',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: participantsController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Participantes',
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    // Agregar lógica para agregar actividad
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    backgroundColor: Colors.teal,
+                  ),
+                  child: Text(
+                    'Agregar',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 30),
+            Expanded(
+              child: ListView(
+                children: _buildActivityList(),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Exportar .XLS', style: TextStyle(color: Colors.teal)),
+                Icon(Icons.file_download, color: Colors.teal),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildFilterOptions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center, // Centra el texto
-      children: [
-        Text(
-          'Mis Documentos',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-      ],
-    );
-  }
-
-  List<Widget> _buildBinnacleEntries() {
-    List<Map<String, dynamic>> documents = [
-      {'title': 'Programa Gira', 'icon': Icons.description},
-      {'title': 'Póliza de Seguro', 'icon': Icons.policy},
-      {'title': 'Detalle Estadías', 'icon': Icons.hotel},
-      {'title': 'Ficha Médica', 'icon': Icons.medical_services},
-      {'title': 'Nómina Alumnos', 'icon': Icons.people},
+  List<Widget> _buildActivityList() {
+    List<Map<String, String>> activities = [
+      {'name': 'Bowling Bariloche', 'participants': '32'},
+      {'name': 'Cabalgata Osorno', 'participants': '28'},
+      {'name': 'Rafting Bariloche', 'participants': '32'},
     ];
 
-    return documents.map((document) {
+    return activities.map((entry) {
       return Card(
-        margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-        child: ListTile(
-          leading: Icon(
-            document['icon'] as IconData,
-            color: Colors.teal,
-            size: 40,
-          ),
-          title: Text(
-            document['title']!,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                onPressed: () {
-                  // Acción para visualizar el documento
-                },
-              ),
-              IconButton(
-                icon: Icon(Icons.download, color: Colors.teal),
-                onPressed: () {
-                  // Acción para descargar el documento
-                },
-              ),
-            ],
+        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Más ancho
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: ListTile(
+            title: Row(
+              mainAxisAlignment:
+                  MainAxisAlignment.center, // Centra el contenido del Row
+              children: [
+                Text(
+                  entry['name']!,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                Container(
+                  margin: EdgeInsets.symmetric(
+                      horizontal: 8), // Espaciado a los lados
+                  height: 20, // Altura de la línea
+                  width: 2, // Ancho de la línea
+                  color: Colors.teal, // Color de la línea
+                ),
+                Text(
+                  entry['participants']!,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
           ),
         ),
       );
