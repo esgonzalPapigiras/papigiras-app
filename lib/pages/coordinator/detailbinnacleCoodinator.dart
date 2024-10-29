@@ -36,7 +36,6 @@ class _DetalleBitacoraCoordScreenState
           ),
         ],
       ),
-      bottomNavigationBar: _buildCustomBottomNavigationBar(),
     );
   }
 
@@ -187,28 +186,62 @@ class _DetalleBitacoraCoordScreenState
 
   List<Widget> _buildBinnacleEntries() {
     List<Map<String, String>> entries = [
-      {'time': '18:30', 'activity': 'Torneo Bowling'},
-      {'time': '14:30', 'activity': 'City Tour Bariloche'},
-      {'time': '13:00', 'activity': 'Almuerzo en el Hotel'},
-      {'time': '09:30', 'activity': 'Llegamos a Bariloche, Argentina.'},
-      {'time': '08:30', 'activity': 'Control de Aduana sin inconvenientes'},
+      {
+        'time': '18:30',
+        'activity': 'Torneo Bowling',
+        'description':
+            'Todos en la sala de Bolos, Hombres contra mujeres, ¿quién ganará?',
+        'image1': 'assets/bowling1.jpg',
+        'image2': 'assets/bowling2.jpg',
+      },
+      // Añadir más actividades según sea necesario
     ];
 
     return entries.map((entry) {
       return Card(
-        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Más ancho
+        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: ListTile(
-            leading: Icon(Icons.access_time, color: Colors.teal),
-            title: Text(
-              '${entry['time']} - ${entry['activity']}', // Hora y actividad en una línea
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            trailing: TextButton(
-              onPressed: () {},
-              child: Text('Ver más', style: TextStyle(color: Colors.teal)),
-            ),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.place, color: Colors.teal),
+                  SizedBox(width: 8),
+                  Text(
+                    entry['time']!,
+                    style: TextStyle(
+                        color: Colors.teal,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    entry['activity']!,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              Text(
+                entry['description']!,
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: Image.asset(entry['image1']!, fit: BoxFit.cover),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Image.asset(entry['image2']!, fit: BoxFit.cover),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       );
