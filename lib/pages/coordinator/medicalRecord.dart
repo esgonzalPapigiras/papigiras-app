@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
@@ -291,7 +292,8 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
                 child: buildBottomButtonHito(
                     Icons.add_circle, 'Hito', null, HitoAddCoordScreen()),
               ),
-              buildBottomButton(Icons.person_add_alt_1, 'Contador', null, null),
+              buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
+                  CountDownCoordScreen()),
             ],
           ),
           SizedBox(height: 10), // Espacio entre filas

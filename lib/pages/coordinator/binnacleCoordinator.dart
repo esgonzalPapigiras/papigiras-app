@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
+import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/detailbinnacleCoodinator.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
@@ -246,7 +247,8 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
                 child: buildBottomButtonHito(
                     Icons.add_circle, 'Hito', null, HitoAddCoordScreen()),
               ),
-              buildBottomButton(Icons.person_add_alt_1, 'Contador', null, null),
+              buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
+                  CountDownCoordScreen()),
             ],
           ),
           SizedBox(height: 10), // Espacio entre filas
