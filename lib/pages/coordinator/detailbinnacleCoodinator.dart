@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
@@ -147,7 +148,6 @@ class _DetalleBitacoraCoordScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFilterOptions(),
           SizedBox(height: 20),
           Expanded(
             child: ListView(
@@ -156,31 +156,6 @@ class _DetalleBitacoraCoordScreenState
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFilterOptions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Ver:',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-        ),
-        ElevatedButton(
-          onPressed: () {},
-          child: Text('Todos'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            shape: StadiumBorder(),
-          ),
-        ),
-        Text(
-          'Más recientes',
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-        ),
-        Icon(Icons.filter_list, color: Colors.teal),
-      ],
     );
   }
 
@@ -277,7 +252,8 @@ class _DetalleBitacoraCoordScreenState
                 child: buildBottomButtonHito(
                     Icons.add_circle, 'Hito', null, BusCrewCoorScreen()),
               ),
-              buildBottomButton(Icons.person_add_alt_1, 'Contador', null, null),
+              buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
+                  CountDownCoordScreen()),
             ],
           ),
           SizedBox(height: 10), // Espacio entre filas

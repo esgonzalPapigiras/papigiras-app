@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:quickalert/quickalert.dart';
 
 class LoginCoordinator extends StatelessWidget {
+  final usuarioProvider = new CoordinatorProviders();
+  final TextEditingController _codigoGiraController = TextEditingController();
+  late TourSales login;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,6 +66,7 @@ class LoginCoordinator extends StatelessWidget {
                     ),
                     SizedBox(height: 30.0),
                     TextField(
+                      controller: _codigoGiraController,
                       decoration: InputDecoration(
                         labelText: 'Codigo Gira',
                         labelStyle: TextStyle(color: Colors.grey),
@@ -74,13 +82,45 @@ class LoginCoordinator extends StatelessWidget {
                     ),
                     SizedBox(height: 30.0),
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  TravelCoordinatorDashboard()),
-                        );
+                      onPressed: () async {
+                        final codigoGira = _codigoGiraController.text;
+                        final login =
+                            await usuarioProvider.validateLoginUser(codigoGira);
+
+                        if (login != null) {
+                          // Si login tiene datos, muestra QuickAlert de éxito y navega a la siguiente pantalla
+                          QuickAlert.show(
+                            context: context,
+                            type: QuickAlertType.success,
+                            title: 'Éxito',
+                            text: 'Gira encontrada',
+                            confirmBtnText: 'Continuar',
+                            onConfirmBtnTap: () {
+                              Navigator.of(context)
+                                  .pop(); // Cierra el QuickAlert
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      TravelCoordinatorDashboard(login: login),
+                                ),
+                              );
+                            },
+                          );
+                        } else {
+                          // Si login es null, muestra QuickAlert de error y no navega
+                          QuickAlert.show(
+                            context: context,
+                            type: QuickAlertType.error,
+                            title: 'Error',
+                            text: 'Gira no encontrada',
+                            confirmBtnText: 'Aceptar',
+                            onConfirmBtnTap: () {
+                              Navigator.of(context)
+                                  .pop(); // Cierra el QuickAlert
+                            },
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.symmetric(

@@ -41,7 +41,11 @@ dependencies:
   timezone: ^0.9.0
   geolocator: ^8.2.1
   geocoding: ^2.2.2
-  qr_code_scanner: ^0.7.0
+  qr_code_scanner: ^1.0.1
+  http: ^0.13.4
+  bloc: ^8.0.1
+  flutter_bloc: ^8.0.0
+  quickalert: ^1.0.2
 
 dev_dependencies:
   flutter_test:

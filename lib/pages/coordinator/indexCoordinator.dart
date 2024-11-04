@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
@@ -9,8 +10,12 @@ import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
 class TravelCoordinatorDashboard extends StatefulWidget {
+  final TourSales login;
+  TravelCoordinatorDashboard({required this.login});
+
   @override
   _TravelCoordinatorDashboardState createState() =>
       _TravelCoordinatorDashboardState();
@@ -19,9 +24,20 @@ class TravelCoordinatorDashboard extends StatefulWidget {
 class _TravelCoordinatorDashboardState
     extends State<TravelCoordinatorDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final usuarioProvider = new CoordinatorProviders();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final passengerCounts = widget.login.passengerCountsBySex;
+    final countMale = passengerCounts['M'] ?? 0;
+    final countFemale = passengerCounts['F'] ?? 0;
+    final countMaleCompanion = passengerCounts['AM'] ?? 0;
+    final countFemaleCompanion = passengerCounts['AF'] ?? 0;
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Color(0xFF3AC5C9),
@@ -51,15 +67,15 @@ class _TravelCoordinatorDashboardState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Arancibia Carlos',
+                        widget.login.tourTripulationNameId,
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 8,
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        '20.457.748-k',
+                        widget.login.tourTripulationIdentificationId,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.black,
@@ -180,9 +196,9 @@ class _TravelCoordinatorDashboardState
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Alberto Roldán',
+                                  widget.login.tourTripulationNameId,
                                   style: TextStyle(
-                                    fontSize: 24,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.grey[800],
                                   ),
@@ -197,7 +213,11 @@ class _TravelCoordinatorDashboardState
                                   ),
                                 ),
                                 Text(
-                                  'LASTARRIAS 3° C 2020',
+                                  widget.login.nameClient +
+                                      " " +
+                                      widget.login.courseClient +
+                                      " " +
+                                      widget.login.seasonClient.toString(),
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold, // Negrita
@@ -273,7 +293,7 @@ class _TravelCoordinatorDashboardState
                                         width:
                                             10), // Espacio entre el icono y el texto
                                     Text(
-                                      '18',
+                                      countMale.toString(),
                                       style: TextStyle(fontSize: 18),
                                     ),
                                   ],
@@ -300,7 +320,7 @@ class _TravelCoordinatorDashboardState
                                         width:
                                             10), // Espacio entre el icono y el texto
                                     Text(
-                                      '18',
+                                      countFemale.toString(),
                                       style: TextStyle(fontSize: 18),
                                     ),
                                   ],
@@ -346,7 +366,7 @@ class _TravelCoordinatorDashboardState
                                         width:
                                             10), // Espacio entre el icono y el texto
                                     Text(
-                                      '18',
+                                      countMaleCompanion.toString(),
                                       style: TextStyle(fontSize: 18),
                                     ),
                                   ],
@@ -372,7 +392,7 @@ class _TravelCoordinatorDashboardState
                                         width:
                                             10), // Espacio entre el icono y el texto
                                     Text(
-                                      '18',
+                                      countFemaleCompanion.toString(),
                                       style: TextStyle(fontSize: 18),
                                     ),
                                   ],
@@ -446,7 +466,7 @@ class _TravelCoordinatorDashboardState
                                   height:
                                       4), // Espacio entre el texto y la fecha
                               Text(
-                                '2/12/20',
+                                widget.login.tourSalesInit,
                                 style:
                                     TextStyle(color: Colors.teal, fontSize: 16),
                               ),
@@ -485,7 +505,7 @@ class _TravelCoordinatorDashboardState
                                   height:
                                       4), // Espacio entre el texto y la fecha
                               Text(
-                                '8/12/20',
+                                widget.login.tourSalesFinal,
                                 style:
                                     TextStyle(color: Colors.teal, fontSize: 16),
                               ),
