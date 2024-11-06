@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
@@ -11,6 +12,8 @@ import 'package:papigiras_app/pages/tripulationbus.dart';
 class ActivitiesCoordScreen extends StatefulWidget {
   @override
   _ActivitiesCoordScreenState createState() => _ActivitiesCoordScreenState();
+  final TourSales login;
+  ActivitiesCoordScreen({required this.login});
 }
 
 class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
@@ -292,8 +295,11 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              buildBottomButton(Icons.connect_without_contact_sharp,
-                  'Actividades', null, ActivitiesCoordScreen()),
+              buildBottomButton(
+                  Icons.connect_without_contact_sharp,
+                  'Actividades',
+                  null,
+                  ActivitiesCoordScreen(login: widget.login)),
               Transform.translate(
                 offset:
                     Offset(0, -20), // Ajuste de posición para el botón central
@@ -301,7 +307,7 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
                     Icons.add_circle, 'Hito', null, HitoAddCoordScreen()),
               ),
               buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
-                  CountDownCoordScreen()),
+                  CountDownCoordScreen(login: widget.login)),
             ],
           ),
           SizedBox(height: 10), // Espacio entre filas
@@ -309,13 +315,13 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               buildBottomButton(Icons.medical_information, 'Fichas Medicas',
-                  null, MedicalCoordScreen()),
+                  null, MedicalCoordScreen(login: widget.login)),
               buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
-                  BusCrewCoorScreen()),
+                  BusCrewCoorScreen(login: widget.login)),
               buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
-                  DocumentCoordScreen()),
+                  DocumentCoordScreen(login: widget.login)),
               buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
-                  BitacoraCoordScreen()),
+                  BitacoraCoordScreen(login: widget.login)),
             ],
           ),
         ],

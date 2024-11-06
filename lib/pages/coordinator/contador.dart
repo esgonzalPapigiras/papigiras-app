@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
@@ -10,6 +11,8 @@ import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 class CountDownCoordScreen extends StatefulWidget {
   @override
   _CountDownCoordScreenState createState() => _CountDownCoordScreenState();
+  final TourSales login;
+  CountDownCoordScreen({required this.login});
 }
 
 class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
@@ -266,8 +269,11 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              buildBottomButton(Icons.connect_without_contact_sharp,
-                  'Actividades', null, ActivitiesCoordScreen()),
+              buildBottomButton(
+                  Icons.connect_without_contact_sharp,
+                  'Actividades',
+                  null,
+                  ActivitiesCoordScreen(login: widget.login)),
               Transform.translate(
                 offset:
                     Offset(0, -20), // Ajuste de posición para el botón central
@@ -275,7 +281,7 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
                     Icons.add_circle, 'Hito', null, HitoAddCoordScreen()),
               ),
               buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
-                  CountDownCoordScreen()),
+                  CountDownCoordScreen(login: widget.login)),
             ],
           ),
           SizedBox(height: 10), // Espacio entre filas
@@ -283,13 +289,13 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               buildBottomButton(Icons.medical_information, 'Fichas Medicas',
-                  null, MedicalCoordScreen()),
+                  null, MedicalCoordScreen(login: widget.login)),
               buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
-                  BusCrewCoorScreen()),
+                  BusCrewCoorScreen(login: widget.login)),
               buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
-                  DocumentCoordScreen()),
+                  DocumentCoordScreen(login: widget.login)),
               buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
-                  BitacoraCoordScreen()),
+                  BitacoraCoordScreen(login: widget.login)),
             ],
           ),
         ],

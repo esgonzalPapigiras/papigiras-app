@@ -1,19 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/TourSales.dart';
+import 'package:papigiras_app/dto/tourTripulation.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
 class BusCrewCoorScreen extends StatefulWidget {
   @override
   _BusCrewCoorScreenState createState() => _BusCrewCoorScreenState();
+  final TourSales login;
+  BusCrewCoorScreen({required this.login});
 }
 
 class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  List<TourTripulation> _tripulations = [];
+  final usuarioProvider = new CoordinatorProviders();
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTripulations(
+        "yourTourCode"); // Reemplaza "yourTourCode" con el código real
+  }
+
+  Future<void> _loadTripulations(String tourCode) async {
+    try {
+      _tripulations = await usuarioProvider
+          .getTripulation(widget.login.tourSalesId.toString());
+    } catch (e) {
+      // Manejo de errores
+      print('Error al cargar la tripulación: $e');
+    } finally {
+      setState(() {
+        _isLoading = false; // Cambia el estado de carga
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -326,26 +355,35 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        buildBottomButton(Icons.connect_without_contact_sharp,
-                            'Actividades', null, ActivitiesCoordScreen()),
+                        buildBottomButton(
+                            Icons.connect_without_contact_sharp,
+                            'Actividades',
+                            null,
+                            ActivitiesCoordScreen(login: widget.login)),
                         Transform.translate(
                             offset: Offset(0, -30),
                             child: buildBottomButtonHito(Icons.add_circle,
                                 'Hito', null, HitoAddCoordScreen())),
                         buildBottomButton(Icons.person_add_alt_1, 'Contador',
-                            null, CountDownCoordScreen()),
+                            null, CountDownCoordScreen(login: widget.login)),
                       ],
                     ),
                     SizedBox(height: 5), // Espacio entre las filas
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        buildBottomButton(Icons.medical_information,
-                            'Fichas Medicas', null, MedicalCoordScreen()),
-                        buildBottomButton(Icons.directions_bus,
-                            'Bus & Tripulación', null, BusCrewCoorScreen()),
+                        buildBottomButton(
+                            Icons.medical_information,
+                            'Fichas Medicas',
+                            null,
+                            MedicalCoordScreen(login: widget.login)),
+                        buildBottomButton(
+                            Icons.directions_bus,
+                            'Bus & Tripulación',
+                            null,
+                            BusCrewCoorScreen(login: widget.login)),
                         buildBottomButton(Icons.folder_open, 'Mis Documentos',
-                            null, DocumentCoordScreen()),
+                            null, DocumentCoordScreen(login: widget.login)),
                         buildBottomButton(Icons.book, 'Bitácora del Viaje',
                             null, BitacoraScreen()),
                       ],
@@ -400,14 +438,6 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                   color: Colors.grey[800], fontWeight: FontWeight.bold)),
           Text(position, style: TextStyle(color: Colors.grey[600])),
           Text(id, style: TextStyle(color: Colors.grey[600])),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(FontAwesomeIcons.whatsapp, color: Colors.teal, size: 24),
-          SizedBox(width: 10), // Espacio entre los íconos
-          Icon(FontAwesomeIcons.phone, color: Colors.teal, size: 24),
         ],
       ),
       onTap: () {

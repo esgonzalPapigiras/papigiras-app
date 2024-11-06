@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
@@ -12,6 +13,8 @@ import 'package:papigiras_app/pages/tripulationbus.dart';
 class BitacoraCoordScreen extends StatefulWidget {
   @override
   _BitacoraCoordScreenState createState() => _BitacoraCoordScreenState();
+  final TourSales login;
+  BitacoraCoordScreen({required this.login});
 }
 
 class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
@@ -207,8 +210,8 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
             ),
             trailing: TextButton(
               onPressed: () {
-                Navigator.of(context)
-                    .push(_createRoute(DetalleBitacoraCoordScreen()));
+                Navigator.of(context).push(_createRoute(
+                    DetalleBitacoraCoordScreen(login: widget.login)));
               },
               child: Text('Ver más', style: TextStyle(color: Colors.teal)),
             ),
@@ -239,8 +242,11 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              buildBottomButton(Icons.connect_without_contact_sharp,
-                  'Actividades', null, ActivitiesCoordScreen()),
+              buildBottomButton(
+                  Icons.connect_without_contact_sharp,
+                  'Actividades',
+                  null,
+                  ActivitiesCoordScreen(login: widget.login)),
               Transform.translate(
                 offset:
                     Offset(0, -20), // Ajuste de posición para el botón central
@@ -248,7 +254,7 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
                     Icons.add_circle, 'Hito', null, HitoAddCoordScreen()),
               ),
               buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
-                  CountDownCoordScreen()),
+                  CountDownCoordScreen(login: widget.login)),
             ],
           ),
           SizedBox(height: 10), // Espacio entre filas
@@ -256,13 +262,13 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               buildBottomButton(Icons.medical_information, 'Fichas Medicas',
-                  null, MedicalCoordScreen()),
+                  null, MedicalCoordScreen(login: widget.login)),
               buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
-                  BusCrewCoorScreen()),
+                  BusCrewCoorScreen(login: widget.login)),
               buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
-                  DocumentCoordScreen()),
+                  DocumentCoordScreen(login: widget.login)),
               buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
-                  BitacoraCoordScreen()),
+                  BitacoraCoordScreen(login: widget.login)),
             ],
           ),
         ],

@@ -4,10 +4,16 @@ import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 
-class LoginCoordinator extends StatelessWidget {
+class LoginCoordinator extends StatefulWidget {
+  @override
+  _LoginCoordinatorState createState() => _LoginCoordinatorState();
+}
+
+class _LoginCoordinatorState extends State<LoginCoordinator> {
   final usuarioProvider = new CoordinatorProviders();
   final TextEditingController _codigoGiraController = TextEditingController();
   late TourSales login;
+  bool _showError = false;
 
   @override
   Widget build(BuildContext context) {
@@ -68,25 +74,48 @@ class LoginCoordinator extends StatelessWidget {
                     TextField(
                       controller: _codigoGiraController,
                       decoration: InputDecoration(
-                        labelText: 'Codigo Gira',
+                        labelText: 'Código Gira',
                         labelStyle: TextStyle(color: Colors.grey),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey),
+                          borderSide: BorderSide(
+                              color: _showError ? Colors.red : Colors.grey),
                           borderRadius: BorderRadius.circular(10.0),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.teal),
+                          borderSide: BorderSide(
+                              color: _showError ? Colors.red : Colors.teal),
                           borderRadius: BorderRadius.circular(10.0),
                         ),
                       ),
+                      onChanged: (value) {
+                        setState(() {
+                          _showError = false; // Oculta el error al escribir
+                        });
+                      },
                     ),
+                    if (_showError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 5.0),
+                        child: Text(
+                          'Debes ingresar un codigo de gira',
+                          style: TextStyle(color: Colors.red, fontSize: 12.0),
+                        ),
+                      ),
                     SizedBox(height: 30.0),
                     ElevatedButton(
                       onPressed: () async {
-                        final codigoGira = _codigoGiraController.text;
-                        final login =
-                            await usuarioProvider.validateLoginUser(codigoGira);
-
+                        if (_codigoGiraController.text.isNotEmpty) {
+                          setState(() {
+                            _showError = false;
+                          });
+                          final login = await usuarioProvider
+                              .validateLoginUser(_codigoGiraController.text);
+                          // Maneja la respuesta del login si es necesario
+                        } else {
+                          setState(() {
+                            _showError = true;
+                          });
+                        }
                         if (login != null) {
                           // Si login tiene datos, muestra QuickAlert de éxito y navega a la siguiente pantalla
                           QuickAlert.show(

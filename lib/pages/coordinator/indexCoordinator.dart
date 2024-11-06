@@ -606,14 +606,17 @@ class _TravelCoordinatorDashboardState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              buildBottomButton(Icons.connect_without_contact_sharp,
-                  'Actividades', null, ActivitiesCoordScreen()),
+              buildBottomButton(
+                  Icons.connect_without_contact_sharp,
+                  'Actividades',
+                  null,
+                  ActivitiesCoordScreen(login: widget.login)),
               Transform.translate(
                   offset: Offset(0, -30),
                   child: buildBottomButtonHito(
                       Icons.add_circle, 'Hito', null, HitoAddCoordScreen())),
               buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
-                  CountDownCoordScreen()),
+                  CountDownCoordScreen(login: widget.login)),
             ],
           ),
           SizedBox(height: 5), // Espacio entre las filas
@@ -621,13 +624,13 @@ class _TravelCoordinatorDashboardState
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               buildBottomButton(Icons.medical_information, 'Fichas Medicas',
-                  null, MedicalCoordScreen()),
+                  null, MedicalCoordScreen(login: widget.login)),
               buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
-                  BusCrewCoorScreen()),
+                  BusCrewCoorScreen(login: widget.login)),
               buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
-                  DocumentCoordScreen()),
+                  DocumentCoordScreen(login: widget.login)),
               buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
-                  BitacoraCoordScreen()),
+                  BitacoraCoordScreen(login: widget.login)),
             ],
           ),
         ],
