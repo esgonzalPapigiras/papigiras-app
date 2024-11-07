@@ -5,6 +5,7 @@ import 'package:papigiras_app/dto/tourTripulation.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
+import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
@@ -408,7 +409,7 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                       Icons.book,
                       'Bitácora del Viaje',
                       null,
-                      BitacoraScreen(),
+                      BitacoraCoordScreen(login: widget.login),
                     ),
                   ],
                 ),
