@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
@@ -9,6 +10,7 @@ import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
 class BitacoraCoordScreen extends StatefulWidget {
   @override
@@ -19,6 +21,25 @@ class BitacoraCoordScreen extends StatefulWidget {
 
 class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  List<Itinerary> itineraries = [];
+  final usuarioProvider = new CoordinatorProviders();
+
+  @override
+  void initState() {
+    super.initState();
+    // Llama a fetchDocuments al iniciar el widget
+    _fetchItineraries(widget.login.tourSalesId.toString());
+  }
+
+  Future<void> _fetchItineraries(String tourCode) async {
+    try {
+      itineraries = await usuarioProvider
+          .getItineray(widget.login.tourSalesId.toString());
+      setState(() {}); // Actualiza el estado para reconstruir la interfaz
+    } catch (error) {
+      print("Error al cargar los itinerarios: $error");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -189,23 +210,15 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
   }
 
   List<Widget> _buildBinnacleEntries() {
-    List<Map<String, String>> entries = [
-      {'time': '18:30', 'activity': 'Torneo Bowling'},
-      {'time': '14:30', 'activity': 'City Tour Bariloche'},
-      {'time': '13:00', 'activity': 'Almuerzo en el Hotel'},
-      {'time': '09:30', 'activity': 'Llegamos a Bariloche, Argentina.'},
-      {'time': '08:30', 'activity': 'Control de Aduana sin inconvenientes'},
-    ];
-
-    return entries.map((entry) {
+    return itineraries.map((binnacle) {
       return Card(
-        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Más ancho
+        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: ListTile(
             leading: Icon(Icons.access_time, color: Colors.teal),
             title: Text(
-              '${entry['time']} - ${entry['activity']}', // Hora y actividad en una línea
+              binnacle.itinerary, // Usa los campos adecuados
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             trailing: TextButton(

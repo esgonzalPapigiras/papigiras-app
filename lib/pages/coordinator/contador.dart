@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/PassengerList.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 class CountDownCoordScreen extends StatefulWidget {
   @override
@@ -16,30 +20,59 @@ class CountDownCoordScreen extends StatefulWidget {
 }
 
 class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
-  int totalAlumnos = 35;
+  List<PassengerList> pasajeros = [];
+  List<Map<String, dynamic>> alumnos = []; // Inicializar aquí
+  int totalPasajeros = 0;
   int alumnosVerificados = 0;
-  List<Map<String, dynamic>> alumnos = [
-    {"nombre": "Juan Perez Arancibia", "verificado": false},
-    {"nombre": "Eduardo Morales Novoa", "verificado": false},
-    {"nombre": "Felipe Avello Mundaca", "verificado": false},
-    {"nombre": "Rocio Tapia Duran", "verificado": false},
-    {"nombre": "Francisca Valenzuela Per", "verificado": false},
-    {"nombre": "Gonzalo Navia Yañez", "verificado": false},
-    {"nombre": "Eduardo Rios Diaz", "verificado": false},
-    {"nombre": "Rocio Tapia Duran", "verificado": false},
-  ];
+  final usuarioProvider = CoordinatorProviders();
 
-  void _scanQRCode() {
-    // Aquí abrirías la pantalla de escáner QR y manejarías el resultado.
-    setState(() {
-      for (var alumno in alumnos) {
-        if (!alumno["verificado"]) {
-          alumno["verificado"] = true;
-          alumnosVerificados++;
-          break;
+  @override
+  void initState() {
+    super.initState();
+    // Llama a fetchDocuments al iniciar el widget
+    _fetchItineraries(widget.login.tourSalesId.toString());
+  }
+
+  Future<void> _fetchItineraries(String tourCode) async {
+    try {
+      // Obtiene la lista de pasajeros
+      pasajeros = await usuarioProvider.getListPassenger(tourCode);
+      totalPasajeros = pasajeros.length;
+      alumnosVerificados =
+          pasajeros.where((passenger) => passenger.passengerverificate).length;
+
+      // Mapea los pasajeros a la lista de alumnos
+      alumnos = pasajeros.map((passenger) {
+        return {
+          "nombre": passenger.passengerName,
+          "verificado": passenger.passengerverificate
+        };
+      }).toList();
+
+      setState(() {}); // Actualiza el estado para reconstruir la interfaz
+    } catch (error) {
+      print("Error al cargar los itinerarios: $error");
+    }
+  }
+
+  void _scanQRCode() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => QRViewExample(),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        for (var alumno in alumnos) {
+          if (!alumno["verificado"]) {
+            alumno["verificado"] = true;
+            alumnosVerificados++;
+            break; // Salir del bucle después de verificar el primer alumno no verificado
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   void _resetCounter() {
@@ -214,7 +247,7 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                "$alumnosVerificados/$totalAlumnos",
+                "$alumnosVerificados/$totalPasajeros",
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ),
@@ -380,5 +413,39 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
         );
       },
     );
+  }
+}
+
+class QRViewExample extends StatefulWidget {
+  @override
+  _QRViewExampleState createState() => _QRViewExampleState();
+}
+
+class _QRViewExampleState extends State<QRViewExample> {
+  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  QRViewController? controller;
+
+  @override
+  void dispose() {
+    controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: QRView(
+        key: qrKey,
+        onQRViewCreated: _onQRViewCreated,
+      ),
+    );
+  }
+
+  void _onQRViewCreated(QRViewController controller) {
+    this.controller = controller;
+    controller.scannedDataStream.listen((scanData) {
+      controller.pauseCamera(); // Detener la cámara después de escanear
+      Navigator.of(context).pop(scanData.code); // Devuelve el código escaneado
+    });
   }
 }

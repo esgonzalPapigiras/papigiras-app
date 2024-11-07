@@ -1,13 +1,13 @@
 class Itinerary {
-  final String itineraryName;
+  final String itinerary;
 
-  Itinerary({required this.itineraryName});
+  Itinerary({required this.itinerary});
 
-  // Método para convertir un JSON en un objeto Itinerary
+  // Método para crear una instancia de Itinerary a partir de JSON
   factory Itinerary.fromJson(Map<String, dynamic> json) {
     return Itinerary(
-      itineraryName: json[
-          'itinerary_name'], // Asegúrate de que la clave coincida con la respuesta de tu API
+      itinerary: json['itinerary'] ??
+          '', // Maneja el valor null con un valor por defecto
     );
   }
 }

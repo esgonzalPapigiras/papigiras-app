@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
+import 'package:papigiras_app/dto/document.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
@@ -8,6 +9,7 @@ import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
 class DocumentCoordScreen extends StatefulWidget {
   @override
@@ -18,6 +20,15 @@ class DocumentCoordScreen extends StatefulWidget {
 
 class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late Future<List<Document>> _documentsFuture;
+  final usuarioProvider = new CoordinatorProviders();
+
+  @override
+  void initState() {
+    super.initState();
+    // Llama a fetchDocuments al iniciar el widget
+    _documentsFuture = fetchDocuments(widget.login.tourSalesId.toString());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -153,9 +164,7 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
           _buildFilterOptions(),
           SizedBox(height: 20),
           Expanded(
-            child: ListView(
-              children: _buildBinnacleEntries(),
-            ),
+            child: _buildBinnacleEntries(),
           ),
         ],
       ),
@@ -178,48 +187,86 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
     );
   }
 
-  List<Widget> _buildBinnacleEntries() {
-    List<Map<String, dynamic>> documents = [
-      {'title': 'Programa Gira', 'icon': Icons.description},
-      {'title': 'Póliza de Seguro', 'icon': Icons.policy},
-      {'title': 'Detalle Estadías', 'icon': Icons.hotel},
-      {'title': 'Ficha Médica', 'icon': Icons.medical_services},
-      {'title': 'Nómina Alumnos', 'icon': Icons.people},
-    ];
+  Future<List<Document>> fetchDocuments(String tourCode) async {
+    try {
+      List<Document> documents = await usuarioProvider.getDocument(tourCode);
+      return documents; // Devuelve la lista de documentos
+    } catch (e) {
+      print('Error: $e');
+      return []; // Devuelve una lista vacía en caso de error
+    }
+  }
 
-    return documents.map((document) {
-      return Card(
-        margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-        child: ListTile(
-          leading: Icon(
-            document['icon'] as IconData,
-            color: Colors.teal,
-            size: 40,
-          ),
-          title: Text(
-            document['title']!,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                onPressed: () {
-                  // Acción para visualizar el documento
-                },
+  Widget _buildBinnacleEntries() {
+    return FutureBuilder<List<Document>>(
+      future: _documentsFuture, // Usamos _documentsFuture aquí
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No documents found.'));
+        }
+
+        List<Document> documents = snapshot.data!;
+
+        return ListView.builder(
+          itemCount: documents.length,
+          itemBuilder: (context, index) {
+            final document = documents[index];
+            return Card(
+              margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+              child: ListTile(
+                leading: Icon(
+                  _getIconForDocumentType(document.documentType),
+                  color: Colors.teal,
+                  size: 40,
+                ),
+                title: Text(
+                  document.documentType ?? 'Sin nombre',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.remove_red_eye, color: Colors.teal),
+                      onPressed: () {
+                        // Acción para visualizar el documento
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.download, color: Colors.teal),
+                      onPressed: () {
+                        // Acción para descargar el documento
+                      },
+                    ),
+                  ],
+                ),
               ),
-              IconButton(
-                icon: Icon(Icons.download, color: Colors.teal),
-                onPressed: () {
-                  // Acción para descargar el documento
-                },
-              ),
-            ],
-          ),
-        ),
-      );
-    }).toList();
+            );
+          },
+        );
+      },
+    );
+  }
+
+  IconData _getIconForDocumentType(String documentType) {
+    switch (documentType) {
+      case 'poliza':
+        return Icons.policy;
+      case 'gira':
+        return Icons.description;
+      case 'hotel':
+        return Icons.hotel;
+      case 'Programa gira':
+        return Icons.description;
+      case 'Nomina alumnos':
+        return Icons.people;
+      default:
+        return Icons.description; // Icono por defecto si no coincide
+    }
   }
 
   Widget _buildCustomBottomNavigationBar() {

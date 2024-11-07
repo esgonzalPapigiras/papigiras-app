@@ -8,14 +8,14 @@ import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 
-class DocumentCoordScreen extends StatefulWidget {
+class DocumentFatherScreen extends StatefulWidget {
   @override
   _DocumentCoordScreenState createState() => _DocumentCoordScreenState();
   final TourSales login;
-  DocumentCoordScreen({required this.login});
+  DocumentFatherScreen({required this.login});
 }
 
-class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
+class _DocumentCoordScreenState extends State<DocumentFatherScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
