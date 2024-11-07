@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:papigiras_app/dto/Itinerary.dart';
 import 'dart:convert';
 
 import 'package:papigiras_app/dto/TourSales.dart';
@@ -37,6 +38,21 @@ class CoordinatorProviders with ChangeNotifier {
       return decorespoCreate
           .map((job) => new TourTripulation.fromJson(job))
           .toList();
+    } else {
+      throw Exception('Failed to load services');
+    }
+  }
+
+  Future<List<Itinerary>> getItineray(String tourCode) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/binnacle', {'tourId': tourCode});
+    final resp = await http.post(url, headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      List decorespoCreate = json.decode(resp.body);
+      return decorespoCreate.map((job) => new Itinerary.fromJson(job)).toList();
     } else {
       throw Exception('Failed to load services');
     }

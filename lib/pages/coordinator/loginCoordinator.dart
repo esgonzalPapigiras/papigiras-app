@@ -12,7 +12,6 @@ class LoginCoordinator extends StatefulWidget {
 class _LoginCoordinatorState extends State<LoginCoordinator> {
   final usuarioProvider = new CoordinatorProviders();
   final TextEditingController _codigoGiraController = TextEditingController();
-  late TourSales login;
   bool _showError = false;
 
   @override
@@ -110,45 +109,46 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                           });
                           final login = await usuarioProvider
                               .validateLoginUser(_codigoGiraController.text);
+                          if (login != null) {
+                            // Si login tiene datos, muestra QuickAlert de éxito y navega a la siguiente pantalla
+                            QuickAlert.show(
+                              context: context,
+                              type: QuickAlertType.success,
+                              title: 'Éxito',
+                              text: 'Gira encontrada',
+                              confirmBtnText: 'Continuar',
+                              onConfirmBtnTap: () {
+                                Navigator.of(context)
+                                    .pop(); // Cierra el QuickAlert
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        TravelCoordinatorDashboard(
+                                            login: login),
+                                  ),
+                                );
+                              },
+                            );
+                          } else {
+                            // Si login es null, muestra QuickAlert de error y no navega
+                            QuickAlert.show(
+                              context: context,
+                              type: QuickAlertType.error,
+                              title: 'Error',
+                              text: 'Gira no encontrada',
+                              confirmBtnText: 'Aceptar',
+                              onConfirmBtnTap: () {
+                                Navigator.of(context)
+                                    .pop(); // Cierra el QuickAlert
+                              },
+                            );
+                          }
                           // Maneja la respuesta del login si es necesario
                         } else {
                           setState(() {
                             _showError = true;
                           });
-                        }
-                        if (login != null) {
-                          // Si login tiene datos, muestra QuickAlert de éxito y navega a la siguiente pantalla
-                          QuickAlert.show(
-                            context: context,
-                            type: QuickAlertType.success,
-                            title: 'Éxito',
-                            text: 'Gira encontrada',
-                            confirmBtnText: 'Continuar',
-                            onConfirmBtnTap: () {
-                              Navigator.of(context)
-                                  .pop(); // Cierra el QuickAlert
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      TravelCoordinatorDashboard(login: login),
-                                ),
-                              );
-                            },
-                          );
-                        } else {
-                          // Si login es null, muestra QuickAlert de error y no navega
-                          QuickAlert.show(
-                            context: context,
-                            type: QuickAlertType.error,
-                            title: 'Error',
-                            text: 'Gira no encontrada',
-                            confirmBtnText: 'Aceptar',
-                            onConfirmBtnTap: () {
-                              Navigator.of(context)
-                                  .pop(); // Cierra el QuickAlert
-                            },
-                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(
