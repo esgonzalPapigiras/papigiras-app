@@ -9,6 +9,7 @@ import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/provider.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 

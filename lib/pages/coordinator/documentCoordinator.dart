@@ -10,6 +10,7 @@ import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:quickalert/quickalert.dart';
 
 class DocumentCoordScreen extends StatefulWidget {
   @override
@@ -233,12 +234,33 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
                     IconButton(
                       icon: Icon(Icons.remove_red_eye, color: Colors.teal),
                       onPressed: () {
-                        // Acción para visualizar el documento
+                        usuarioProvider.viewDocument(
+                            document.tourSalesUuid,
+                            document.documentName!,
+                            widget.login.tourSalesId.toString(),
+                            context,
+                            "documentosextras");
+                        // Acción para descargar el documento
                       },
                     ),
                     IconButton(
                       icon: Icon(Icons.download, color: Colors.teal),
                       onPressed: () {
+                        usuarioProvider.downloadDocument(
+                            document.tourSalesUuid,
+                            document.documentName!,
+                            widget.login.tourSalesId.toString(),
+                            "documentosextras");
+                        QuickAlert.show(
+                          context: context,
+                          type: QuickAlertType.success,
+                          title: 'Éxito',
+                          text: 'Documento Descargado',
+                          confirmBtnText: 'Continuar',
+                          onConfirmBtnTap: () {
+                            Navigator.of(context).pop(); // Cierra el QuickAlert
+                          },
+                        );
                         // Acción para descargar el documento
                       },
                     ),

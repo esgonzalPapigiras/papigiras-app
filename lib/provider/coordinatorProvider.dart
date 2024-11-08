@@ -1,14 +1,22 @@
 import 'dart:collection';
+import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/PassengerList.dart';
+import 'package:papigiras_app/utils/PDFViewer.dart';
 import 'dart:convert';
+import 'package:path/path.dart' as path;
 
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/document.dart';
 import 'package:papigiras_app/dto/tourTripulation.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
 
 class CoordinatorProviders with ChangeNotifier {
   Future<TourSales?> validateLoginUser(String tourCode) async {
@@ -125,6 +133,130 @@ class CoordinatorProviders with ChangeNotifier {
           .toList();
     } else {
       throw Exception('Failed to load services');
+    }
+  }
+
+  Future<void> downloadDocument(
+      String folderName, String fileName, String idTour, String folder) async {
+    // Solicitar permisos de almacenamiento
+    await _requestStoragePermission();
+
+    final url = Uri.https(
+        'ms-papigiras-app-ezkbu.ondigitalocean.app', '/app/services/download', {
+      'folderName': folderName,
+      'fileName': fileName,
+      'idTour': idTour,
+    });
+
+    final response = await http.get(url, headers: {
+      'Content-Type': 'application/json',
+      // Si es necesario, puedes agregar aquí el token
+      // 'Authorization': 'Bearer your_token_here',
+    });
+
+    if (fileName == "Nomina alumnos") {
+      fileName = "NominaAlumnos.pdf";
+    } else if (fileName == "Programa gira") {
+      fileName = "ProgramaGira.pdf";
+    }
+
+    if (response.statusCode == 200) {
+      final downloadsDirectory = Directory('/storage/emulated/0/Download');
+      if (!await downloadsDirectory.exists()) {
+        await downloadsDirectory.create(recursive: true);
+      }
+      final filePath = path.join(downloadsDirectory.path, fileName);
+      final file = File(filePath);
+      await file.writeAsBytes(response.bodyBytes);
+    } else {
+      throw Exception(
+          'Error al descargar el documento: ${response.reasonPhrase}');
+    }
+  }
+
+  Future<void> viewDocument(String folderName, String fileName, String idTour,
+      BuildContext context, String folder) async {
+    try {
+      final url = Uri.https(
+          'ms-papigiras-app-ezkbu.ondigitalocean.app', '/app/services/view', {
+        'folderName': folderName,
+        'fileName': fileName,
+        'idTour': idTour,
+      });
+
+      final resp = await http.get(url, headers: {
+        'Content-Type':
+            'application/json' // Agregar el token en la cabecera de la solicitud
+      });
+
+      if (resp.statusCode == 200) {
+        final Uint8List documentBytes = resp.bodyBytes;
+
+        // Guardar el documento temporalmente en el dispositivo
+        final Directory appDocDir = await getApplicationDocumentsDirectory();
+        final String filePath = '${appDocDir.path}/$fileName';
+
+        // Escribir el archivo en el dispositivo
+        final File file = File(filePath);
+        await file.writeAsBytes(documentBytes);
+
+        // Mostrar el PDF en un diálogo
+        _showPdfDialog(filePath, context);
+      } else {
+        throw Exception('Error al obtener el documento: ${resp.statusCode}');
+      }
+    } catch (e) {
+      print('Error al visualizar el documento: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al visualizar el documento: $e')),
+      );
+    }
+  }
+
+  void _showPdfDialog(String filePath, BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Visualizador PDF'),
+          content: Container(
+            width: double.maxFinite,
+            height: 400, // Ajusta la altura según sea necesario
+            child: PDFView(
+              filePath: filePath,
+              enableSwipe: true,
+              swipeHorizontal: false,
+              autoSpacing: false,
+              pageFling: false,
+              onPageChanged: (page, total) {
+                print('Page $page of $total');
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Cerrar el diálogo
+              },
+              child: Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _requestStoragePermission() async {
+    var status = await Permission.storage.status;
+    if (status.isDenied) {
+      // Si el permiso está denegado, solicítalo
+      status = await Permission.storage.request();
+    }
+
+    if (status.isGranted) {
+      print("Permiso de almacenamiento otorgado");
+    } else {
+      throw Exception("Permiso de almacenamiento no otorgado");
     }
   }
 }

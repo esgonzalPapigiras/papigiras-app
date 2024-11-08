@@ -40,7 +40,7 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
           'name': passenger
               .passengerName, // Asegúrate de que esto coincida con tu DTO
           'id': passenger
-              .passengerName, // Asegúrate de que esto coincida con tu DTO
+              .passengerIdentification, // Asegúrate de que esto coincida con tu DTO
         };
       }).toList();
     });
@@ -144,7 +144,14 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
                 Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
               ],
             ),
-            onTap: () {},
+            onTap: () {
+              usuarioProvider.viewDocumentMedical(
+                  document.tourSalesUuid,
+                  document.documentName!,
+                  widget.login.tourSalesId.toString(),
+                  context,
+                  "documentosextras");
+            },
           ),
           ListTile(
             leading: Icon(Icons.report_problem, color: Colors.teal),
