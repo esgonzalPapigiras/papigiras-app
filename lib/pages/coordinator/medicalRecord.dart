@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/PassengerList.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
@@ -8,6 +9,7 @@ import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
 class MedicalCoordScreen extends StatefulWidget {
   @override
@@ -20,15 +22,31 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   bool _isAscending = true; // Bandera para ordenación
+  List<PassengerList> pasajeros = [];
+  final usuarioProvider = CoordinatorProviders();
 
-  List<Map<String, dynamic>> documents = [
-    {'name': 'Arancibia Carlos', 'id': '20.457.748-k'},
-    {'name': 'Armas Pedro', 'id': '20.457.748-k'},
-    {'name': 'Arenas Juan', 'id': '20.457.748-k'},
-    {'name': 'Acuña David', 'id': '20.457.748-k'},
-    {'name': 'Altamirano Julián', 'id': '20.457.748-k'},
-    {'name': 'Bravo Andrés', 'id': '20.457.748-k'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Llama a fetchDocuments al iniciar el widget
+    _fetchItineraries(widget.login.tourSalesId.toString());
+  }
+
+  Future<void> _fetchItineraries(String tourCode) async {
+    pasajeros = await usuarioProvider.getListPassenger(tourCode);
+    setState(() {
+      documents = pasajeros.map((passenger) {
+        return {
+          'name': passenger
+              .passengerName, // Asegúrate de que esto coincida con tu DTO
+          'id': passenger
+              .passengerName, // Asegúrate de que esto coincida con tu DTO
+        };
+      }).toList();
+    });
+  }
+
+  List<Map<String, dynamic>> documents = []; // Inicializa como lista vacía
 
   void _sortDocuments() {
     setState(() {
@@ -158,10 +176,10 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Arancibia Carlos',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                widget.login.tourTripulationNameId,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8),
               ),
-              Text('20.457.748-K'),
+              Text(widget.login.tourTripulationIdentificationId),
             ],
           ),
         ],

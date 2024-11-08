@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
@@ -8,6 +9,7 @@ import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
 class ActivitiesCoordScreen extends StatefulWidget {
   @override
@@ -20,6 +22,25 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? selectedActivity;
   final TextEditingController participantsController = TextEditingController();
+  List<Itinerary> itineraries = [];
+  final usuarioProvider = new CoordinatorProviders();
+
+  @override
+  void initState() {
+    super.initState();
+    // Llama a fetchDocuments al iniciar el widget
+    _fetchItineraries(widget.login.tourSalesId.toString());
+  }
+
+  Future<void> _fetchItineraries(String tourCode) async {
+    try {
+      itineraries = await usuarioProvider
+          .getItineray(widget.login.tourSalesId.toString());
+      setState(() {}); // Actualiza el estado para reconstruir la interfaz
+    } catch (error) {
+      print("Error al cargar los itinerarios: $error");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,10 +114,10 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Arancibia Carlos',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                widget.login.tourTripulationNameId,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
               ),
-              Text('20.457.748-K'),
+              Text(widget.login.tourTripulationIdentificationId),
             ],
           ),
         ],
