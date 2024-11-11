@@ -91,6 +91,7 @@ class _HitoAddCoordScreenState extends State<HitoAddCoordScreen> {
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
+
         setState(() {
           _location = '${place.street}, ${place.locality}, ${place.country}';
         });

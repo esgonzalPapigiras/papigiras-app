@@ -144,14 +144,7 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
                 Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
               ],
             ),
-            onTap: () {
-              usuarioProvider.viewDocumentMedical(
-                  document.tourSalesUuid,
-                  document.documentName!,
-                  widget.login.tourSalesId.toString(),
-                  context,
-                  "documentosextras");
-            },
+            onTap: () {},
           ),
           ListTile(
             leading: Icon(Icons.report_problem, color: Colors.teal),

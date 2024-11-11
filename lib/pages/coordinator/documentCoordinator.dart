@@ -245,8 +245,8 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
                     ),
                     IconButton(
                       icon: Icon(Icons.download, color: Colors.teal),
-                      onPressed: () {
-                        usuarioProvider.downloadDocument(
+                      onPressed: () async {
+                        await usuarioProvider.downloadDocument(
                             document.tourSalesUuid,
                             document.documentName!,
                             widget.login.tourSalesId.toString(),

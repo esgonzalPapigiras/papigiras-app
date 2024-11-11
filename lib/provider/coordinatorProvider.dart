@@ -146,6 +146,7 @@ class CoordinatorProviders with ChangeNotifier {
       'folderName': folderName,
       'fileName': fileName,
       'idTour': idTour,
+      'folder': folder
     });
 
     final response = await http.get(url, headers: {
@@ -182,6 +183,7 @@ class CoordinatorProviders with ChangeNotifier {
         'folderName': folderName,
         'fileName': fileName,
         'idTour': idTour,
+        'folder': folder
       });
 
       final resp = await http.get(url, headers: {
@@ -247,15 +249,30 @@ class CoordinatorProviders with ChangeNotifier {
   }
 
   Future<void> _requestStoragePermission() async {
-    var status = await Permission.storage.status;
-    if (status.isDenied) {
-      // Si el permiso está denegado, solicítalo
-      status = await Permission.storage.request();
+    // Si estamos en Android 11 o superior, solicitamos MANAGE_EXTERNAL_STORAGE
+    if (Platform.isAndroid && await Permission.manageExternalStorage.isDenied) {
+      await Permission.manageExternalStorage.request();
+
+      // Si el permiso sigue denegado, abrimos la configuración de la app para que el usuario lo habilite manualmente
+      if (await Permission.manageExternalStorage.isDenied) {
+        openAppSettings();
+      }
+      print("Permiso MANAGE_EXTERNAL_STORAGE solicitado");
     }
 
+    // Verificamos el estado de los permisos de almacenamiento
+    var status = await Permission.storage.status;
+
+    if (status.isDenied) {
+      status = await Permission.storage.request();
+      print("Permiso de almacenamiento solicitado");
+    }
+
+    // Si el permiso fue otorgado
     if (status.isGranted) {
       print("Permiso de almacenamiento otorgado");
     } else {
+      print("Permiso de almacenamiento no otorgado");
       throw Exception("Permiso de almacenamiento no otorgado");
     }
   }
