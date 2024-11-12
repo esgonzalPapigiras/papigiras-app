@@ -344,6 +344,7 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                   ),
           ),
           Container(
+            padding: EdgeInsets.symmetric(vertical: 35),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [

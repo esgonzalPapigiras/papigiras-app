@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/PassengerList.dart';
 import 'package:papigiras_app/dto/RequestActivities.dart';
@@ -140,7 +141,7 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<void> addHito(RequestHito tourCode) async {
+  Future<ConsolidatedTourSalesDTO> addHito(RequestHito tourCode) async {
     var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
         '/app/services/create-hito');
     final resp =
@@ -149,9 +150,52 @@ class CoordinatorProviders with ChangeNotifier {
           'application/json' // Agregar el token en la cabecera de la solicitud
     });
     if (resp.statusCode == 200) {
+      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+      ConsolidatedTourSalesDTO login =
+          new ConsolidatedTourSalesDTO.fromJson(decorespoCreate);
+      return login;
       notifyListeners();
     } else {
       throw Exception('Failed to load services');
+    }
+  }
+
+  Future<void> addHitoFoto(
+      int hito, String tourId, List<XFile> imageFiles) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/create-hito/fotos');
+
+    // Crea un objeto MultipartRequest para enviar datos multipart
+    var request = http.MultipartRequest('POST', url);
+
+    // Añadir parámetros adicionales
+    request.fields['hitoId'] =
+        hito.toString(); // El hitoId debe ser parte del objeto hito
+    request.fields['tourId'] =
+        tourId.toString(); // El tourId debe ser parte del objeto hito
+
+    // Añadir las imágenes
+    for (int i = 0; i < imageFiles.length; i++) {
+      var file = await http.MultipartFile.fromPath(
+        'images', // Este es el nombre del campo en tu API
+        imageFiles[i].path,
+        filename: imageFiles[i].name,
+      );
+      request.files.add(file);
+    }
+
+    // Realiza la solicitud
+    try {
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        print('Hito fotos agregadas con éxito');
+        // Aquí puedes manejar la respuesta si es necesario
+      } else {
+        print('Error al enviar las fotos: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error al enviar la solicitud: $e');
     }
   }
 
@@ -317,31 +361,19 @@ class CoordinatorProviders with ChangeNotifier {
   }
 
   Future<void> _requestStoragePermission() async {
-    // Si estamos en Android 11 o superior, solicitamos MANAGE_EXTERNAL_STORAGE
-    if (Platform.isAndroid && await Permission.manageExternalStorage.isDenied) {
-      await Permission.manageExternalStorage.request();
-
-      // Si el permiso sigue denegado, abrimos la configuración de la app para que el usuario lo habilite manualmente
+    if (Platform.isAndroid) {
       if (await Permission.manageExternalStorage.isDenied) {
-        openAppSettings();
+        // Solicitar permiso para acceder al almacenamiento completo
+        await Permission.manageExternalStorage.request();
+        if (await Permission.manageExternalStorage.isDenied) {
+          // Si el permiso sigue denegado, abrir la configuración de la app
+          openAppSettings();
+          print(
+              "Permiso MANAGE_EXTERNAL_STORAGE denegado. Se abrió la configuración.");
+        } else {
+          print("Permiso MANAGE_EXTERNAL_STORAGE otorgado.");
+        }
       }
-      print("Permiso MANAGE_EXTERNAL_STORAGE solicitado");
-    }
-
-    // Verificamos el estado de los permisos de almacenamiento
-    var status = await Permission.storage.status;
-
-    if (status.isDenied) {
-      status = await Permission.storage.request();
-      print("Permiso de almacenamiento solicitado");
-    }
-
-    // Si el permiso fue otorgado
-    if (status.isGranted) {
-      print("Permiso de almacenamiento otorgado");
-    } else {
-      print("Permiso de almacenamiento no otorgado");
-      throw Exception("Permiso de almacenamiento no otorgado");
     }
   }
 }

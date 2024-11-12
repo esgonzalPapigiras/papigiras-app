@@ -244,7 +244,7 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
   Widget _buildCustomBottomNavigationBar() {
     return Container(
       padding:
-          EdgeInsets.symmetric(vertical: 10), // Ajuste del espacio vertical
+          EdgeInsets.symmetric(vertical: 35), // Ajuste del espacio vertical
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -277,7 +277,7 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
                   CountDownCoordScreen(login: widget.login)),
             ],
           ),
-          SizedBox(height: 10), // Espacio entre filas
+          SizedBox(height: 5), // Espacio entre filas
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [

@@ -350,7 +350,7 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
   Widget _buildCustomBottomNavigationBar() {
     return Container(
       padding:
-          EdgeInsets.symmetric(vertical: 10), // Ajuste del espacio vertical
+          EdgeInsets.symmetric(vertical: 35), // Ajuste del espacio vertical
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [

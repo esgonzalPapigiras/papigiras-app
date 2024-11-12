@@ -284,7 +284,7 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
 
   Widget _buildCustomBottomNavigationBar() {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 10),
+      padding: EdgeInsets.symmetric(vertical: 35),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
