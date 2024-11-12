@@ -230,7 +230,7 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
               onPressed: () {
                 Navigator.of(context).push(_createRoute(
                     DetalleBitacoraCoordScreen(
-                        idHito: binnacle.binnacleDetailId,
+                        idHito: binnacle.binnacleDetailId.toString(),
                         login: widget.login)));
               },
               child: Text('Ver más', style: TextStyle(color: Colors.teal)),

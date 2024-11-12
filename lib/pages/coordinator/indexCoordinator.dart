@@ -533,6 +533,7 @@ class _TravelCoordinatorDashboardState
                           ),
                         ],
                       ),
+                      SizedBox(height: 30),
                     ],
                   ),
                 ),
@@ -589,7 +590,7 @@ class _TravelCoordinatorDashboardState
 
   Widget buildBottomBar() {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 2),
+      padding: EdgeInsets.symmetric(vertical: 35),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [

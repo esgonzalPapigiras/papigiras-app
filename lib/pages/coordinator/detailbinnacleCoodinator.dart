@@ -8,18 +8,21 @@ import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
 class DetalleBitacoraCoordScreen extends StatefulWidget {
   @override
   _DetalleBitacoraCoordScreenState createState() =>
       _DetalleBitacoraCoordScreenState();
   final TourSales login;
-  DetalleBitacoraCoordScreen({required idHito, required this.login});
+  final String idHito;
+  DetalleBitacoraCoordScreen({required this.idHito, required this.login});
 }
 
 class _DetalleBitacoraCoordScreenState
     extends State<DetalleBitacoraCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final usuarioProvider = new CoordinatorProviders();
 
   @override
   Widget build(BuildContext context) {
@@ -163,6 +166,9 @@ class _DetalleBitacoraCoordScreenState
   }
 
   List<Widget> _buildBinnacleEntries() {
+    usuarioProvider.getHitoComplete(
+        widget.idHito.toString(), widget.login.tourSalesId.toString());
+
     List<Map<String, String>> entries = [
       {
         'time': '18:30',

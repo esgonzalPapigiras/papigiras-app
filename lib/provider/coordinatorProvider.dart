@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:papigiras_app/dto/DetailHitoList.dart';
 import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/PassengerList.dart';
 import 'package:papigiras_app/dto/RequestActivities.dart';
@@ -153,8 +154,8 @@ class CoordinatorProviders with ChangeNotifier {
       LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
       ConsolidatedTourSalesDTO login =
           new ConsolidatedTourSalesDTO.fromJson(decorespoCreate);
-      return login;
       notifyListeners();
+      return login;
     } else {
       throw Exception('Failed to load services');
     }
@@ -196,6 +197,25 @@ class CoordinatorProviders with ChangeNotifier {
       }
     } catch (e) {
       print('Error al enviar la solicitud: $e');
+    }
+  }
+
+  Future<DetailHitoList> getHitoComplete(String hito, String tourId) async {
+    var url = Uri.https(
+        'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/get/detail/create-hito',
+        {'tourId': tourId, 'idHito': hito.toString()});
+    final resp = await http.get(url, headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      Map<String, dynamic> decodedResponse = json.decode(resp.body);
+      DetailHitoList login = new DetailHitoList.fromJson(decodedResponse);
+      notifyListeners();
+      return login;
+    } else {
+      throw Exception('Failed to load services');
     }
   }
 

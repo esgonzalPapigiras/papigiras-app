@@ -206,11 +206,7 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                     // Validaciones de los campos
                     if (tituloController.text.isEmpty ||
                         descripcionController.text.isEmpty ||
-                        ubicacionController.text.isEmpty ||
-                        notaCierreController.text.isEmpty ||
-                        latitudController.text.isEmpty ||
-                        longitudController.text.isEmpty ||
-                        horaController.text.isEmpty) {
+                        notaCierreController.text.isEmpty) {
                       QuickAlert.show(
                         context: context,
                         type: QuickAlertType.error,
