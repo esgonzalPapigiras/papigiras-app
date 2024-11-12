@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/DetailHitoList.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
@@ -23,6 +26,15 @@ class _DetalleBitacoraCoordScreenState
     extends State<DetalleBitacoraCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final usuarioProvider = new CoordinatorProviders();
+  Future<DetailHitoList>? _hitoDetailFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicia la llamada al servicio para obtener los detalles del hito
+    _hitoDetailFuture = usuarioProvider.getHitoComplete(
+        widget.idHito.toString(), widget.login.tourSalesId.toString());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +49,21 @@ class _DetalleBitacoraCoordScreenState
             children: [
               _buildAppBar(context),
               Expanded(
-                child: _buildBinnacleContent(),
+                child: FutureBuilder<DetailHitoList>(
+                  future: _hitoDetailFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else if (snapshot.hasData) {
+                      DetailHitoList hitoDetail = snapshot.data!;
+                      return _buildBinnacleContent(hitoDetail);
+                    } else {
+                      return Center(child: Text('No data available'));
+                    }
+                  },
+                ),
               ),
             ],
           ),
@@ -141,7 +167,7 @@ class _DetalleBitacoraCoordScreenState
     );
   }
 
-  Widget _buildBinnacleContent() {
+  Widget _buildBinnacleContent(DetailHitoList hitoDetail) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -157,7 +183,7 @@ class _DetalleBitacoraCoordScreenState
           SizedBox(height: 20),
           Expanded(
             child: ListView(
-              children: _buildBinnacleEntries(),
+              children: _buildBinnacleEntries(hitoDetail),
             ),
           ),
         ],
@@ -165,22 +191,27 @@ class _DetalleBitacoraCoordScreenState
     );
   }
 
-  List<Widget> _buildBinnacleEntries() {
-    usuarioProvider.getHitoComplete(
-        widget.idHito.toString(), widget.login.tourSalesId.toString());
+  List<Widget> _buildBinnacleEntries(DetailHitoList hitoDetail) {
+    List<Map<String, dynamic>> entries = [];
 
-    List<Map<String, String>> entries = [
-      {
-        'time': '18:30',
-        'activity': 'Torneo Bowling',
-        'description':
-            'Todos en la sala de Bolos, Hombres contra mujeres, ¿quién ganará?',
-        'image1': 'assets/bowling1.jpg',
-        'image2': 'assets/bowling2.jpg',
-      },
-      // Añadir más actividades según sea necesario
-    ];
+    // Se asume que las imágenes están en formato base64 en la lista hitoDetail.images
+    // Agrupamos las imágenes por actividad
+    for (var i = 0; i < hitoDetail.images!.length; i++) {
+      String base64Image = hitoDetail.images![i];
 
+      // Agregar las imágenes a las entradas
+    }
+    String time = hitoDetail.hora ?? 'Sin hora';
+    String activity = hitoDetail.titulo ?? 'Actividad no disponible';
+    String description = hitoDetail.descripcion ?? 'Descripción no disponible';
+    entries.add({
+      'time': time,
+      'activity': activity,
+      'description': description,
+      'images': hitoDetail.images, // Lista de imágenes
+    });
+
+    // Mapear las entradas a los widgets
     return entries.map((entry) {
       return Card(
         margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -213,18 +244,25 @@ class _DetalleBitacoraCoordScreenState
                 style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
               SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              // Mostrar todas las imágenes dinámicamente dependiendo de la cantidad
+              Column(
                 children: [
-                  Expanded(
-                    child: Image.asset(entry['image1']!, fit: BoxFit.cover),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Image.asset(entry['image2']!, fit: BoxFit.cover),
-                  ),
+                  // Aquí mapeamos las imágenes de la lista 'images' de la entrada
+                  for (var imageBase64 in entry['images'])
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Center(
+                        child: Image.memory(
+                          base64Decode(imageBase64.split(',').last),
+                          fit: BoxFit
+                              .cover, // Ajusta la forma en que se escala la imagen
+                          height: 200, // Altura específica de la imagen
+                          width: 200, // Ancho específico de la imagen
+                        ),
+                      ),
+                    ),
                 ],
-              ),
+              )
             ],
           ),
         ),

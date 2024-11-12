@@ -204,13 +204,14 @@ class CoordinatorProviders with ChangeNotifier {
     var url = Uri.https(
         'ms-papigiras-app-ezkbu.ondigitalocean.app',
         '/app/services/get/detail/create-hito',
-        {'tourId': tourId, 'idHito': hito.toString()});
+        {'idTour': tourId, 'idHito': hito.toString()});
     final resp = await http.get(url, headers: {
       'Content-Type':
           'application/json' // Agregar el token en la cabecera de la solicitud
     });
     if (resp.statusCode == 200) {
-      Map<String, dynamic> decodedResponse = json.decode(resp.body);
+      Map<String, dynamic> decodedResponse =
+          json.decode(utf8.decode(resp.bodyBytes));
       DetailHitoList login = new DetailHitoList.fromJson(decodedResponse);
       notifyListeners();
       return login;
@@ -227,7 +228,7 @@ class CoordinatorProviders with ChangeNotifier {
           'application/json' // Agregar el token en la cabecera de la solicitud
     });
     if (resp.statusCode == 200) {
-      List decorespoCreate = json.decode(resp.body);
+      List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
       return decorespoCreate
           .map((job) => new ConsolidatedTourSalesDTO.fromJson(job))
           .toList();
@@ -244,7 +245,7 @@ class CoordinatorProviders with ChangeNotifier {
           'application/json' // Agregar el token en la cabecera de la solicitud
     });
     if (resp.statusCode == 200) {
-      List decorespoCreate = json.decode(resp.body);
+      List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
       return decorespoCreate.map((job) => new Document.fromJson(job)).toList();
     } else {
       throw Exception('Failed to load services');
