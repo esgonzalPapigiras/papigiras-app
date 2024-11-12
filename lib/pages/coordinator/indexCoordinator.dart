@@ -613,8 +613,8 @@ class _TravelCoordinatorDashboardState
                   ActivitiesCoordScreen(login: widget.login)),
               Transform.translate(
                   offset: Offset(0, -30),
-                  child: buildBottomButtonHito(
-                      Icons.add_circle, 'Hito', null, HitoAddCoordScreen())),
+                  child: buildBottomButtonHito(Icons.add_circle, 'Hito', null,
+                      HitoAddCoordScreen(login: widget.login))),
               buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
                   CountDownCoordScreen(login: widget.login)),
             ],

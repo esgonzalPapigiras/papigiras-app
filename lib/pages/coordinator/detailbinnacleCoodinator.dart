@@ -14,7 +14,7 @@ class DetalleBitacoraCoordScreen extends StatefulWidget {
   _DetalleBitacoraCoordScreenState createState() =>
       _DetalleBitacoraCoordScreenState();
   final TourSales login;
-  DetalleBitacoraCoordScreen({required this.login});
+  DetalleBitacoraCoordScreen({required idHito, required this.login});
 }
 
 class _DetalleBitacoraCoordScreenState

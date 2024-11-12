@@ -7,6 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/PassengerList.dart';
+import 'package:papigiras_app/dto/RequestActivities.dart';
+import 'package:papigiras_app/dto/binnacle.dart';
+import 'package:papigiras_app/dto/binnacleaddlist.dart';
+import 'package:papigiras_app/dto/requestHito.dart';
 import 'package:papigiras_app/utils/PDFViewer.dart';
 import 'dart:convert';
 import 'package:path/path.dart' as path;
@@ -99,6 +103,70 @@ class CoordinatorProviders with ChangeNotifier {
     if (resp.statusCode == 200) {
       List decorespoCreate = json.decode(resp.body);
       return decorespoCreate.map((job) => new Itinerary.fromJson(job)).toList();
+    } else {
+      throw Exception('Failed to load services');
+    }
+  }
+
+  Future<List<ActivitiesList>> getItinerayGuardados(String tourCode) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/get/create-activities', {'tourId': tourCode});
+    final resp = await http.get(url, headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      List decorespoCreate = json.decode(resp.body);
+      return decorespoCreate
+          .map((job) => new ActivitiesList.fromJson(job))
+          .toList();
+    } else {
+      throw Exception('Failed to load services');
+    }
+  }
+
+  Future<void> activitiesCreate(RequestActivities tourCode) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/create-activities');
+    final resp =
+        await http.post(url, body: jsonEncode(tourCode.toJson()), headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      notifyListeners();
+    } else {
+      throw Exception('Failed to load services');
+    }
+  }
+
+  Future<void> addHito(RequestHito tourCode) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/create-hito');
+    final resp =
+        await http.post(url, body: jsonEncode(tourCode.toJson()), headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      notifyListeners();
+    } else {
+      throw Exception('Failed to load services');
+    }
+  }
+
+  Future<List<ConsolidatedTourSalesDTO>> getBinnacle(String tourCode) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/get/create-hito', {'tourId': tourCode});
+    final resp = await http.get(url, headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      List decorespoCreate = json.decode(resp.body);
+      return decorespoCreate
+          .map((job) => new ConsolidatedTourSalesDTO.fromJson(job))
+          .toList();
     } else {
       throw Exception('Failed to load services');
     }

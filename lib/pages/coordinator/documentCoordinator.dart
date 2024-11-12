@@ -320,8 +320,8 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
               Transform.translate(
                 offset:
                     Offset(0, -20), // Ajuste de posición para el botón central
-                child: buildBottomButtonHito(
-                    Icons.add_circle, 'Hito', null, HitoAddCoordScreen()),
+                child: buildBottomButtonHito(Icons.add_circle, 'Hito', null,
+                    HitoAddCoordScreen(login: widget.login)),
               ),
               buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
                   CountDownCoordScreen(login: widget.login)),

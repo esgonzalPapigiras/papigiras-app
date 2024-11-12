@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
+import 'package:papigiras_app/dto/binnacle.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
@@ -21,7 +22,7 @@ class BitacoraCoordScreen extends StatefulWidget {
 
 class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  List<Itinerary> itineraries = [];
+  List<ConsolidatedTourSalesDTO> itineraries = [];
   final usuarioProvider = new CoordinatorProviders();
 
   @override
@@ -34,7 +35,7 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
   Future<void> _fetchItineraries(String tourCode) async {
     try {
       itineraries = await usuarioProvider
-          .getItineray(widget.login.tourSalesId.toString());
+          .getBinnacle(widget.login.tourSalesId.toString());
       setState(() {}); // Actualiza el estado para reconstruir la interfaz
     } catch (error) {
       print("Error al cargar los itinerarios: $error");
@@ -218,13 +219,19 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
           child: ListTile(
             leading: Icon(Icons.access_time, color: Colors.teal),
             title: Text(
-              binnacle.itinerary, // Usa los campos adecuados
+              binnacle.binnacleTitulo, // Usa los campos adecuados
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              binnacle.binnacleUbicacion, // Usa los campos adecuados
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             trailing: TextButton(
               onPressed: () {
                 Navigator.of(context).push(_createRoute(
-                    DetalleBitacoraCoordScreen(login: widget.login)));
+                    DetalleBitacoraCoordScreen(
+                        idHito: binnacle.binnacleDetailId,
+                        login: widget.login)));
               },
               child: Text('Ver más', style: TextStyle(color: Colors.teal)),
             ),
@@ -263,8 +270,8 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
               Transform.translate(
                 offset:
                     Offset(0, -20), // Ajuste de posición para el botón central
-                child: buildBottomButtonHito(
-                    Icons.add_circle, 'Hito', null, HitoAddCoordScreen()),
+                child: buildBottomButtonHito(Icons.add_circle, 'Hito', null,
+                    HitoAddCoordScreen(login: widget.login)),
               ),
               buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
                   CountDownCoordScreen(login: widget.login)),

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/Itinerary.dart';
+import 'package:papigiras_app/dto/RequestActivities.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
+import 'package:papigiras_app/dto/binnacleaddlist.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:quickalert/quickalert.dart';
 
 class ActivitiesCoordScreen extends StatefulWidget {
   @override
@@ -20,9 +24,10 @@ class ActivitiesCoordScreen extends StatefulWidget {
 
 class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String? selectedActivity;
-  final TextEditingController participantsController = TextEditingController();
+  Itinerary? selectedActivity;
   List<Itinerary> itineraries = [];
+  List<ActivitiesList> activitiesList = [];
+  final TextEditingController participantsController = TextEditingController();
   final usuarioProvider = new CoordinatorProviders();
 
   @override
@@ -36,7 +41,18 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
     try {
       itineraries = await usuarioProvider
           .getItineray(widget.login.tourSalesId.toString());
-      setState(() {}); // Actualiza el estado para reconstruir la interfaz
+      // Eliminar duplicados basados en itineraryId
+      itineraries = itineraries.toSet().toList();
+
+      if (itineraries.isNotEmpty) {
+        selectedActivity =
+            itineraries[0]; // Esto asegura que selectedActivity no esté null
+      }
+
+      activitiesList = await usuarioProvider
+          .getItinerayGuardados(widget.login.tourSalesId.toString());
+
+      setState(() {});
     } catch (error) {
       print("Error al cargar los itinerarios: $error");
     }
@@ -55,8 +71,24 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
             children: [
               _buildAppBar(context),
               Expanded(
-                child: _buildActivityContent(),
-              ),
+                  child: FutureBuilder<Widget>(
+                future: _buildActivityContent(),
+                builder:
+                    (BuildContext context, AsyncSnapshot<Widget> snapshot) {
+                  // Check the connection state of the future
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    // While the future is still loading, show a loading indicator
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    // If there was an error, display an error message
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else {
+                    // Once the future is resolved, return the widget from the future
+                    return snapshot.data ??
+                        SizedBox.shrink(); // Return the resolved widget
+                  }
+                },
+              )),
             ],
           ),
         ],
@@ -160,7 +192,7 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
     );
   }
 
-  Widget _buildActivityContent() {
+  Future<Widget> _buildActivityContent() async {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -182,15 +214,20 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
                   color: Colors.black87),
             ),
             SizedBox(height: 20),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<Itinerary>(
               value: selectedActivity,
-              items: ['Rafting', 'Bowling Bariloche', 'Cabalgata Osorno']
-                  .map((activity) => DropdownMenuItem(
-                        value: activity,
-                        child: Text(activity),
-                      ))
-                  .toList(),
-              onChanged: (value) => setState(() => selectedActivity = value),
+              items: itineraries.map((activity) {
+                return DropdownMenuItem<Itinerary>(
+                  value: activity,
+                  child: Text(
+                      activity.itinerary), // Muestra el nombre de la actividad
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedActivity = value;
+                });
+              },
               decoration: InputDecoration(
                 labelText: 'Selecciona Actividad',
                 filled: true,
@@ -219,8 +256,36 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
                 ),
                 SizedBox(width: 10),
                 ElevatedButton(
-                  onPressed: () {
-                    // Agregar lógica para agregar actividad
+                  onPressed: () async {
+                    RequestActivities maintainerList = RequestActivities(
+                        activityId: selectedActivity!.itineraryId,
+                        quantityPassenger:
+                            int.parse(participantsController.text),
+                        tourSalesId: widget.login.tourSalesId);
+                    await usuarioProvider.activitiesCreate(maintainerList);
+
+                    await _fetchItineraries(
+                        widget.login.tourSalesId.toString());
+
+                    setState(() {});
+
+                    QuickAlert.show(
+                      context: context,
+                      type: QuickAlertType.success,
+                      title: 'Éxito',
+                      text: 'Agregado con exito',
+                      confirmBtnText: 'Continuar',
+                      onConfirmBtnTap: () {
+                        Navigator.of(context).pop(); // Cierra el QuickAlert
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                TravelCoordinatorDashboard(login: widget.login),
+                          ),
+                        );
+                      },
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -242,13 +307,6 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
                 children: _buildActivityList(),
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Exportar .XLS', style: TextStyle(color: Colors.teal)),
-                Icon(Icons.file_download, color: Colors.teal),
-              ],
-            ),
           ],
         ),
       ),
@@ -256,13 +314,7 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
   }
 
   List<Widget> _buildActivityList() {
-    List<Map<String, String>> activities = [
-      {'name': 'Bowling Bariloche', 'participants': '32'},
-      {'name': 'Cabalgata Osorno', 'participants': '28'},
-      {'name': 'Rafting Bariloche', 'participants': '32'},
-    ];
-
-    return activities.map((entry) {
+    return activitiesList.map((entry) {
       return Card(
         margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Más ancho
         child: Padding(
@@ -273,7 +325,7 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
                   MainAxisAlignment.center, // Centra el contenido del Row
               children: [
                 Text(
-                  entry['name']!,
+                  entry.activitiesName,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 Container(
@@ -284,7 +336,7 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
                   color: Colors.teal, // Color de la línea
                 ),
                 Text(
-                  entry['participants']!,
+                  entry.quantityPassengerCheck.toString(),
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ],
@@ -324,8 +376,8 @@ class _ActivitiesCoordScreenState extends State<ActivitiesCoordScreen> {
               Transform.translate(
                 offset:
                     Offset(0, -20), // Ajuste de posición para el botón central
-                child: buildBottomButtonHito(
-                    Icons.add_circle, 'Hito', null, HitoAddCoordScreen()),
+                child: buildBottomButtonHito(Icons.add_circle, 'Hito', null,
+                    HitoAddCoordScreen(login: widget.login)),
               ),
               buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
                   CountDownCoordScreen(login: widget.login)),

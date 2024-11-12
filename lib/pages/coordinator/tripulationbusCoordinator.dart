@@ -372,7 +372,7 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                         Icons.add_circle,
                         'Hito',
                         null,
-                        HitoAddCoordScreen(),
+                        HitoAddCoordScreen(login: widget.login),
                       ),
                     ),
                     buildBottomButton(
