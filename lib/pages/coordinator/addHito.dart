@@ -129,33 +129,35 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
   final ImagePicker _picker = ImagePicker();
   late ConsolidatedTourSalesDTO consolidate; // Instancia de ImagePicker
 
-  Future<void> _pickImage() async {
-    // Solicitar permiso de acceso completo al almacenamiento
-    PermissionStatus status = await Permission.manageExternalStorage.request();
+  void selectAndUploadImage() async {
+    await requestPermissions();
+    await pickImage();
+  }
 
-    if (status.isGranted) {
-      // Si el permiso es concedido, puedes acceder a la galería o al almacenamiento completo
-      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() {
-          _imageFiles.add(pickedFile);
-        });
-      }
+  Future<void> pickImage() async {
+    final ImagePicker _picker = ImagePicker();
+
+    // Selecciona una imagen de la galería
+    final XFile? pickedFile =
+        await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      File image = File(pickedFile.path);
+      // Ahora puedes usar la imagen, por ejemplo, cargarla a un servidor
+      print("Imagen seleccionada: ${image.path}");
     } else {
-      // Si el permiso es denegado, muestra un mensaje
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Permiso Denegado',
-        text:
-            'No se puede acceder al almacenamiento completo. Habilita el permiso en la configuración.',
-        confirmBtnText: 'Ir a Configuración',
-        onConfirmBtnTap: () async {
-          // Abre la configuración de la aplicación para permitir que el usuario habilite el permiso
-          await openAppSettings();
-          Navigator.of(context).pop(); // Cierra el QuickAlert
-        },
-      );
+      print("No se seleccionó ninguna imagen");
+    }
+  }
+
+  Future<void> requestPermissions() async {
+    PermissionStatus status = await Permission.photos.request();
+    if (status.isGranted) {
+      // Permiso concedido, puedes acceder a la galería
+      print("Permiso para acceder a la galería concedido");
+    } else {
+      // Si el permiso no se concede
+      print("Permiso para acceder a la galería denegado");
     }
   }
 
@@ -314,7 +316,7 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: GestureDetector(
-        onTap: _pickImage, // Al hacer clic, abre la galería
+        onTap: pickImage, // Al hacer clic, abre la galería
         child: Container(
           width: 60,
           height: 60,

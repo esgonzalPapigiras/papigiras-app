@@ -1,37 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
-import 'package:papigiras_app/dto/document.dart';
+import 'package:papigiras_app/dto/binnacle.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
-import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
+import 'package:papigiras_app/pages/attorney/binnacledetailFather.dart';
+import 'package:papigiras_app/pages/attorney/documentsfather.dart';
 import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
-import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
+import 'package:papigiras_app/pages/coordinator/detailbinnacleCoodinator.dart';
+import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:quickalert/quickalert.dart';
 
-class DocumentFatherScreen extends StatefulWidget {
+class BitacoraFatherScreen extends StatefulWidget {
   @override
-  _DocumentFatherScreenState createState() => _DocumentFatherScreenState();
+  _BitacoraFatherScreenState createState() => _BitacoraFatherScreenState();
   final ResponseAttorney login;
-  DocumentFatherScreen({required this.login});
+  BitacoraFatherScreen({required this.login});
 }
 
-class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
+class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late Future<List<Document>> _documentsFuture;
+  List<ConsolidatedTourSalesDTO> itineraries = [];
   final usuarioProvider = new CoordinatorProviders();
 
   @override
   void initState() {
     super.initState();
     // Llama a fetchDocuments al iniciar el widget
-    _documentsFuture = fetchDocuments(widget.login.tourId.toString());
+    _fetchItineraries(widget.login.tourId.toString());
+  }
+
+  Future<void> _fetchItineraries(String tourCode) async {
+    try {
+      itineraries =
+          await usuarioProvider.getBinnacle(widget.login.tourId.toString());
+      setState(() {}); // Actualiza el estado para reconstruir la interfaz
+    } catch (error) {
+      print("Error al cargar los itinerarios: $error");
+    }
   }
 
   @override
@@ -168,7 +180,9 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
           _buildFilterOptions(),
           SizedBox(height: 20),
           Expanded(
-            child: _buildBinnacleEntries(),
+            child: ListView(
+              children: _buildBinnacleEntries(),
+            ),
           ),
         ],
       ),
@@ -177,121 +191,58 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
 
   Widget _buildFilterOptions() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center, // Centra el texto
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Mis Documentos',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
+          'Ver:',
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        ),
+        ElevatedButton(
+          onPressed: () {},
+          child: Text('Todos'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            shape: StadiumBorder(),
           ),
         ),
+        Text(
+          'Más recientes',
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        ),
+        Icon(Icons.filter_list, color: Colors.teal),
       ],
     );
   }
 
-  Future<List<Document>> fetchDocuments(String tourCode) async {
-    try {
-      List<Document> documents = await usuarioProvider.getDocument(tourCode);
-      return documents; // Devuelve la lista de documentos
-    } catch (e) {
-      print('Error: $e');
-      return []; // Devuelve una lista vacía en caso de error
-    }
-  }
-
-  Widget _buildBinnacleEntries() {
-    return FutureBuilder<List<Document>>(
-      future: _documentsFuture, // Usamos _documentsFuture aquí
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No documents found.'));
-        }
-
-        List<Document> documents = snapshot.data!;
-
-        return ListView.builder(
-          itemCount: documents.length,
-          itemBuilder: (context, index) {
-            final document = documents[index];
-            return Card(
-              margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              child: ListTile(
-                leading: Icon(
-                  _getIconForDocumentType(document.documentType),
-                  color: Colors.teal,
-                  size: 40,
-                ),
-                title: Text(
-                  document.documentType ?? 'Sin nombre',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                      onPressed: () {
-                        usuarioProvider.viewDocument(
-                            document.tourSalesUuid,
-                            document.documentName!,
-                            widget.login.tourId.toString(),
-                            context,
-                            "documentosextras");
-                        // Acción para descargar el documento
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.download, color: Colors.teal),
-                      onPressed: () async {
-                        await usuarioProvider.downloadDocument(
-                            document.tourSalesUuid,
-                            document.documentName!,
-                            widget.login.tourId.toString(),
-                            "documentosextras");
-                        QuickAlert.show(
-                          context: context,
-                          type: QuickAlertType.success,
-                          title: 'Éxito',
-                          text: 'Documento Descargado',
-                          confirmBtnText: 'Continuar',
-                          onConfirmBtnTap: () {
-                            Navigator.of(context).pop(); // Cierra el QuickAlert
-                          },
-                        );
-                        // Acción para descargar el documento
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  IconData _getIconForDocumentType(String documentType) {
-    switch (documentType) {
-      case 'poliza':
-        return Icons.policy;
-      case 'gira':
-        return Icons.description;
-      case 'hotel':
-        return Icons.hotel;
-      case 'Programa gira':
-        return Icons.description;
-      case 'Nomina alumnos':
-        return Icons.people;
-      default:
-        return Icons.description; // Icono por defecto si no coincide
-    }
+  List<Widget> _buildBinnacleEntries() {
+    return itineraries.map((binnacle) {
+      return Card(
+        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: ListTile(
+            leading: Icon(Icons.access_time, color: Colors.teal),
+            title: Text(
+              binnacle.binnacleTitulo, // Usa los campos adecuados
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              binnacle.binnacleUbicacion, // Usa los campos adecuados
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            trailing: TextButton(
+              onPressed: () {
+                Navigator.of(context).push(_createRoute(
+                    DetalleBitacoraFatherScreen(
+                        idHito: binnacle.binnacleDetailId.toString(),
+                        login: widget.login)));
+              },
+              child: Text('Ver más', style: TextStyle(color: Colors.teal)),
+            ),
+          ),
+        ),
+      );
+    }).toList();
   }
 
   Widget _buildCustomBottomNavigationBar() {
@@ -316,12 +267,22 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
-                  BusCrewFatherScreen(login: widget.login)),
+              buildBottomButton(
+                  Icons.book,
+                  'Bitácora del Viaje',
+                  null,
+                  BitacoraFatherScreen(
+                    login: widget.login,
+                  )),
+              buildBottomButton(
+                  Icons.directions_bus,
+                  'Bus & Tripulación',
+                  null,
+                  BusCrewFatherScreen(
+                    login: widget.login,
+                  )),
               buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
                   DocumentFatherScreen(login: widget.login)),
-              buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
-                  BitacoraFatherScreen(login: widget.login)),
             ],
           ),
         ],

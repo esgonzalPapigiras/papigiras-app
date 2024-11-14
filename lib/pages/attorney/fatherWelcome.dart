@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/fatherMedicalFile.dart';
+import 'package:papigiras_app/pages/attorney/indexFather.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
-class WelcomeFatherScreen extends StatelessWidget {
+class WelcomeFatherScreen extends StatefulWidget {
+  final ResponseAttorney login;
+  WelcomeFatherScreen({required this.login});
+  @override
+  _WelcomeFatherScreenState createState() => _WelcomeFatherScreenState();
+}
+
+class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
+  final usuarioProvider = new CoordinatorProviders();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,6 +28,8 @@ class WelcomeFatherScreen extends StatelessWidget {
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment
+                  .center, // Esto asegura que el contenido se alinee horizontalmente
               children: [
                 // Logo y nombre de la app
                 Image.asset(
@@ -23,19 +37,23 @@ class WelcomeFatherScreen extends StatelessWidget {
                   height: 350,
                 ),
                 SizedBox(height: 20),
-                SizedBox(height: 20),
                 Text(
                   'Bienvenidos a bordo junto a:',
                   style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
                 SizedBox(height: 10),
+                // Nombre del pasajero centrado
                 Text(
-                  'Carlos Arancibia',
+                  widget.login.passengerName! +
+                      " " +
+                      widget.login.passengerApellidos!,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
+                  textAlign:
+                      TextAlign.center, // Asegura que el texto esté centrado
                 ),
                 SizedBox(height: 20),
                 // Imagen de perfil
@@ -58,12 +76,23 @@ class WelcomeFatherScreen extends StatelessWidget {
                 SizedBox(height: 40),
                 // Botón de continuación
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => MedicalRecordScreen()),
-                    );
+                  onPressed: () async {
+                    if (await usuarioProvider.validateMedicalRecord(
+                        widget.login.passengerId.toString())) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                TravelFatherDashboard(login: widget.login)),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                MedicalRecordScreen(login: widget.login)),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     primary: Colors.teal,

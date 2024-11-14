@@ -13,6 +13,8 @@ import 'package:papigiras_app/dto/RequestActivities.dart';
 import 'package:papigiras_app/dto/binnacle.dart';
 import 'package:papigiras_app/dto/binnacleaddlist.dart';
 import 'package:papigiras_app/dto/requestHito.dart';
+import 'package:papigiras_app/dto/requestMedicalRecord.dart';
+import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/utils/PDFViewer.dart';
 import 'dart:convert';
 import 'package:path/path.dart' as path;
@@ -28,42 +30,6 @@ class CoordinatorProviders with ChangeNotifier {
   Future<TourSales?> validateLoginUser(String tourCode) async {
     var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
         '/app/services/coordinator', {'tourCode': tourCode});
-    final resp = await http.post(url, headers: {
-      'Content-Type':
-          'application/json' // Agregar el token en la cabecera de la solicitud
-    });
-
-    LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
-    TourSales login = new TourSales.fromJson(decorespoCreate);
-    if (resp.statusCode == 200) {
-      return login;
-    } else {
-      return null;
-    }
-  }
-
-  Future<TourSales?> validateLoginUserFather(
-      String rut, String password) async {
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/coordinator', {'rut': rut, 'password': password});
-    final resp = await http.post(url, headers: {
-      'Content-Type':
-          'application/json' // Agregar el token en la cabecera de la solicitud
-    });
-
-    LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
-    TourSales login = new TourSales.fromJson(decorespoCreate);
-    if (resp.statusCode == 200) {
-      return login;
-    } else {
-      return null;
-    }
-  }
-
-  Future<TourSales?> validateLoginUserPassenger(
-      String rut, String password) async {
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/coordinator', {'rut': rut, 'password': password});
     final resp = await http.post(url, headers: {
       'Content-Type':
           'application/json' // Agregar el token en la cabecera de la solicitud
@@ -272,7 +238,7 @@ class CoordinatorProviders with ChangeNotifier {
   Future<void> downloadDocument(
       String folderName, String fileName, String idTour, String folder) async {
     // Solicitar permisos de almacenamiento
-    await _requestStoragePermission();
+    await requestStoragePermission();
 
     final url = Uri.https(
         'ms-papigiras-app-ezkbu.ondigitalocean.app', '/app/services/download', {
@@ -294,18 +260,12 @@ class CoordinatorProviders with ChangeNotifier {
       fileName = "ProgramaGira.pdf";
     }
 
-    if (response.statusCode == 200) {
-      final downloadsDirectory = Directory('/storage/emulated/0/Download');
-      if (!await downloadsDirectory.exists()) {
-        await downloadsDirectory.create(recursive: true);
-      }
-      final filePath = path.join(downloadsDirectory.path, fileName);
-      final file = File(filePath);
-      await file.writeAsBytes(response.bodyBytes);
-    } else {
-      throw Exception(
-          'Error al descargar el documento: ${response.reasonPhrase}');
-    }
+    String downloadPath = await getDownloadDirectory();
+    final filePath = path.join(downloadPath, fileName);
+    final file = File(filePath);
+    await file.writeAsBytes(response.bodyBytes);
+
+    print('Archivo descargado en: $filePath');
   }
 
   Future<void> viewDocument(String folderName, String fileName, String idTour,
@@ -381,20 +341,98 @@ class CoordinatorProviders with ChangeNotifier {
     );
   }
 
-  Future<void> _requestStoragePermission() async {
+  Future<void> requestStoragePermission() async {
+    PermissionStatus status = await Permission.storage.request();
+
+    if (status.isGranted) {
+      print("Permiso de almacenamiento concedido");
+    } else {
+      print("Permiso de almacenamiento denegado");
+    }
+  }
+
+  Future<String> getDownloadDirectory() async {
     if (Platform.isAndroid) {
-      if (await Permission.manageExternalStorage.isDenied) {
-        // Solicitar permiso para acceder al almacenamiento completo
-        await Permission.manageExternalStorage.request();
-        if (await Permission.manageExternalStorage.isDenied) {
-          // Si el permiso sigue denegado, abrir la configuración de la app
-          openAppSettings();
-          print(
-              "Permiso MANAGE_EXTERNAL_STORAGE denegado. Se abrió la configuración.");
-        } else {
-          print("Permiso MANAGE_EXTERNAL_STORAGE otorgado.");
-        }
+      // En Android, obtienes la carpeta de "Descargas" desde el almacenamiento externo
+      Directory? downloadsDirectory = Directory('/storage/emulated/0/Download');
+      if (await downloadsDirectory.exists()) {
+        return downloadsDirectory.path;
+      } else {
+        // Si no se encuentra el directorio, se retorna el directorio general de almacenamiento
+        Directory? appDocDir = await getExternalStorageDirectory();
+        return appDocDir?.path ?? '';
       }
+    } else if (Platform.isIOS) {
+      // En iOS, puedes usar el directorio de documentos
+      Directory? appDocDir = await getApplicationDocumentsDirectory();
+      return appDocDir.path;
+    }
+    return '';
+  }
+
+  Future<ResponseAttorney?> validateLoginUserFather(
+      String rut, String password) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/attorney/login', {'user': rut, 'password': password});
+    final resp = await http.post(url, headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+
+    LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+    ResponseAttorney login = new ResponseAttorney.fromJson(decorespoCreate);
+    if (resp.statusCode == 200) {
+      return login;
+    } else {
+      return null;
+    }
+  }
+
+  Future<TourSales?> validateLoginUserPassenger(
+      String rut, String password) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/coordinator', {'rut': rut, 'password': password});
+    final resp = await http.post(url, headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+
+    LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+    TourSales login = new TourSales.fromJson(decorespoCreate);
+    if (resp.statusCode == 200) {
+      return login;
+    } else {
+      return null;
+    }
+  }
+
+  Future<bool> validateMedicalRecord(String rut) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/validate/medical-records', {'user': rut});
+    final resp = await http.post(url, headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> createMedicalRecord(
+      RequestPassengerMedical medicalRecord) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/medical-records');
+    final resp = await http
+        .post(url, body: jsonEncode(medicalRecord.toJson()), headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      return true;
+    } else {
+      return false;
     }
   }
 }

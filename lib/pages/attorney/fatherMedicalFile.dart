@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/requestMedicalRecord.dart';
+import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
 import 'package:papigiras_app/pages/index.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:quickalert/quickalert.dart';
 
 class MedicalRecordScreen extends StatefulWidget {
+  final ResponseAttorney login;
+  MedicalRecordScreen({required this.login});
   @override
   _MedicalRecordScreenState createState() => _MedicalRecordScreenState();
 }
 
 class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  final usuarioProvider = new CoordinatorProviders();
+  final TextEditingController _alergiasController = TextEditingController();
+  final TextEditingController _enfermedadesController = TextEditingController();
+  final TextEditingController _medicamentosController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +55,9 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Arancibia Carlos',
+                          widget.login.passengerName! +
+                              " " +
+                              widget.login.passengerApellidos!,
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.black,
@@ -52,7 +65,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                           ),
                         ),
                         Text(
-                          '20.457.748-k',
+                          widget.login.passengerIdentificacion!,
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.black,
@@ -161,17 +174,6 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                                 color: Colors.grey[800],
                               ),
                             ),
-                            SizedBox(width: 10),
-                            TextButton.icon(
-                              onPressed: () {
-                                // Acción para editar
-                              },
-                              icon: Icon(Icons.edit, color: Colors.teal),
-                              label: Text(
-                                'Editar',
-                                style: TextStyle(color: Colors.teal),
-                              ),
-                            ),
                           ],
                         ),
                         SizedBox(height: 20),
@@ -194,24 +196,19 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Arancibia Carlos',
+                                  widget.login.passengerName! +
+                                      " " +
+                                      widget.login.passengerApellidos!,
                                   style: TextStyle(
-                                    fontSize: 20,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.grey[800],
                                   ),
                                 ),
                                 Text(
-                                  '20.457.748-k',
+                                  widget.login.passengerIdentificacion!,
                                   style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                Text(
-                                  '16 años / Tipo de Sangre O+',
-                                  style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 12,
                                     color: Colors.grey[600],
                                   ),
                                 ),
@@ -224,19 +221,42 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                         SizedBox(height: 10),
                         buildInfoSection('Alergias'),
                         SizedBox(height: 10),
-                        buildInfoSection('Enfermedades'),
+                        buildInfoSectionEnfermedades('Enfermedades'),
                         SizedBox(height: 10),
-                        buildInfoSection('Medicamentos'),
+                        buildInfoSectionMedicamentos('Medicamentos'),
                         SizedBox(height: 20),
                         // Botón Guardar Ficha Médica
                         Center(
                           child: ElevatedButton(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        TravelFatherDashboard()),
+                              RequestPassengerMedical medical =
+                                  RequestPassengerMedical(
+                                      alergias: _alergiasController.text,
+                                      enfermedades:
+                                          _enfermedadesController.text,
+                                      medicamentos:
+                                          _medicamentosController.text,
+                                      idPassenger: widget.login.passengerId!,
+                                      idTour: widget.login.tourId!);
+
+                              usuarioProvider.createMedicalRecord(medical);
+                              QuickAlert.show(
+                                context: context,
+                                type: QuickAlertType.success,
+                                title: 'Éxito',
+                                text: 'Ficha Médica Registrada',
+                                confirmBtnText: 'Continuar',
+                                onConfirmBtnTap: () {
+                                  Navigator.of(context)
+                                      .pop(); // Cierra el QuickAlert
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            TravelFatherDashboard(
+                                                login: widget.login)),
+                                  );
+                                },
                               );
                             },
                             child: Text('Guardar Ficha Médica'),
@@ -302,6 +322,83 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
           ),
           padding: EdgeInsets.all(10),
           child: TextField(
+            controller: _alergiasController,
+            maxLines: null,
+            expands: true,
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              hintText: 'Escribe aquí...',
+              hintStyle: TextStyle(color: Colors.grey[600]),
+            ),
+            style: TextStyle(color: Colors.grey[800]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildInfoSectionEnfermedades(String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$title:',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: 5),
+        Container(
+          constraints: BoxConstraints(
+            maxHeight: 80,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: EdgeInsets.all(10),
+          child: TextField(
+            controller: _enfermedadesController,
+            maxLines: null,
+            expands: true,
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              hintText: 'Escribe aquí...',
+              hintStyle: TextStyle(color: Colors.grey[600]),
+            ),
+            style: TextStyle(color: Colors.grey[800]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildInfoSectionMedicamentos(String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$title:',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: 5),
+        Container(
+          constraints: BoxConstraints(
+            maxHeight: 80,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: EdgeInsets.all(10),
+          child: TextField(
+            controller: _medicamentosController,
             maxLines: null,
             expands: true,
             decoration: InputDecoration(

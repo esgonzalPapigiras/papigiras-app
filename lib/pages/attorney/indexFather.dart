@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/responseAttorney.dart';
+import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
+import 'package:papigiras_app/pages/attorney/documentsfather.dart';
+import 'package:papigiras_app/pages/attorney/map.dart';
+import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart'; // Importa el paquete
 
 class TravelFatherDashboard extends StatefulWidget {
+  final ResponseAttorney login;
+  TravelFatherDashboard({required this.login});
   @override
   _TravelFatherDashboardState createState() => _TravelFatherDashboardState();
 }
@@ -260,57 +267,17 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                           ],
                         ),
                       ),
-                      SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Kms recorridos',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  '1000km',
-                                  style: TextStyle(
-                                    color: Colors.grey[800],
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Slider(
-                                    value: 1000,
-                                    min: 0,
-                                    max: 2500,
-                                    onChanged: (value) {},
-                                    activeColor: Colors.teal,
-                                    inactiveColor: Colors.grey[300],
-                                  ),
-                                ),
-                                Text(
-                                  '2500km',
-                                  style: TextStyle(
-                                    color: Colors.grey[800],
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              'Kms por recorrer',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  MapScreen(login: widget.login),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           primary: Colors.teal,
                           padding: EdgeInsets.symmetric(
@@ -352,16 +319,26 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                 children: [
                   Divider(height: 1, color: Colors.grey[300]),
                   Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    padding: EdgeInsets.symmetric(vertical: 35),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        buildBottomButton(Icons.book, 'Bitácora del Viaje',
-                            null, BitacoraScreen()),
-                        buildBottomButton(Icons.directions_bus,
-                            'Bus & Tripulación', null, BusCrewScreen()),
                         buildBottomButton(
-                            Icons.folder_open, 'Mis Documentos', null, null),
+                            Icons.book,
+                            'Bitácora del Viaje',
+                            null,
+                            BitacoraFatherScreen(
+                              login: widget.login,
+                            )),
+                        buildBottomButton(
+                            Icons.directions_bus,
+                            'Bus & Tripulación',
+                            null,
+                            BusCrewFatherScreen(
+                              login: widget.login,
+                            )),
+                        buildBottomButton(Icons.folder_open, 'Mis Documentos',
+                            null, DocumentFatherScreen(login: widget.login)),
                       ],
                     ),
                   ),

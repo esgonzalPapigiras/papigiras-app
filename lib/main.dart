@@ -25,8 +25,6 @@ class MyApp extends StatelessWidget {
           'welcome': (BuildContext context) => WelcomeScreen(),
           'login': (BuildContext context) => LoginScreen(),
           'dashboardTour': (BuildContext context) => TravelDashboard(),
-          'welcomeFather': (BuildContext context) => WelcomeFatherScreen(),
-          'medicalRecords': (BuildContext context) => MedicalRecordScreen(),
           'busCrewScreen': (BuildContext context) => BusCrewScreen(),
           'bitacoraScreen': (BuildContext context) => BitacoraScreen()
         }));

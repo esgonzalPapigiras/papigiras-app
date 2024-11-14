@@ -1,37 +1,43 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/dto/DetailHitoList.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
-import 'package:papigiras_app/dto/document.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
+import 'package:papigiras_app/pages/attorney/documentsfather.dart';
 import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
-import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
+import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:quickalert/quickalert.dart';
 
-class DocumentFatherScreen extends StatefulWidget {
+class DetalleBitacoraFatherScreen extends StatefulWidget {
   @override
-  _DocumentFatherScreenState createState() => _DocumentFatherScreenState();
+  _DetalleBitacoraFatherScreenState createState() =>
+      _DetalleBitacoraFatherScreenState();
   final ResponseAttorney login;
-  DocumentFatherScreen({required this.login});
+  final String idHito;
+  DetalleBitacoraFatherScreen({required this.idHito, required this.login});
 }
 
-class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
+class _DetalleBitacoraFatherScreenState
+    extends State<DetalleBitacoraFatherScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late Future<List<Document>> _documentsFuture;
   final usuarioProvider = new CoordinatorProviders();
+  Future<DetailHitoList>? _hitoDetailFuture;
 
   @override
   void initState() {
     super.initState();
-    // Llama a fetchDocuments al iniciar el widget
-    _documentsFuture = fetchDocuments(widget.login.tourId.toString());
+    // Inicia la llamada al servicio para obtener los detalles del hito
+    _hitoDetailFuture = usuarioProvider.getHitoComplete(
+        widget.idHito.toString(), widget.login.tourId.toString());
   }
 
   @override
@@ -47,13 +53,26 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
             children: [
               _buildAppBar(context),
               Expanded(
-                child: _buildBinnacleContent(),
+                child: FutureBuilder<DetailHitoList>(
+                  future: _hitoDetailFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else if (snapshot.hasData) {
+                      DetailHitoList hitoDetail = snapshot.data!;
+                      return _buildBinnacleContent(hitoDetail);
+                    } else {
+                      return Center(child: Text('No data available'));
+                    }
+                  },
+                ),
               ),
             ],
           ),
         ],
       ),
-      bottomNavigationBar: _buildCustomBottomNavigationBar(),
     );
   }
 
@@ -152,7 +171,7 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
     );
   }
 
-  Widget _buildBinnacleContent() {
+  Widget _buildBinnacleContent(DetailHitoList hitoDetail) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -165,139 +184,100 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFilterOptions(),
           SizedBox(height: 20),
           Expanded(
-            child: _buildBinnacleEntries(),
+            child: ListView(
+              children: _buildBinnacleEntries(hitoDetail),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterOptions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center, // Centra el texto
-      children: [
-        Text(
-          'Mis Documentos',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
+  List<Widget> _buildBinnacleEntries(DetailHitoList hitoDetail) {
+    List<Map<String, dynamic>> entries = [];
+
+    // Se asume que las imágenes están en formato base64 en la lista hitoDetail.images
+    // Agrupamos las imágenes por actividad
+    for (var i = 0; i < hitoDetail.images!.length; i++) {
+      String base64Image = hitoDetail.images![i];
+
+      // Agregar las imágenes a las entradas
+    }
+    String time = hitoDetail.hora ?? 'Sin hora';
+    String activity = hitoDetail.titulo ?? 'Actividad no disponible';
+    String description = hitoDetail.descripcion ?? 'Descripción no disponible';
+    entries.add({
+      'time': time,
+      'activity': activity,
+      'description': description,
+      'images': hitoDetail.images, // Lista de imágenes
+    });
+
+    // Mapear las entradas a los widgets
+    return entries.map((entry) {
+      return Card(
+        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.place, color: Colors.teal),
+                  SizedBox(width: 8),
+                  Text(
+                    entry['time']!,
+                    style: TextStyle(
+                        color: Colors.teal,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    entry['activity']!,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              Text(
+                entry['description']!,
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+              SizedBox(height: 16),
+              // Mostrar todas las imágenes dinámicamente dependiendo de la cantidad
+              Column(
+                children: [
+                  // Aquí mapeamos las imágenes de la lista 'images' de la entrada
+                  for (var imageBase64 in entry['images'])
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Center(
+                        child: Image.memory(
+                          base64Decode(imageBase64.split(',').last),
+                          fit: BoxFit
+                              .cover, // Ajusta la forma en que se escala la imagen
+                          height: 200, // Altura específica de la imagen
+                          width: 200, // Ancho específico de la imagen
+                        ),
+                      ),
+                    ),
+                ],
+              )
+            ],
           ),
         ),
-      ],
-    );
-  }
-
-  Future<List<Document>> fetchDocuments(String tourCode) async {
-    try {
-      List<Document> documents = await usuarioProvider.getDocument(tourCode);
-      return documents; // Devuelve la lista de documentos
-    } catch (e) {
-      print('Error: $e');
-      return []; // Devuelve una lista vacía en caso de error
-    }
-  }
-
-  Widget _buildBinnacleEntries() {
-    return FutureBuilder<List<Document>>(
-      future: _documentsFuture, // Usamos _documentsFuture aquí
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No documents found.'));
-        }
-
-        List<Document> documents = snapshot.data!;
-
-        return ListView.builder(
-          itemCount: documents.length,
-          itemBuilder: (context, index) {
-            final document = documents[index];
-            return Card(
-              margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              child: ListTile(
-                leading: Icon(
-                  _getIconForDocumentType(document.documentType),
-                  color: Colors.teal,
-                  size: 40,
-                ),
-                title: Text(
-                  document.documentType ?? 'Sin nombre',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                      onPressed: () {
-                        usuarioProvider.viewDocument(
-                            document.tourSalesUuid,
-                            document.documentName!,
-                            widget.login.tourId.toString(),
-                            context,
-                            "documentosextras");
-                        // Acción para descargar el documento
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.download, color: Colors.teal),
-                      onPressed: () async {
-                        await usuarioProvider.downloadDocument(
-                            document.tourSalesUuid,
-                            document.documentName!,
-                            widget.login.tourId.toString(),
-                            "documentosextras");
-                        QuickAlert.show(
-                          context: context,
-                          type: QuickAlertType.success,
-                          title: 'Éxito',
-                          text: 'Documento Descargado',
-                          confirmBtnText: 'Continuar',
-                          onConfirmBtnTap: () {
-                            Navigator.of(context).pop(); // Cierra el QuickAlert
-                          },
-                        );
-                        // Acción para descargar el documento
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  IconData _getIconForDocumentType(String documentType) {
-    switch (documentType) {
-      case 'poliza':
-        return Icons.policy;
-      case 'gira':
-        return Icons.description;
-      case 'hotel':
-        return Icons.hotel;
-      case 'Programa gira':
-        return Icons.description;
-      case 'Nomina alumnos':
-        return Icons.people;
-      default:
-        return Icons.description; // Icono por defecto si no coincide
-    }
+      );
+    }).toList();
   }
 
   Widget _buildCustomBottomNavigationBar() {
     return Container(
       padding:
-          EdgeInsets.symmetric(vertical: 35), // Ajuste del espacio vertical
+          EdgeInsets.symmetric(vertical: 10), // Ajuste del espacio vertical
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -312,7 +292,6 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Espacio entre filas
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [

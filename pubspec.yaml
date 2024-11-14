@@ -53,11 +53,20 @@ dependencies:
   flutter_pdfview: ^1.0.6
   syncfusion_flutter_xlsio: ^27.1.58
   image_picker: ^0.8.5+3
-  
+  google_maps_flutter: ^2.2.6
+  location: ^5.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/logo-papigiras.png"
+
+
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
