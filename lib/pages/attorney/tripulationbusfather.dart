@@ -5,6 +5,7 @@ import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/dto/tourTripulation.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
+import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
@@ -144,6 +145,22 @@ class _BusCrewFatherScreenState extends State<BusCrewFatherScreen> {
                 const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
             child: Row(
               children: [
+                Builder(
+                  builder: (context) => IconButton(
+                    icon: Icon(Icons.arrow_back,
+                        color: Colors.white, size: 30), // Flecha blanca
+                    onPressed: () {
+                      // Navegar a otra ruta cuando la flecha es presionada
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => TravelFatherDashboard(
+                                login: widget
+                                    .login)), // Reemplaza con la ruta deseada
+                      );
+                    },
+                  ),
+                ),
                 Spacer(),
                 Image.asset(
                   'assets/logo-letras-papigiras.png',

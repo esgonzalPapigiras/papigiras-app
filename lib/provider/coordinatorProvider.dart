@@ -9,6 +9,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:papigiras_app/dto/DetailHitoList.dart';
 import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/PassengerList.dart';
+import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
+import 'package:papigiras_app/dto/ProgramViewDto.dart';
 import 'package:papigiras_app/dto/RequestActivities.dart';
 import 'package:papigiras_app/dto/binnacle.dart';
 import 'package:papigiras_app/dto/binnacleaddlist.dart';
@@ -429,10 +431,47 @@ class CoordinatorProviders with ChangeNotifier {
       'Content-Type':
           'application/json' // Agregar el token en la cabecera de la solicitud
     });
+
     if (resp.statusCode == 200) {
       return true;
     } else {
       return false;
+    }
+  }
+
+  Future<PassengersMedicalRecordDTO> getMedicalRecord(
+      String idTour, String idPassenger) async {
+    var url = Uri.https(
+        'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/get/medical-records',
+        {'tourId': idTour, 'idPassenger': idPassenger});
+    final resp = await http.post(url, headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+    PassengersMedicalRecordDTO login =
+        new PassengersMedicalRecordDTO.fromJson(decorespoCreate);
+    if (resp.statusCode == 200) {
+      return login;
+    } else {
+      throw Exception('Failed to load services');
+    }
+  }
+
+  Future<ProgramViewDto> getviewProgram(String idTour) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/get/program-view', {'tourId': idTour});
+    final resp = await http.post(url, headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+    ProgramViewDto login = new ProgramViewDto.fromJson(decorespoCreate);
+    if (resp.statusCode == 200) {
+      return login;
+    } else {
+      throw Exception('Failed to load services');
     }
   }
 }

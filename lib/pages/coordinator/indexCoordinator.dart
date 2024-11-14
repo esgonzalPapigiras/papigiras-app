@@ -7,8 +7,10 @@ import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/listPassenger.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/viewProgram.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
@@ -238,7 +240,14 @@ class _TravelCoordinatorDashboardState
                                             8), // Espacio entre el icono y el texto
                                     GestureDetector(
                                       onTap: () {
-                                        // Lógica para navegar o ejecutar una acción
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ViewProgramCoordScreen(
+                                                    login: widget.login),
+                                          ),
+                                        );
                                       },
                                       child: Text(
                                         'Ver Programa',
@@ -417,7 +426,14 @@ class _TravelCoordinatorDashboardState
                               width: 8), // Espacio entre el icono y el texto
                           GestureDetector(
                             onTap: () {
-                              // Lógica para navegar o ejecutar una acción
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ListPassengerCoordScreen(
+                                          login: widget.login),
+                                ),
+                              );
                             },
                             child: Text(
                               'Ver Nómina Pasajeros',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:papigiras_app/pages/attorney/fatherWelcome.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
@@ -15,6 +16,18 @@ class _LoginFatherState extends State<LoginFather> {
   final TextEditingController _passwordController = TextEditingController();
   bool _showError = false;
   bool _showErrorTwo = false;
+
+  String _formatRut(String rut) {
+    rut = rut.replaceAll(
+        RegExp(r'[^0-9kK]'), ''); // Eliminar caracteres no numéricos ni 'K'
+    if (rut.length > 1) {
+      final length = rut.length;
+      final rutWithDots =
+          '${rut.substring(0, length - 1).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}-${rut[length - 1]}';
+      return rutWithDots;
+    }
+    return rut;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,20 +87,36 @@ class _LoginFatherState extends State<LoginFather> {
                       SizedBox(height: 30.0),
                       TextField(
                         controller: _userController,
+                        maxLength:
+                            12, // Longitud máxima para RUT con puntos y guion
                         decoration: InputDecoration(
                           labelText: 'Rut Alumno',
                           labelStyle: TextStyle(color: Colors.grey),
                           enabledBorder: OutlineInputBorder(
                             borderSide: BorderSide(
-                                color: _showError ? Colors.red : Colors.grey),
+                              color: _showError ? Colors.red : Colors.grey,
+                            ),
                             borderRadius: BorderRadius.circular(10.0),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderSide: BorderSide(
-                                color: _showError ? Colors.red : Colors.teal),
+                              color: _showError ? Colors.red : Colors.teal,
+                            ),
                             borderRadius: BorderRadius.circular(10.0),
                           ),
                         ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(
+                              12), // Limitar a la longitud del RUT con puntos
+                          TextInputFormatter.withFunction(
+                            (oldValue, newValue) {
+                              // Formatear el texto con puntos y guion mientras se escribe
+                              String formatted = _formatRut(newValue.text);
+                              return newValue.copyWith(text: formatted);
+                            },
+                          ),
+                        ],
                         onChanged: (value) {
                           setState(() {
                             _showError = false; // Oculta el error al escribir

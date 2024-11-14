@@ -1,41 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
-import 'package:papigiras_app/dto/ProgramViewDto.dart';
-import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
-import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/index.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 
-class ViewProgramCoordScreen extends StatefulWidget {
-  final TourSales login;
-  ViewProgramCoordScreen({required this.login});
+class ViewMedicalRecordScreen extends StatefulWidget {
+  final ResponseAttorney login;
+  ViewMedicalRecordScreen({required this.login});
   @override
-  _ViewProgramCoordScreenState createState() => _ViewProgramCoordScreenState();
+  _ViewMedicalRecordScreenState createState() =>
+      _ViewMedicalRecordScreenState();
 }
 
-class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
+class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final usuarioProvider = new CoordinatorProviders();
   final TextEditingController _alergiasController = TextEditingController();
   final TextEditingController _enfermedadesController = TextEditingController();
   final TextEditingController _medicamentosController = TextEditingController();
-  Future<ProgramViewDto>? _hitoDetailFuture;
+  Future<PassengersMedicalRecordDTO>? _hitoDetailFuture;
 
   @override
   void initState() {
     super.initState();
     // Inicia la llamada al servicio para obtener los detalles del hito
-    _hitoDetailFuture =
-        usuarioProvider.getviewProgram(widget.login.tourSalesId.toString());
+    _hitoDetailFuture = usuarioProvider.getMedicalRecord(
+        widget.login.tourId.toString(), widget.login.passengerId.toString());
   }
 
   @override
@@ -65,6 +62,28 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                     ),
                   ),
                   SizedBox(width: 16), // Espacio entre la imagen y el texto
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.login.passengerName! +
+                            " " +
+                            widget.login.passengerApellidos!,
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        widget.login.passengerIdentificacion!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -132,7 +151,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => TravelCoordinatorDashboard(
+                              builder: (context) => TravelFatherDashboard(
                                   login: widget
                                       .login)), // Reemplaza con la ruta deseada
                         );
@@ -158,7 +177,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
               ),
             ),
             Expanded(
-              child: FutureBuilder<ProgramViewDto>(
+              child: FutureBuilder<PassengersMedicalRecordDTO>(
                 future: _hitoDetailFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -166,7 +185,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   } else if (snapshot.hasData) {
-                    final programView = snapshot.data;
+                    final medicalRecord = snapshot.data;
 
                     return SingleChildScrollView(
                       child: Container(
@@ -185,7 +204,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Programa',
+                                  'Ficha Médica',
                                   style: TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
@@ -194,23 +213,61 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                               ],
                             ),
                             SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.teal,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 60,
+                                    backgroundImage:
+                                        AssetImage('assets/profile.jpg'),
+                                  ),
+                                ),
+                                SizedBox(width: 15),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.login.passengerName! +
+                                          " " +
+                                          widget.login.passengerApellidos!,
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey[800]),
+                                    ),
+                                    Text(
+                                      widget.login.passengerIdentificacion!,
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
                             Divider(),
                             SizedBox(height: 10),
                             buildInfoSection(
-                                'Curso',
-                                programView?.courseClient ?? "",
-                                programView?.nameClient ?? "",
-                                programView?.seasonClient.toString() ?? ""),
+                                'Alergias',
+                                medicalRecord?.allergiesPassengersRecord ??
+                                    "No hay alergias registradas"),
                             SizedBox(height: 10),
                             buildInfoSectionEnfermedades(
-                                'Fecha de Ida y Vuelta',
-                                programView?.tourInit ?? "",
-                                programView?.tourEnd ?? ""),
+                                'Enfermedades',
+                                medicalRecord?.medicalPasesengerRecord ??
+                                    "No hay enfermedades registradas"),
                             SizedBox(height: 10),
                             buildInfoSectionMedicamentos(
-                                'Actividades de la Gira',
-                                programView?.activities),
-                            SizedBox(height: 500),
+                                'Medicamentos',
+                                medicalRecord?.medicationsPassengersRecord ??
+                                    "No hay medicamentos registrados"),
+                            SizedBox(height: 200),
                           ],
                         ),
                       ),
@@ -227,8 +284,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
     );
   }
 
-  Widget buildInfoSection(String title, String courseClient, String nameClient,
-      String seasonClient) {
+  Widget buildInfoSection(String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -253,7 +309,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
           child: SingleChildScrollView(
             // Permite desplazamiento si el texto es largo
             child: Text(
-              courseClient, // Muestra el contenido con los saltos de línea
+              content, // Muestra el contenido con los saltos de línea
               style: TextStyle(color: Colors.grey[800]),
             ),
           ),
@@ -262,7 +318,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
     );
   }
 
-  Widget buildInfoSectionEnfermedades(String title, String init, String end) {
+  Widget buildInfoSectionEnfermedades(String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -276,74 +332,24 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
         ),
         SizedBox(height: 5),
         Container(
+          constraints: BoxConstraints(
+            maxHeight: 80,
+          ),
           decoration: BoxDecoration(
             color: Colors.grey[100],
             borderRadius: BorderRadius.circular(10),
           ),
           padding: EdgeInsets.all(10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Columna de "Fecha de salida" centrada
-              Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.center, // Centra la columna
-                children: [
-                  Text(
-                    'Fecha de salida:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  Align(
-                    alignment:
-                        Alignment.center, // Centra el texto dentro del widget
-                    child: Text(
-                      init,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              // Columna de "Fecha de regreso"
-              Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.center, // Centra la columna
-                children: [
-                  Text(
-                    'Fecha de regreso:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  Align(
-                    alignment:
-                        Alignment.center, // Centra el texto dentro del widget
-                    child: Text(
-                      end,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          child: Text(
+            content, // Muestra el contenido con los saltos de línea
+            style: TextStyle(color: Colors.grey[800]),
           ),
         ),
       ],
     );
   }
 
-  Widget buildInfoSectionMedicamentos(String title, List<String>? result) {
+  Widget buildInfoSectionMedicamentos(String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -355,32 +361,20 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
             color: Colors.grey[800],
           ),
         ),
-        SizedBox(height: 1),
+        SizedBox(height: 5),
         Container(
           constraints: BoxConstraints(
-            maxHeight:
-                400, // Esto asegura que el contenedor no se expanda más allá de la altura deseada
+            maxHeight: 80,
           ),
           decoration: BoxDecoration(
             color: Colors.grey[100],
             borderRadius: BorderRadius.circular(10),
           ),
-          padding: EdgeInsets.all(3),
-          child: result == null || result.isEmpty
-              ? Center(
-                  child: Text(
-                    'No hay actividades disponibles.',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: result.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(result[index]),
-                    );
-                  },
-                ),
+          padding: EdgeInsets.all(10),
+          child: Text(
+            content, // Muestra el contenido con los saltos de línea
+            style: TextStyle(color: Colors.grey[800]),
+          ),
         ),
       ],
     );

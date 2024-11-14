@@ -126,6 +126,22 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
           ),
           child: Column(
             children: [
+              Builder(
+                builder: (context) => IconButton(
+                  icon: Icon(Icons.arrow_back,
+                      color: Colors.white, size: 30), // Flecha blanca
+                  onPressed: () {
+                    // Navegar a otra ruta cuando la flecha es presionada
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => TravelFatherDashboard(
+                              login: widget
+                                  .login)), // Reemplaza con la ruta deseada
+                    );
+                  },
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(
                     vertical: 30.0, horizontal: 16.0),

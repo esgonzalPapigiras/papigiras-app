@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
@@ -21,6 +23,9 @@ class _MapScreenState extends State<MapScreen> {
   // Para almacenar la ubicación actual
   LatLng? _currentLocation;
 
+  // StreamSubscription para la ubicación
+  late StreamSubscription<LocationData> _locationSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -29,21 +34,24 @@ class _MapScreenState extends State<MapScreen> {
     _location.requestPermission().then((permissionStatus) {
       if (permissionStatus == PermissionStatus.granted) {
         // Escuchar la ubicación en tiempo real
-        _location.onLocationChanged.listen((LocationData currentLocation) {
-          setState(() {
-            _currentLocation = LatLng(
-              currentLocation.latitude ?? 0.0,
-              currentLocation.longitude ?? 0.0,
-            );
-          });
+        _locationSubscription =
+            _location.onLocationChanged.listen((LocationData currentLocation) {
+          if (mounted) {
+            setState(() {
+              _currentLocation = LatLng(
+                currentLocation.latitude ?? 0.0,
+                currentLocation.longitude ?? 0.0,
+              );
+            });
 
-          // Mover el mapa a la ubicación en tiempo real
-          if (_currentLocation != null) {
-            mapController
-                ?.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
+            // Mover el mapa a la ubicación en tiempo real
+            if (_currentLocation != null) {
+              mapController
+                  ?.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
 
-            // Actualizar el marcador de la ubicación
-            _updateMarker(_currentLocation!);
+              // Actualizar el marcador de la ubicación
+              _updateMarker(_currentLocation!);
+            }
           }
         });
       } else {
@@ -62,6 +70,13 @@ class _MapScreenState extends State<MapScreen> {
         infoWindow: InfoWindow(title: 'Ubicación Actual'),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // Cancelar la suscripción al flujo de ubicación cuando el widget se destruya
+    _locationSubscription.cancel();
+    super.dispose();
   }
 
   @override

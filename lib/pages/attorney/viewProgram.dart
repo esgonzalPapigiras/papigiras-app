@@ -2,26 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
 import 'package:papigiras_app/dto/ProgramViewDto.dart';
-import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
-import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/index.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 
-class ViewProgramCoordScreen extends StatefulWidget {
-  final TourSales login;
-  ViewProgramCoordScreen({required this.login});
+class ViewProgramScreen extends StatefulWidget {
+  final ResponseAttorney login;
+  ViewProgramScreen({required this.login});
   @override
-  _ViewProgramCoordScreenState createState() => _ViewProgramCoordScreenState();
+  _ViewProgramScreenState createState() => _ViewProgramScreenState();
 }
 
-class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
+class _ViewProgramScreenState extends State<ViewProgramScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final usuarioProvider = new CoordinatorProviders();
@@ -35,7 +32,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
     super.initState();
     // Inicia la llamada al servicio para obtener los detalles del hito
     _hitoDetailFuture =
-        usuarioProvider.getviewProgram(widget.login.tourSalesId.toString());
+        usuarioProvider.getviewProgram(widget.login.tourId.toString());
   }
 
   @override
@@ -65,6 +62,28 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                     ),
                   ),
                   SizedBox(width: 16), // Espacio entre la imagen y el texto
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.login.passengerName! +
+                            " " +
+                            widget.login.passengerApellidos!,
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        widget.login.passengerIdentificacion!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -132,7 +151,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => TravelCoordinatorDashboard(
+                              builder: (context) => TravelFatherDashboard(
                                   login: widget
                                       .login)), // Reemplaza con la ruta deseada
                         );
@@ -194,6 +213,44 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                               ],
                             ),
                             SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.teal,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 60,
+                                    backgroundImage:
+                                        AssetImage('assets/profile.jpg'),
+                                  ),
+                                ),
+                                SizedBox(width: 15),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.login.passengerName! +
+                                          " " +
+                                          widget.login.passengerApellidos!,
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey[800]),
+                                    ),
+                                    Text(
+                                      widget.login.passengerIdentificacion!,
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
                             Divider(),
                             SizedBox(height: 10),
                             buildInfoSection(
@@ -210,7 +267,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                             buildInfoSectionMedicamentos(
                                 'Actividades de la Gira',
                                 programView?.activities),
-                            SizedBox(height: 500),
+                            SizedBox(height: 200),
                           ],
                         ),
                       ),
@@ -253,7 +310,11 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
           child: SingleChildScrollView(
             // Permite desplazamiento si el texto es largo
             child: Text(
-              courseClient, // Muestra el contenido con los saltos de línea
+              nameClient +
+                  " " +
+                  courseClient +
+                  " " +
+                  seasonClient, // Muestra el contenido con los saltos de línea
               style: TextStyle(color: Colors.grey[800]),
             ),
           ),

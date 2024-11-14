@@ -7,6 +7,7 @@ import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
@@ -182,6 +183,22 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
       padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
       child: Row(
         children: [
+          Builder(
+            builder: (context) => IconButton(
+              icon: Icon(Icons.arrow_back,
+                  color: Colors.white, size: 30), // Flecha blanca
+              onPressed: () {
+                // Navegar a otra ruta cuando la flecha es presionada
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => TravelCoordinatorDashboard(
+                          login:
+                              widget.login)), // Reemplaza con la ruta deseada
+                );
+              },
+            ),
+          ),
           Spacer(),
           Image.asset(
             'assets/logo-letras-papigiras.png',

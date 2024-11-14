@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
 import 'package:papigiras_app/pages/attorney/map.dart';
 import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
+import 'package:papigiras_app/pages/attorney/viewProgram.dart';
+import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
 import 'package:papigiras_app/pages/binnacle.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart'; // Importa el paquete
 
@@ -17,6 +20,16 @@ class TravelFatherDashboard extends StatefulWidget {
 
 class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  String formatDate(String date) {
+    // Parsear la fecha en el formato original (yyyy-MM-dd)
+    DateTime parsedDate = DateTime.parse(date);
+
+    // Formatear la fecha en el formato deseado (dd-MM-yyyy)
+    String formattedDate = DateFormat('dd-MM-yyyy').format(parsedDate);
+
+    return formattedDate;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +177,9 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                       ),
                       SizedBox(height: 10),
                       Text(
-                        'Arancibia Carlos',
+                        widget.login.passengerName! +
+                            " " +
+                            widget.login.passengerApellidos!,
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -172,7 +187,7 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                         ),
                       ),
                       Text(
-                        '20.457.748-k',
+                        widget.login.passengerIdentificacion!,
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey[600],
@@ -180,7 +195,15 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                       ),
                       SizedBox(height: 8),
                       TextButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ViewMedicalRecordScreen(login: widget.login),
+                            ),
+                          );
+                        },
                         icon: Icon(Icons.remove_red_eye, color: Colors.teal),
                         label: Text(
                           'Ficha médica',
@@ -193,7 +216,11 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                       SizedBox(height: 10),
                       Divider(),
                       Text(
-                        'LASTARRIAS 3° C 2020',
+                        widget.login.tourName! +
+                            " " +
+                            widget.login.tourCourse! +
+                            " " +
+                            widget.login.tourYear.toString(),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -209,7 +236,15 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                       ),
                       SizedBox(height: 8),
                       TextButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ViewProgramScreen(login: widget.login),
+                            ),
+                          );
+                        },
                         icon: Icon(Icons.remove_red_eye, color: Colors.teal),
                         label: Text(
                           'Ver Programa',
@@ -236,7 +271,8 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  '2/12/20',
+                                  formatDate(
+                                      widget.login.tourSalesdateInitial!),
                                   style: TextStyle(
                                     color: Colors.teal,
                                     fontSize: 16,
@@ -255,7 +291,7 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  '8/12/20',
+                                  formatDate(widget.login.tourSalesdateFinal!),
                                   style: TextStyle(
                                     color: Colors.teal,
                                     fontSize: 16,
