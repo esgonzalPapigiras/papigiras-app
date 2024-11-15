@@ -1,126 +1,65 @@
 import 'dart:async';
-
-import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
+import 'package:flutter/material.dart'; // Para obtener la ubicación
 import 'package:papigiras_app/dto/responseAttorney.dart';
+import 'package:permission_handler/permission_handler.dart' as permisos;
+// Para manejar permisos
 
 class MapScreen extends StatefulWidget {
   final ResponseAttorney login;
   MapScreen({required this.login});
-
   @override
   _MapScreenState createState() => _MapScreenState();
 }
 
 class _MapScreenState extends State<MapScreen> {
-  GoogleMapController? mapController;
-  Location _location = Location();
-  Set<Marker> _markers = {};
-  List<LatLng> _polylineCoordinates = [];
-  Set<Polyline> _polylines = {};
-
-  // Para almacenar la ubicación actual
-  LatLng? _currentLocation;
-
-  // StreamSubscription para la ubicación
-  late StreamSubscription<LocationData> _locationSubscription;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Verificar permisos y escuchar la ubicación en tiempo real
-    _location.requestPermission().then((permissionStatus) {
-      if (permissionStatus == PermissionStatus.granted) {
-        // Escuchar la ubicación en tiempo real
-        _locationSubscription =
-            _location.onLocationChanged.listen((LocationData currentLocation) {
-          if (mounted) {
-            setState(() {
-              _currentLocation = LatLng(
-                currentLocation.latitude ?? 0.0,
-                currentLocation.longitude ?? 0.0,
-              );
-            });
-
-            // Mover el mapa a la ubicación en tiempo real
-            if (_currentLocation != null) {
-              mapController
-                  ?.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
-
-              // Actualizar el marcador de la ubicación
-              _updateMarker(_currentLocation!);
-            }
-          }
-        });
-      } else {
-        // Manejo de error si no se tienen permisos
-        print("Permiso de ubicación no concedido");
-      }
-    });
-  }
-
-  void _updateMarker(LatLng location) {
-    final markerId = MarkerId('current_location_marker');
-    _markers.add(
-      Marker(
-        markerId: markerId,
-        position: location,
-        infoWindow: InfoWindow(title: 'Ubicación Actual'),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    // Cancelar la suscripción al flujo de ubicación cuando el widget se destruya
-    _locationSubscription.cancel();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
+    // TODO: implement build
+    throw UnimplementedError();
+  }
+  /*@override
+  Widget build(BuildContext context) {
     return Scaffold(
-      body: GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: LatLng(0.0, 0.0), // Establecer una ubicación inicial
-          zoom: 15.0,
+      appBar: AppBar(
+        title: Text('Flutter Map Example'),
+      ),
+      body: FlutterMap(
+        options: MapOptions(
+          center:
+              LatLng(51.509865, -0.118092), // Coordenadas del centro del mapa
+          zoom: 13.0, // Nivel de zoom
         ),
-        onMapCreated: (GoogleMapController controller) {
-          mapController = controller;
-        },
-        onTap: _onMapTapped, // Agregar marcador en el mapa
-        markers: _markers,
-        polylines: _polylines,
-        myLocationEnabled: true,
-        myLocationButtonEnabled: true,
+        layers: [
+          TileLayerOptions(
+            urlTemplate:
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", // Mapa de OpenStreetMap
+            subdomains: ['a', 'b', 'c'], // Subdominios
+          ),
+          MarkerLayerOptions(
+            markers: [
+              Marker(
+                point: LatLng(51.509865, -0.118092), // Ubicación del marcador
+                builder: (ctx) => Icon(
+                  Icons.location_pin,
+                  color: Colors.red,
+                  size: 40,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  // Función para agregar un marcador y una línea entre ellos
-  void _onMapTapped(LatLng tappedPoint) {
-    setState(() {
-      final markerId = MarkerId('marker_${_markers.length}');
-      _markers.add(
-        Marker(
-          markerId: markerId,
-          position: tappedPoint,
-          infoWindow: InfoWindow(title: 'Marcador ${_markers.length + 1}'),
-        ),
-      );
-      _polylineCoordinates.add(tappedPoint);
-      if (_polylineCoordinates.length > 1) {
-        _polylines.add(
-          Polyline(
-            polylineId: PolylineId('polyline_1'),
-            points: _polylineCoordinates,
-            color: Colors.blue,
-            width: 5,
-          ),
-        );
-      }
-    });
-  }
+  // Función para solicitar permisos de ubicación
+  Future<void> requestLocationPermission() async {
+    permisos.PermissionStatus status =
+        await permisos.Permission.location.request();
+    if (status.isGranted) {
+      print('Permiso de ubicación concedido');
+    } else {
+      print('Permiso de ubicación denegado');
+    }
+  }*/
 }

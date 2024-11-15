@@ -3,10 +3,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
 import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
+import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
-import 'package:papigiras_app/pages/binnacle.dart';
-import 'package:papigiras_app/pages/index.dart';
-import 'package:papigiras_app/pages/tripulationbus.dart';
+import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 
@@ -388,7 +387,9 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
         if (label == 'Bitácora del Viaje') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => BitacoraScreen()),
+            MaterialPageRoute(
+                builder: (context) =>
+                    BitacoraFatherScreen(login: widget.login)),
           );
         }
       },

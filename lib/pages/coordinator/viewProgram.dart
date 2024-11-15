@@ -6,11 +6,9 @@ import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
-import 'package:papigiras_app/pages/binnacle.dart';
+import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
-import 'package:papigiras_app/pages/index.dart';
-import 'package:papigiras_app/pages/tripulationbus.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 
@@ -253,7 +251,11 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
           child: SingleChildScrollView(
             // Permite desplazamiento si el texto es largo
             child: Text(
-              courseClient, // Muestra el contenido con los saltos de línea
+              nameClient +
+                  " " +
+                  courseClient +
+                  " " +
+                  seasonClient, // Muestra el contenido con los saltos de línea
               style: TextStyle(color: Colors.grey[800]),
             ),
           ),
@@ -394,7 +396,10 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
         if (label == 'Bitácora del Viaje') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => BitacoraScreen()),
+            MaterialPageRoute(
+                builder: (context) => BitacoraCoordScreen(
+                      login: widget.login,
+                    )),
           );
         }
       },

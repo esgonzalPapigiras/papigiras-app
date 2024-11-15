@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:papigiras_app/pages/login.dart';
+import 'package:papigiras_app/pages/alumns/loginpassenger.dart';
 import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/pages/attorney/loginFather.dart';
 
@@ -71,7 +71,8 @@ class WelcomeScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => LoginPassenger()),
                       );
                     },
                     style: ElevatedButton.styleFrom(

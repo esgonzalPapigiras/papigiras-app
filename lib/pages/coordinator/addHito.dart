@@ -36,6 +36,11 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
   Timer? _timer;
   late Position position;
 
+  final usuarioProvider = new CoordinatorProviders();
+  List<XFile> _imageFiles =
+      []; // Lista para almacenar las imágenes seleccionadas
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
@@ -64,7 +69,9 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
   Future<void> _checkLocationService() async {
     bool serviceEnabled;
     LocationPermission permission;
+
     try {
+      // Comentar o descomentar esta línea según tu caso:
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
@@ -72,6 +79,8 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
         });
         return;
       }
+
+      // Verificar permisos
       permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -82,16 +91,18 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
           return;
         }
       }
+
       if (permission == LocationPermission.deniedForever) {
         setState(() {
           _location = 'Permiso de ubicación permanentemente denegado.';
         });
         return;
       }
+
+      // Obtener la ubicación
       _getCurrentLocation();
     } catch (e) {
       setState(() {
-        print(e);
         _location = 'Error al obtener ubicación: $e';
       });
     }
@@ -100,10 +111,13 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
   Future<void> _getCurrentLocation() async {
     try {
       position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+        desiredAccuracy: LocationAccuracy.high,
+      );
 
-      List<Placemark> placemarks =
-          await placemarkFromCoordinates(position.latitude, position.longitude);
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
@@ -123,41 +137,39 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
     }
   }
 
-  final usuarioProvider = new CoordinatorProviders();
-  List<XFile> _imageFiles =
-      []; // Lista para almacenar las imágenes seleccionadas
-  final ImagePicker _picker = ImagePicker();
-  late ConsolidatedTourSalesDTO consolidate; // Instancia de ImagePicker
+  // Permiso para acceder a la galería
+  Future<void> requestPermissions() async {
+    // Solicitar permiso para acceder a las fotos
+    PermissionStatus status = await Permission.photos.request();
 
-  void selectAndUploadImage() async {
-    await requestPermissions();
-    await pickImage();
+    if (status.isGranted) {
+      // Si el permiso es concedido, se ejecuta la acción para elegir una imagen
+      print("Permiso para acceder a la galería concedido");
+      await pickImage();
+    } else if (status.isPermanentlyDenied) {
+      openAppSettings();
+      // Si el permiso es denegado
+      print("Permiso para acceder a la galería denegado");
+    } else if (status.isDenied) {
+      // Si el permiso es denegado permanentemente, muestra una ventana para ir a la configuración
+      print("Permiso para acceder a la galería denegado permanentemente");
+      // Permite abrir la configuración de la app
+    }
   }
 
+  // Seleccionar imagen de la galería
   Future<void> pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-
-    // Selecciona una imagen de la galería
     final XFile? pickedFile =
         await _picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       File image = File(pickedFile.path);
-      // Ahora puedes usar la imagen, por ejemplo, cargarla a un servidor
+      setState(() {
+        _imageFiles.add(pickedFile);
+      });
       print("Imagen seleccionada: ${image.path}");
     } else {
       print("No se seleccionó ninguna imagen");
-    }
-  }
-
-  Future<void> requestPermissions() async {
-    PermissionStatus status = await Permission.photos.request();
-    if (status.isGranted) {
-      // Permiso concedido, puedes acceder a la galería
-      print("Permiso para acceder a la galería concedido");
-    } else {
-      // Si el permiso no se concede
-      print("Permiso para acceder a la galería denegado");
     }
   }
 
@@ -230,12 +242,12 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                       notaCierre: notaCierreController.text,
                       latitud: position.latitude.toString(),
                       longitud: position.longitude.toString(),
-                      hora: _timer.toString(),
+                      hora: _formattedTime,
                       idTour: widget.login.tourSalesId,
                     );
 
                     // Llamada al método para agregar el Hito
-                    consolidate = await usuarioProvider.addHito(hito);
+                    var consolidate = await usuarioProvider.addHito(hito);
                     if (consolidate != null) {
                       await usuarioProvider.addHitoFoto(
                           consolidate.binnacleDetailId,
@@ -259,8 +271,6 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                         },
                       );
                     }
-
-                    // Mostrar un mensaje de éxito
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF3AC5C9),
@@ -316,7 +326,7 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: GestureDetector(
-        onTap: pickImage, // Al hacer clic, abre la galería
+        onTap: requestPermissions, // Al hacer clic, abre la galería
         child: Container(
           width: 60,
           height: 60,

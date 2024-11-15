@@ -2,21 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
+import 'package:papigiras_app/pages/alumns/loginpassenger.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
+import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/attorney/map.dart';
 import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/attorney/viewProgram.dart';
 import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
+import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
+// Importa el paquete
 
-class TravelFatherDashboard extends StatefulWidget {
+class TravelPassengerDashboard extends StatefulWidget {
   final ResponseAttorney login;
-  TravelFatherDashboard({required this.login});
+  TravelPassengerDashboard({required this.login});
   @override
-  _TravelFatherDashboardState createState() => _TravelFatherDashboardState();
+  _TravelPassengerDashboardState createState() =>
+      _TravelPassengerDashboardState();
 }
 
-class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
+class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   String formatDate(String date) {
@@ -85,9 +90,7 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                 'Contactar Agencia',
                 style: TextStyle(color: Colors.grey[800]),
               ),
-              onTap: () {
-                // Acción para contactar agencia
-              },
+              onTap: () {},
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -103,9 +106,7 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                 'Reportar un Problema',
                 style: TextStyle(color: Colors.grey[800]),
               ),
-              onTap: () {
-                // Acción para reportar un problema
-              },
+              onTap: () {},
             ),
             ListTile(
               leading: Icon(Icons.logout, color: Colors.teal),
@@ -114,6 +115,12 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LoginPassenger(),
+                  ),
+                );
                 // Acción para cerrar sesión
               },
             ),
@@ -192,144 +199,8 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                         ),
                       ),
                       SizedBox(height: 8),
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ViewMedicalRecordScreen(login: widget.login),
-                            ),
-                          );
-                        },
-                        icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                        label: Text(
-                          'Ficha médica',
-                          style: TextStyle(
-                            color: Colors.teal,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 10),
                       Divider(),
-                      Text(
-                        widget.login.tourName! +
-                            " " +
-                            widget.login.tourCourse! +
-                            " " +
-                            widget.login.tourYear.toString(),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                      Text(
-                        'En Gira',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ViewProgramScreen(login: widget.login),
-                            ),
-                          );
-                        },
-                        icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                        label: Text(
-                          'Ver Programa',
-                          style: TextStyle(
-                            color: Colors.teal,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
                       SizedBox(height: 10),
-                      Divider(),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              children: [
-                                Text(
-                                  'Fecha Salida',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  formatDate(
-                                      widget.login.tourSalesdateInitial!),
-                                  style: TextStyle(
-                                    color: Colors.teal,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  'Fecha Regreso',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  formatDate(widget.login.tourSalesdateFinal!),
-                                  style: TextStyle(
-                                    color: Colors.teal,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  MapScreen(login: widget.login),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          primary: Colors.teal,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 30.0,
-                            vertical: 15.0,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20.0),
-                          ),
-                        ),
-                        child: Text(
-                          'Ver Ubicación en tiempo Real',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
                       SizedBox(height: 20),
                     ],
                   ),
@@ -337,48 +208,6 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
               ),
             ),
             // Sección inferior de botones
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 5,
-                    blurRadius: 10,
-                    offset: Offset(0, -3), // Sombra hacia arriba
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Divider(height: 1, color: Colors.grey[300]),
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 35),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        buildBottomButton(
-                            Icons.book,
-                            'Bitácora del Viaje',
-                            null,
-                            BitacoraFatherScreen(
-                              login: widget.login,
-                            )),
-                        buildBottomButton(
-                            Icons.directions_bus,
-                            'Bus & Tripulación',
-                            null,
-                            BusCrewFatherScreen(
-                              login: widget.login,
-                            )),
-                        buildBottomButton(Icons.folder_open, 'Mis Documentos',
-                            null, DocumentFatherScreen(login: widget.login)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),

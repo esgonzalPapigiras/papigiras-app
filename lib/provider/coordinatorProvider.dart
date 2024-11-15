@@ -390,7 +390,7 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<TourSales?> validateLoginUserPassenger(
+  Future<ResponseAttorney?> validateLoginUserPassenger(
       String rut, String password) async {
     var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
         '/app/services/coordinator', {'rut': rut, 'password': password});
@@ -400,7 +400,7 @@ class CoordinatorProviders with ChangeNotifier {
     });
 
     LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
-    TourSales login = new TourSales.fromJson(decorespoCreate);
+    ResponseAttorney login = new ResponseAttorney.fromJson(decorespoCreate);
     if (resp.statusCode == 200) {
       return login;
     } else {

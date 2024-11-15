@@ -1,30 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
 import 'package:papigiras_app/pages/attorney/fatherWelcome.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 
-class LoginFather extends StatefulWidget {
+class LoginPassenger extends StatefulWidget {
   @override
-  _LoginFatherState createState() => _LoginFatherState();
+  _LoginPassengerState createState() => _LoginPassengerState();
 }
 
-class _LoginFatherState extends State<LoginFather> {
+class _LoginPassengerState extends State<LoginPassenger> {
   final usuarioProvider = new CoordinatorProviders();
   final TextEditingController _userController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _showError = false;
   bool _showErrorTwo = false;
 
-  String _formatRut(String rut) {
-    rut = rut.replaceAll(
-        RegExp(r'[^0-9kK]'), ''); // Eliminar caracteres no numéricos ni 'K'
+  String formatRut(String rut) {
+    // Eliminar todo lo que no sea un número ni la letra 'K'
+    rut = rut.replaceAll(RegExp(r'[^0-9kK]'), '');
+
     if (rut.length > 1) {
       final length = rut.length;
-      final rutWithDots =
-          '${rut.substring(0, length - 1).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}-${rut[length - 1]}';
-      return rutWithDots;
+      // Formatear el RUT con puntos cada 3 dígitos
+      String formatted = '${rut.substring(0, length - 1).replaceAllMapped(
+            RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]}.',
+          )}';
+      // Agregar el guion al final
+      if (rut.length > 7) {
+        formatted = '$formatted-${rut[length - 1]}';
+      } else {
+        formatted = '$formatted${rut[length - 1]}';
+      }
+      return formatted;
     }
     return rut;
   }
@@ -78,7 +89,7 @@ class _LoginFatherState extends State<LoginFather> {
                         ),
                       ),
                       Text(
-                        'Apoderado(s)',
+                        'Alumno(s)',
                         style: TextStyle(
                           fontSize: 16.0,
                           color: Colors.grey[600],
@@ -174,8 +185,8 @@ class _LoginFatherState extends State<LoginFather> {
                               _showError = false;
                               _showErrorTwo = false;
                             });
-                            final login =
-                                await usuarioProvider.validateLoginUserFather(
+                            final login = await usuarioProvider
+                                .validateLoginUserPassenger(
                                     _userController.text,
                                     _passwordController.text);
                             if (login != null) {
@@ -193,7 +204,8 @@ class _LoginFatherState extends State<LoginFather> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          WelcomeFatherScreen(login: login),
+                                          TravelPassengerDashboard(
+                                              login: login),
                                     ),
                                   );
                                 },
