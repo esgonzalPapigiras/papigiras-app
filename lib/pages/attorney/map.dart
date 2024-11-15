@@ -1,7 +1,5 @@
-import 'dart:async';
-import 'package:flutter/material.dart'; // Para obtener la ubicación
+import 'package:flutter/material.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
-import 'package:permission_handler/permission_handler.dart' as permisos;
 // Para manejar permisos
 
 class MapScreen extends StatefulWidget {

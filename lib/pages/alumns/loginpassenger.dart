@@ -238,7 +238,7 @@ class _LoginPassengerState extends State<LoginPassenger> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20.0),
                           ),
-                          primary: Colors.teal, // Color del botón
+                          backgroundColor: Colors.teal, // Color del botón
                         ),
                         child: Text(
                           'Ingresar',

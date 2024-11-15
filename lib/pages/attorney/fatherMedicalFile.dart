@@ -276,8 +276,8 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                             },
                             child: Text('Guardar Ficha Médica'),
                             style: ElevatedButton.styleFrom(
-                              primary: Colors.teal,
-                              onPrimary: Colors.white,
+                              backgroundColor: Colors.teal,
+                              foregroundColor: Colors.white,
                               padding: EdgeInsets.symmetric(
                                 horizontal: 30,
                                 vertical: 15,

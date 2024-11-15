@@ -95,7 +95,7 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.teal,
+                    backgroundColor: Colors.teal,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20.0),
                     ),

@@ -243,7 +243,7 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
             ElevatedButton(
               onPressed: _scanQRCode,
               style: ElevatedButton.styleFrom(
-                primary: Colors.teal,
+                backgroundColor: Colors.teal,
                 padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
               ),
               child: Text(

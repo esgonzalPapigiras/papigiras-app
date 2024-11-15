@@ -313,7 +313,7 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.teal,
+                          backgroundColor: Colors.teal,
                           padding: EdgeInsets.symmetric(
                             horizontal: 30.0,
                             vertical: 15.0,

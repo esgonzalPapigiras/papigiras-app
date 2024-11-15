@@ -53,6 +53,7 @@ dependencies:
   flutter_pdfview: ^1.0.6
   syncfusion_flutter_xlsio: ^27.1.58
   image_picker: ^0.8.5+3
+  
 
 dev_dependencies:
   flutter_test:

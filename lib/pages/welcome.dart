@@ -56,7 +56,7 @@ class WelcomeScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20.0),
                       ),
-                      primary: Colors.teal,
+                      backgroundColor: Colors.teal,
                     ),
                     child: Text(
                       'Apoderado',
@@ -80,7 +80,7 @@ class WelcomeScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20.0),
                       ),
-                      primary: Colors.teal,
+                      backgroundColor: Colors.teal,
                     ),
                     child: Text(
                       'Alumno',
@@ -104,7 +104,7 @@ class WelcomeScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20.0),
                       ),
-                      primary: Colors.teal,
+                      backgroundColor: Colors.teal,
                     ),
                     child: Text(
                       'Coordinador',
