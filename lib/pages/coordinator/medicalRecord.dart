@@ -11,6 +11,7 @@ import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/tripulationbus.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:quickalert/quickalert.dart';
 
 class MedicalCoordScreen extends StatefulWidget {
   @override
@@ -40,8 +41,9 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
         return {
           'name': passenger
               .passengerName, // Asegúrate de que esto coincida con tu DTO
-          'id': passenger
-              .passengerIdentification, // Asegúrate de que esto coincida con tu DTO
+          'id': passenger.passengerIdentification,
+          'idPassenger':
+              passenger.passengerId // Asegúrate de que esto coincida con tu DTO
         };
       }).toList();
     });
@@ -285,13 +287,30 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
               IconButton(
                 icon: Icon(Icons.remove_red_eye, color: Colors.teal),
                 onPressed: () {
-                  // Acción para visualizar el documento
+                  usuarioProvider.viewDocumentMedicalRecord(
+                      widget.login.tourSalesId.toString(),
+                      document['idPassenger'].toString(),
+                      context,
+                      document['id'].toString());
                 },
               ),
               IconButton(
                 icon: Icon(Icons.download, color: Colors.teal),
                 onPressed: () {
-                  // Acción para descargar el documento
+                  usuarioProvider.downloadDocumentMedicalRecord(
+                      widget.login.tourSalesId.toString(),
+                      document['idPassenger'].toString(),
+                      document['id'].toString());
+                  QuickAlert.show(
+                    context: context,
+                    type: QuickAlertType.success,
+                    title: 'Éxito',
+                    text: 'Documento Descargado',
+                    confirmBtnText: 'Continuar',
+                    onConfirmBtnTap: () {
+                      Navigator.of(context).pop(); // Cierra el QuickAlert
+                    },
+                  );
                 },
               ),
             ],

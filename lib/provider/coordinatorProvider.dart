@@ -474,4 +474,73 @@ class CoordinatorProviders with ChangeNotifier {
       throw Exception('Failed to load services');
     }
   }
+
+  Future<void> downloadDocumentMedicalRecord(
+      String idTour, String idPassenger, String identificacion) async {
+    // Solicitar permisos de almacenamiento
+    await requestStoragePermission();
+
+    String fileName = "fichamedica" + "-" + identificacion + ".pdf";
+
+    final url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/get/pdf/view/medical-records', {
+      'idTour': idTour,
+      'folder': idPassenger,
+      'identificacion': identificacion
+    });
+
+    final response = await http.post(url, headers: {
+      'Content-Type': 'application/json',
+      // Si es necesario, puedes agregar aquí el token
+      // 'Authorization': 'Bearer your_token_here',
+    });
+
+    print('Content-Type: ${response.headers['content-type']}');
+
+    String downloadPath = await getDownloadDirectory();
+    final filePath = path.join(downloadPath, fileName);
+    final file = File(filePath);
+    await file.writeAsBytes(response.bodyBytes);
+
+    print('Archivo descargado en: $filePath');
+  }
+
+  Future<void> viewDocumentMedicalRecord(String idTour, String idPassenger,
+      BuildContext context, String identificacion) async {
+    try {
+      final url = Uri.https(
+          'ms-papigiras-app-ezkbu.ondigitalocean.app',
+          '/app/services/get/pdf/medical-records',
+          {'tourId': idTour, 'idPassenger': idPassenger});
+
+      String fileName = "fichamedica" + "-" + identificacion;
+
+      final resp = await http.post(url, headers: {
+        'Content-Type':
+            'application/json' // Agregar el token en la cabecera de la solicitud
+      });
+
+      if (resp.statusCode == 200) {
+        final Uint8List documentBytes = resp.bodyBytes;
+
+        // Guardar el documento temporalmente en el dispositivo
+        final Directory appDocDir = await getApplicationDocumentsDirectory();
+        final String filePath = '${appDocDir.path}/$fileName';
+
+        // Escribir el archivo en el dispositivo
+        final File file = File(filePath);
+        await file.writeAsBytes(documentBytes);
+
+        // Mostrar el PDF en un diálogo
+        _showPdfDialog(filePath, context);
+      } else {
+        throw Exception('Error al obtener el documento: ${resp.statusCode}');
+      }
+    } catch (e) {
+      print('Error al visualizar el documento: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al visualizar el documento: $e')),
+      );
+    }
+  }
 }
