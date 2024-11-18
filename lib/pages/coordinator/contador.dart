@@ -13,6 +13,7 @@ import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CountDownCoordScreen extends StatefulWidget {
@@ -168,12 +169,7 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
             leading: Icon(Icons.logout, color: Colors.teal),
             title: Text('Cerrar Sesión'),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LoginCoordinator(),
-                ),
-              );
+              logoutUser(context);
             },
           ),
         ],
@@ -254,6 +250,19 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void logoutUser(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+
+    // Redirigir al login o realizar otra acción
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginCoordinator(),
       ),
     );
   }

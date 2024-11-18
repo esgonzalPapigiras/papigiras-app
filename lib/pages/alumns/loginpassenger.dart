@@ -5,6 +5,7 @@ import 'package:papigiras_app/pages/attorney/fatherWelcome.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPassenger extends StatefulWidget {
   @override
@@ -189,7 +190,7 @@ class _LoginPassengerState extends State<LoginPassenger> {
                                 .validateLoginUserPassenger(
                                     _userController.text,
                                     _passwordController.text);
-                            if (login != null) {
+                            if (login != null && login.isActive!) {
                               // Si login tiene datos, muestra QuickAlert de éxito y navega a la siguiente pantalla
                               QuickAlert.show(
                                 context: context,
@@ -197,7 +198,10 @@ class _LoginPassengerState extends State<LoginPassenger> {
                                 title: 'Éxito',
                                 text: 'Bienvenido',
                                 confirmBtnText: 'Continuar',
-                                onConfirmBtnTap: () {
+                                onConfirmBtnTap: () async {
+                                  SharedPreferences prefs =
+                                      await SharedPreferences.getInstance();
+                                  await prefs.setBool('isLoggedIn', true);
                                   Navigator.of(context)
                                       .pop(); // Cierra el QuickAlert
                                   Navigator.push(
@@ -216,7 +220,7 @@ class _LoginPassengerState extends State<LoginPassenger> {
                                 context: context,
                                 type: QuickAlertType.error,
                                 title: 'Error',
-                                text: 'Usuario no encontrado',
+                                text: 'Usuario no encontrado o desactivado',
                                 confirmBtnText: 'Aceptar',
                                 onConfirmBtnTap: () {
                                   Navigator.of(context)

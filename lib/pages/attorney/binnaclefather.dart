@@ -17,6 +17,8 @@ import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:quickalert/quickalert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class BitacoraFatherScreen extends StatefulWidget {
@@ -96,6 +98,19 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
     );
   }
 
+  void logoutUser(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+
+    // Redirigir al login o realizar otra acción
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginFather(),
+      ),
+    );
+  }
+
   Widget _buildDrawer() {
     return Drawer(
       child: ListView(
@@ -127,15 +142,35 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
             },
           ),
           ListTile(
+            leading: Icon(Icons.desktop_access_disabled_outlined,
+                color: Colors.teal),
+            title: Text(
+              'Desactivar Cuenta',
+              style: TextStyle(color: Colors.grey[800]),
+            ),
+            onTap: () {
+              QuickAlert.show(
+                context: context,
+                type:
+                    QuickAlertType.error, // Cambiar a 'error' para la cruz roja
+                title: 'Eliminar Cuenta',
+                text: 'Desactivar tu cuenta no te permitirá ingresar más',
+                confirmBtnText: 'Continuar',
+                onConfirmBtnTap: () {
+                  usuarioProvider.desactivateAccount(
+                      widget.login.passengerIdentificacion.toString());
+
+                  logoutUser(context); // Cierra el QuickAlert
+                },
+              );
+              // Acción para cerrar sesión
+            },
+          ),
+          ListTile(
             leading: Icon(Icons.logout, color: Colors.teal),
             title: Text('Cerrar Sesión'),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LoginFather(),
-                ),
-              );
+              logoutUser(context);
             },
           ),
         ],

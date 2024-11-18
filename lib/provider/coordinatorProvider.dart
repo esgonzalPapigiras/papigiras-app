@@ -394,7 +394,7 @@ class CoordinatorProviders with ChangeNotifier {
   Future<ResponseAttorney?> validateLoginUserPassenger(
       String rut, String password) async {
     var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/coordinator', {'rut': rut, 'password': password});
+        '/app/services/passenger/login', {'user': rut, 'password': password});
     final resp = await http.post(url, headers: {
       'Content-Type':
           'application/json' // Agregar el token en la cabecera de la solicitud
@@ -557,6 +557,20 @@ class CoordinatorProviders with ChangeNotifier {
       return decorespoCreate
           .map((job) => new PositionMap.fromJson(job))
           .toList();
+    } else {
+      throw Exception('Failed to load services');
+    }
+  }
+
+  Future<void> desactivateAccount(String rut) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/desactivate/login', {'rut': rut});
+    final resp = await http.post(url, headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      notifyListeners();
     } else {
       throw Exception('Failed to load services');
     }

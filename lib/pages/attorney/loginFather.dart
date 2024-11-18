@@ -4,6 +4,7 @@ import 'package:papigiras_app/pages/attorney/fatherWelcome.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginFather extends StatefulWidget {
   @override
@@ -178,7 +179,7 @@ class _LoginFatherState extends State<LoginFather> {
                                 await usuarioProvider.validateLoginUserFather(
                                     _userController.text,
                                     _passwordController.text);
-                            if (login != null) {
+                            if (login != null && login.isActive!) {
                               // Si login tiene datos, muestra QuickAlert de éxito y navega a la siguiente pantalla
                               QuickAlert.show(
                                 context: context,
@@ -186,7 +187,10 @@ class _LoginFatherState extends State<LoginFather> {
                                 title: 'Éxito',
                                 text: 'Bienvenido',
                                 confirmBtnText: 'Continuar',
-                                onConfirmBtnTap: () {
+                                onConfirmBtnTap: () async {
+                                  SharedPreferences prefs =
+                                      await SharedPreferences.getInstance();
+                                  await prefs.setBool('isLoggedIn', true);
                                   Navigator.of(context)
                                       .pop(); // Cierra el QuickAlert
                                   Navigator.push(

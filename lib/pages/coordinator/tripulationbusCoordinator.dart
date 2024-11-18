@@ -11,6 +11,7 @@ import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class BusCrewCoorScreen extends StatefulWidget {
@@ -51,6 +52,19 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
         throw 'WhatsApp no está instalado o no puede manejar la URL';
       }
     }
+  }
+
+  void logoutUser(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+
+    // Redirigir al login o realizar otra acción
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginCoordinator(),
+      ),
+    );
   }
 
   @override
@@ -157,12 +171,7 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LoginCoordinator(),
-                  ),
-                );
+                logoutUser(context);
               },
             ),
           ],

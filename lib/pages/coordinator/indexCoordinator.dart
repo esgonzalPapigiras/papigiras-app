@@ -13,6 +13,7 @@ import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/viewProgram.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TravelCoordinatorDashboard extends StatefulWidget {
@@ -28,6 +29,19 @@ class _TravelCoordinatorDashboardState
     extends State<TravelCoordinatorDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final usuarioProvider = new CoordinatorProviders();
+
+  void logoutUser(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+
+    // Redirigir al login o realizar otra acción
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginCoordinator(),
+      ),
+    );
+  }
 
   void sendMessage({required String phone, required String message}) async {
     final whatsappUrl =
@@ -154,12 +168,7 @@ class _TravelCoordinatorDashboardState
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LoginCoordinator(),
-                  ),
-                );
+                logoutUser(context);
               },
             ),
           ],

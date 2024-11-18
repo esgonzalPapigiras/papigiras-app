@@ -14,6 +14,8 @@ import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:quickalert/quickalert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class BusCrewFatherScreen extends StatefulWidget {
@@ -72,6 +74,19 @@ class _BusCrewFatherScreenState extends State<BusCrewFatherScreen> {
         throw 'WhatsApp no está instalado o no puede manejar la URL';
       }
     }
+  }
+
+  void logoutUser(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+
+    // Redirigir al login o realizar otra acción
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginFather(),
+      ),
+    );
   }
 
   @override
@@ -154,18 +169,38 @@ class _BusCrewFatherScreenState extends State<BusCrewFatherScreen> {
               },
             ),
             ListTile(
+              leading: Icon(Icons.desktop_access_disabled_outlined,
+                  color: Colors.teal),
+              title: Text(
+                'Desactivar Cuenta',
+                style: TextStyle(color: Colors.grey[800]),
+              ),
+              onTap: () {
+                QuickAlert.show(
+                  context: context,
+                  type: QuickAlertType
+                      .error, // Cambiar a 'error' para la cruz roja
+                  title: 'Eliminar Cuenta',
+                  text: 'Desactivar tu cuenta no te permitirá ingresar más',
+                  confirmBtnText: 'Continuar',
+                  onConfirmBtnTap: () {
+                    usuarioProvider.desactivateAccount(
+                        widget.login.passengerIdentificacion.toString());
+
+                    logoutUser(context); // Cierra el QuickAlert
+                  },
+                );
+                // Acción para cerrar sesión
+              },
+            ),
+            ListTile(
               leading: Icon(Icons.logout, color: Colors.teal),
               title: Text(
                 'Cerrar Sesión',
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LoginFather(),
-                  ),
-                );
+                logoutUser(context);
               },
             ),
           ],

@@ -3,6 +3,7 @@ import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginCoordinator extends StatefulWidget {
   @override
@@ -117,7 +118,10 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                               title: 'Éxito',
                               text: 'Gira encontrada',
                               confirmBtnText: 'Continuar',
-                              onConfirmBtnTap: () {
+                              onConfirmBtnTap: () async {
+                                SharedPreferences prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.setBool('isLoggedIn', true);
                                 Navigator.of(context)
                                     .pop(); // Cierra el QuickAlert
                                 Navigator.push(

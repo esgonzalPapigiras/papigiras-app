@@ -9,6 +9,9 @@ import 'package:papigiras_app/pages/attorney/map.dart';
 import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/attorney/viewProgram.dart';
 import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:quickalert/quickalert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TravelFatherDashboard extends StatefulWidget {
@@ -20,6 +23,7 @@ class TravelFatherDashboard extends StatefulWidget {
 
 class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final usuarioProvider = new CoordinatorProviders();
 
   String formatDate(String date) {
     // Parsear la fecha en el formato original (yyyy-MM-dd)
@@ -54,6 +58,19 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
         throw 'WhatsApp no está instalado o no puede manejar la URL';
       }
     }
+  }
+
+  void logoutUser(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+
+    // Redirigir al login o realizar otra acción
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginFather(),
+      ),
+    );
   }
 
   @override
@@ -137,18 +154,38 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
               },
             ),
             ListTile(
+              leading: Icon(Icons.desktop_access_disabled_outlined,
+                  color: Colors.teal),
+              title: Text(
+                'Desactivar Cuenta',
+                style: TextStyle(color: Colors.grey[800]),
+              ),
+              onTap: () {
+                QuickAlert.show(
+                  context: context,
+                  type: QuickAlertType
+                      .error, // Cambiar a 'error' para la cruz roja
+                  title: 'Eliminar Cuenta',
+                  text: 'Desactivar tu cuenta no te permitirá ingresar más',
+                  confirmBtnText: 'Continuar',
+                  onConfirmBtnTap: () {
+                    usuarioProvider.desactivateAccount(
+                        widget.login.passengerIdentificacion.toString());
+
+                    logoutUser(context);
+                  },
+                );
+                // Acción para cerrar sesión
+              },
+            ),
+            ListTile(
               leading: Icon(Icons.logout, color: Colors.teal),
               title: Text(
                 'Cerrar Sesión',
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LoginFather(),
-                  ),
-                );
+                logoutUser(context);
               },
             ),
           ],

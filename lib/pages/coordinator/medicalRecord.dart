@@ -12,6 +12,7 @@ import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MedicalCoordScreen extends StatefulWidget {
@@ -27,6 +28,18 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
   bool _isAscending = true; // Bandera para ordenación
   List<PassengerList> pasajeros = [];
   final usuarioProvider = CoordinatorProviders();
+  void logoutUser(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+
+    // Redirigir al login o realizar otra acción
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginCoordinator(),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -190,12 +203,7 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
             leading: Icon(Icons.logout, color: Colors.teal),
             title: Text('Cerrar Sesión'),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LoginCoordinator(),
-                ),
-              );
+              logoutUser(context);
             },
           ),
         ],

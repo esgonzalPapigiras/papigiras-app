@@ -12,6 +12,7 @@ import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ViewProgramCoordScreen extends StatefulWidget {
@@ -134,12 +135,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LoginCoordinator(),
-                  ),
-                );
+                logoutUser(context);
               },
             ),
           ],
@@ -259,6 +255,19 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void logoutUser(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+
+    // Redirigir al login o realizar otra acción
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginCoordinator(),
       ),
     );
   }

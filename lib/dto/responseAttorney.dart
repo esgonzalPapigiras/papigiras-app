@@ -17,28 +17,29 @@ class ResponseAttorney {
   final String? tourCourse;
   final String? tourName;
   final int? tourYear;
+  final bool? isActive;
 
   // Constructor con parámetros
-  ResponseAttorney({
-    this.passengerId,
-    this.passengerName,
-    this.passengerApellidos,
-    this.passengerIdentificacion,
-    this.passengerDiet,
-    this.passengerEmail,
-    this.passengerBirthDate,
-    this.passengerGender,
-    this.tourId,
-    this.coordinatorName,
-    this.coordinatorPhone,
-    this.coordinatorIdentificator,
-    this.tourSalesdateInitial,
-    this.tourSalesdateFinal,
-    this.tourSalesUuid,
-    this.tourCourse,
-    this.tourName,
-    this.tourYear,
-  });
+  ResponseAttorney(
+      {this.passengerId,
+      this.passengerName,
+      this.passengerApellidos,
+      this.passengerIdentificacion,
+      this.passengerDiet,
+      this.passengerEmail,
+      this.passengerBirthDate,
+      this.passengerGender,
+      this.tourId,
+      this.coordinatorName,
+      this.coordinatorPhone,
+      this.coordinatorIdentificator,
+      this.tourSalesdateInitial,
+      this.tourSalesdateFinal,
+      this.tourSalesUuid,
+      this.tourCourse,
+      this.tourName,
+      this.tourYear,
+      this.isActive});
 
   // Método para convertir el objeto a un mapa (por ejemplo, para enviar en una solicitud HTTP)
   Map<String, dynamic> toMap() {
@@ -61,53 +62,54 @@ class ResponseAttorney {
       'tourCourse': tourCourse,
       'tourName': tourName,
       'tourYear': tourYear,
+      'isActive': isActive
     };
   }
 
   // Método para crear un objeto desde un mapa (por ejemplo, para recibir datos de una API)
   factory ResponseAttorney.fromMap(Map<String, dynamic> map) {
     return ResponseAttorney(
-      passengerId: map['passengerId'],
-      passengerName: map['passengerName'],
-      passengerApellidos: map['passengerApellidos'],
-      passengerIdentificacion: map['passengerIdentificacion'],
-      passengerDiet: map['passengerDiet'],
-      passengerEmail: map['passengerEmail'],
-      passengerBirthDate: map['passengerBirthDate'],
-      passengerGender: map['passengerGender'],
-      tourId: map['tourId'],
-      coordinatorName: map['coordinatorName'],
-      coordinatorPhone: map['coordinatorPhone'],
-      coordinatorIdentificator: map['coordinatorIdentificator'],
-      tourSalesdateInitial: map['tourSalesdateInitial'],
-      tourSalesdateFinal: map['tourSalesdateFinal'],
-      tourSalesUuid: map['tourSalesUuid'],
-      tourCourse: map['tourCourse'],
-      tourName: map['tourName'],
-      tourYear: map['tourYear'],
-    );
+        passengerId: map['passengerId'],
+        passengerName: map['passengerName'],
+        passengerApellidos: map['passengerApellidos'],
+        passengerIdentificacion: map['passengerIdentificacion'],
+        passengerDiet: map['passengerDiet'],
+        passengerEmail: map['passengerEmail'],
+        passengerBirthDate: map['passengerBirthDate'],
+        passengerGender: map['passengerGender'],
+        tourId: map['tourId'],
+        coordinatorName: map['coordinatorName'],
+        coordinatorPhone: map['coordinatorPhone'],
+        coordinatorIdentificator: map['coordinatorIdentificator'],
+        tourSalesdateInitial: map['tourSalesdateInitial'],
+        tourSalesdateFinal: map['tourSalesdateFinal'],
+        tourSalesUuid: map['tourSalesUuid'],
+        tourCourse: map['tourCourse'],
+        tourName: map['tourName'],
+        tourYear: map['tourYear'],
+        isActive: map['isActive']);
   }
 
   factory ResponseAttorney.fromJson(Map<String, dynamic> json) {
     return ResponseAttorney(
-      passengerId: json['passengerId'],
-      passengerName: json['passengerName'],
-      passengerApellidos: json['passengerApellidos'],
-      passengerIdentificacion: json['passengerIdentificacion'],
-      passengerDiet: json['passengerDiet'],
-      passengerEmail: json['passengerEmail'],
-      passengerBirthDate: json['passengerBirthDate'],
-      passengerGender: json['passengerGender'],
-      tourId: json['tourId'],
-      coordinatorName: json['coordinatorName'],
-      coordinatorPhone: json['coordinatorPhone'],
-      coordinatorIdentificator: json['coordinatorIdentificator'],
-      tourSalesdateInitial: json['tourSalesdateInitial'],
-      tourSalesdateFinal: json['tourSalesdateFinal'],
-      tourSalesUuid: json['tourSalesUuid'],
-      tourCourse: json['tourCourse'],
-      tourName: json['tourName'],
-      tourYear: json['tourYear'],
-    );
+        passengerId: json['passengerId'],
+        passengerName: json['passengerName'],
+        passengerApellidos: json['passengerApellidos'],
+        passengerIdentificacion: json['passengerIdentificacion'],
+        passengerDiet: json['passengerDiet'],
+        passengerEmail: json['passengerEmail'],
+        passengerBirthDate: json['passengerBirthDate'],
+        passengerGender: json['passengerGender'],
+        tourId: json['tourId'],
+        coordinatorName: json['coordinatorName'],
+        coordinatorPhone: json['coordinatorPhone'],
+        coordinatorIdentificator: json['coordinatorIdentificator'],
+        tourSalesdateInitial: json['tourSalesdateInitial'],
+        tourSalesdateFinal: json['tourSalesdateFinal'],
+        tourSalesUuid: json['tourSalesUuid'],
+        tourCourse: json['tourCourse'],
+        tourName: json['tourName'],
+        tourYear: json['tourYear'],
+        isActive: json['isActive']);
   }
 }

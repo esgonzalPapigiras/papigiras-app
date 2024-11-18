@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +14,12 @@ import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/attorney/viewProgram.dart';
 import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:qr/qr.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:quickalert/quickalert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 // Importa el paquete
 
@@ -24,6 +33,10 @@ class TravelPassengerDashboard extends StatefulWidget {
 
 class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  final usuarioProvider = new CoordinatorProviders();
+  String baseUrl =
+      "https://ms-papigiras-app-ezkbu.ondigitalocean.app/app/services/get/information/passenger?tourPassenger=";
 
   String formatDate(String date) {
     // Parsear la fecha en el formato original (yyyy-MM-dd)
@@ -141,18 +154,38 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
               },
             ),
             ListTile(
+              leading: Icon(Icons.desktop_access_disabled_outlined,
+                  color: Colors.teal),
+              title: Text(
+                'Desactivar Cuenta',
+                style: TextStyle(color: Colors.grey[800]),
+              ),
+              onTap: () {
+                QuickAlert.show(
+                  context: context,
+                  type: QuickAlertType
+                      .error, // Cambiar a 'error' para la cruz roja
+                  title: 'Eliminar Cuenta',
+                  text: 'Desactivar tu cuenta no te permitirá ingresar más',
+                  confirmBtnText: 'Continuar',
+                  onConfirmBtnTap: () {
+                    usuarioProvider.desactivateAccount(
+                        widget.login.passengerIdentificacion.toString());
+
+                    logoutUser(context); //Cierra el QuickAlert
+                  },
+                );
+                // Acción para cerrar sesión
+              },
+            ),
+            ListTile(
               leading: Icon(Icons.logout, color: Colors.teal),
               title: Text(
                 'Cerrar Sesión',
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LoginPassenger(),
-                  ),
-                );
+                logoutUser(context);
                 // Acción para cerrar sesión
               },
             ),
@@ -232,7 +265,24 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
                       ),
                       SizedBox(height: 8),
                       Divider(),
-                      SizedBox(height: 10),
+                      SizedBox(height: 100),
+                      Center(
+                        child: QrImageView(
+                          data: jsonEncode({
+                            "id": 20,
+                            "url": baseUrl + widget.login.passengerId.toString()
+                          }),
+                          size: 200,
+                          // You can include embeddedImageStyle Property if you
+                          //wanna embed an image from your Asset folder
+                          embeddedImageStyle: QrEmbeddedImageStyle(
+                            size: const Size(
+                              100,
+                              100,
+                            ),
+                          ),
+                        ),
+                      ),
                       SizedBox(height: 20),
                     ],
                   ),
@@ -242,6 +292,19 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
             // Sección inferior de botones
           ],
         ),
+      ),
+    );
+  }
+
+  void logoutUser(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+
+    // Redirigir al login o realizar otra acción
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginPassenger(),
       ),
     );
   }
