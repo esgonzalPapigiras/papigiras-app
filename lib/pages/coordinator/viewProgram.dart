@@ -9,8 +9,10 @@ import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ViewProgramCoordScreen extends StatefulWidget {
   final TourSales login;
@@ -27,6 +29,31 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
   final TextEditingController _enfermedadesController = TextEditingController();
   final TextEditingController _medicamentosController = TextEditingController();
   Future<ProgramViewDto>? _hitoDetailFuture;
+
+  void sendMessage({required String phone, required String message}) async {
+    final whatsappUrl =
+        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(
+        whatsappUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      print('No se puede abrir WhatsApp');
+      // Intenta con el esquema directo
+      final whatsappDirect = Uri.parse(
+          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
+      if (await canLaunchUrl(whatsappDirect)) {
+        await launchUrl(
+          whatsappDirect,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        throw 'WhatsApp no está instalado o no puede manejar la URL';
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -73,7 +100,10 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                // Acción para contactar agencia
+                sendMessage(
+                    phone: "+56944087015",
+                    message:
+                        "Hola! Necesito ayuda"); // Acción para contactar agencia
               },
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -91,7 +121,10 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                // Acción para reportar un problema
+                sendMessage(
+                    phone: "+56944087015",
+                    message:
+                        "Hola! Necesito ayuda"); // Acción para reportar un problema
               },
             ),
             ListTile(
@@ -101,7 +134,12 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                // Acción para cerrar sesión
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LoginCoordinator(),
+                  ),
+                );
               },
             ),
           ],

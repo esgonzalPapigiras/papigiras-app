@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
+import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/listPassenger.dart';
+import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/viewProgram.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TravelCoordinatorDashboard extends StatefulWidget {
   final TourSales login;
@@ -25,6 +28,31 @@ class _TravelCoordinatorDashboardState
     extends State<TravelCoordinatorDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final usuarioProvider = new CoordinatorProviders();
+
+  void sendMessage({required String phone, required String message}) async {
+    final whatsappUrl =
+        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(
+        whatsappUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      print('No se puede abrir WhatsApp');
+      // Intenta con el esquema directo
+      final whatsappDirect = Uri.parse(
+          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
+      if (await canLaunchUrl(whatsappDirect)) {
+        await launchUrl(
+          whatsappDirect,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        throw 'WhatsApp no está instalado o no puede manejar la URL';
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -93,6 +121,8 @@ class _TravelCoordinatorDashboardState
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
+                sendMessage(
+                    phone: "+56944087015", message: "Hola! Necesito ayuda");
                 // Acción para contactar agencia
               },
               trailing: Row(
@@ -111,7 +141,10 @@ class _TravelCoordinatorDashboardState
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                // Acción para reportar un problema
+                sendMessage(
+                    phone: "+56944087015",
+                    message:
+                        "Hola! Necesito ayuda"); // Acción para reportar un problema
               },
             ),
             ListTile(
@@ -121,7 +154,12 @@ class _TravelCoordinatorDashboardState
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                // Acción para cerrar sesión
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LoginCoordinator(),
+                  ),
+                );
               },
             ),
           ],

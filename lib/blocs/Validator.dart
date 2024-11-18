@@ -1,46 +1,39 @@
 import 'dart:async';
 
-class Validators {
+mixin Validators {
   final validarPass = StreamTransformer<String, String>.fromHandlers(
-      handleData: (password, sink) {
-    if (password.length >= 6) {
-      sink.add(password);
-    } else {
-      sink.addError('Escribir su contraseña nuevamente');
-    }
-  });
+    handleData: (password, sink) {
+      if (password.length >= 6) {
+        sink.add(password);
+      } else {
+        sink.addError('La contraseña debe tener al menos 6 caracteres.');
+      }
+    },
+  );
 
-  final validarcredencial = StreamTransformer<String, String>.fromHandlers(
-      handleData: (password, sink) {
-    if (password.length >= 1) {
-      sink.add(password);
-    } else {
-      sink.addError('Escribir sus Nombres y Apellidos');
-    }
-  });
+  final validarCorreo = StreamTransformer<String, String>.fromHandlers(
+    handleData: (correo, sink) {
+      final pattern = r'^[^<>()[\]\\.,;:\s@"]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
+      final regExp = RegExp(pattern);
 
-  final validarcorreo = StreamTransformer<String, String>.fromHandlers(
-      handleData: (correo, sink) {
-    Pattern pattern =
-        r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
-    RegExp regExp = new RegExp(pattern.toString());
+      if (regExp.hasMatch(correo)) {
+        sink.add(correo);
+      } else {
+        sink.addError('Escribir un correo válido.');
+      }
+    },
+  );
 
-    if (regExp.hasMatch(correo)) {
-      sink.add(correo);
-    } else {
-      sink.addError('Escribir correo valido');
-    }
-  });
+  final validarRut = StreamTransformer<String, String>.fromHandlers(
+    handleData: (rut, sink) {
+      final pattern = r'^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$';
+      final regExp = RegExp(pattern);
 
-  final validarRut =
-      StreamTransformer<String, String>.fromHandlers(handleData: (rut, sink) {
-    Pattern pattern = r'^([0-9]+-[0-9K])$';
-    RegExp regExp = new RegExp(pattern.toString());
-
-    if (regExp.hasMatch(rut)) {
-      sink.add(rut);
-    } else {
-      sink.addError('Escribir rut valido');
-    }
-  });
+      if (regExp.hasMatch(rut)) {
+        sink.add(rut);
+      } else {
+        sink.addError('Escribir un RUT válido (ejemplo: 12.345.678-K).');
+      }
+    },
+  );
 }

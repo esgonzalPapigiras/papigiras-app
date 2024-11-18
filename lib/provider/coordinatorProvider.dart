@@ -14,6 +14,7 @@ import 'package:papigiras_app/dto/ProgramViewDto.dart';
 import 'package:papigiras_app/dto/RequestActivities.dart';
 import 'package:papigiras_app/dto/binnacle.dart';
 import 'package:papigiras_app/dto/binnacleaddlist.dart';
+import 'package:papigiras_app/dto/positionMap.dart';
 import 'package:papigiras_app/dto/requestHito.dart';
 import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
@@ -541,6 +542,23 @@ class CoordinatorProviders with ChangeNotifier {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al visualizar el documento: $e')),
       );
+    }
+  }
+
+  Future<List<PositionMap>> positionMap(String tourCode) async {
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/get/binnacle-map', {'tourId': tourCode});
+    final resp = await http.get(url, headers: {
+      'Content-Type':
+          'application/json' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
+      return decorespoCreate
+          .map((job) => new PositionMap.fromJson(job))
+          .toList();
+    } else {
+      throw Exception('Failed to load services');
     }
   }
 }

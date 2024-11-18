@@ -7,6 +7,7 @@ import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnacledetailFather.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
+import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
@@ -16,6 +17,7 @@ import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BitacoraFatherScreen extends StatefulWidget {
   @override
@@ -43,6 +45,31 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
       setState(() {}); // Actualiza el estado para reconstruir la interfaz
     } catch (error) {
       print("Error al cargar los itinerarios: $error");
+    }
+  }
+
+  void sendMessage({required String phone, required String message}) async {
+    final whatsappUrl =
+        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(
+        whatsappUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      print('No se puede abrir WhatsApp');
+      // Intenta con el esquema directo
+      final whatsappDirect = Uri.parse(
+          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
+      if (await canLaunchUrl(whatsappDirect)) {
+        await launchUrl(
+          whatsappDirect,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        throw 'WhatsApp no está instalado o no puede manejar la URL';
+      }
     }
   }
 
@@ -86,17 +113,30 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
                 Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
               ],
             ),
-            onTap: () {},
+            onTap: () {
+              sendMessage(
+                  phone: "+56944087015", message: "Hola! Necesito ayuda");
+            },
           ),
           ListTile(
             leading: Icon(Icons.report_problem, color: Colors.teal),
             title: Text('Reportar un Problema'),
-            onTap: () {},
+            onTap: () {
+              sendMessage(
+                  phone: "+56944087015", message: "Hola! Necesito ayuda");
+            },
           ),
           ListTile(
             leading: Icon(Icons.logout, color: Colors.teal),
             title: Text('Cerrar Sesión'),
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LoginFather(),
+                ),
+              );
+            },
           ),
         ],
       ),

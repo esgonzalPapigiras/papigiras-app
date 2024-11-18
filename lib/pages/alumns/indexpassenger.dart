@@ -11,6 +11,7 @@ import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/attorney/viewProgram.dart';
 import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
+import 'package:url_launcher/url_launcher.dart';
 // Importa el paquete
 
 class TravelPassengerDashboard extends StatefulWidget {
@@ -32,6 +33,31 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
     String formattedDate = DateFormat('dd-MM-yyyy').format(parsedDate);
 
     return formattedDate;
+  }
+
+  void sendMessage({required String phone, required String message}) async {
+    final whatsappUrl =
+        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(
+        whatsappUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      print('No se puede abrir WhatsApp');
+      // Intenta con el esquema directo
+      final whatsappDirect = Uri.parse(
+          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
+      if (await canLaunchUrl(whatsappDirect)) {
+        await launchUrl(
+          whatsappDirect,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        throw 'WhatsApp no está instalado o no puede manejar la URL';
+      }
+    }
   }
 
   @override
@@ -90,7 +116,10 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
                 'Contactar Agencia',
                 style: TextStyle(color: Colors.grey[800]),
               ),
-              onTap: () {},
+              onTap: () {
+                sendMessage(
+                    phone: "+56944087015", message: "Hola! Necesito ayuda");
+              },
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -106,7 +135,10 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
                 'Reportar un Problema',
                 style: TextStyle(color: Colors.grey[800]),
               ),
-              onTap: () {},
+              onTap: () {
+                sendMessage(
+                    phone: "+56944087015", message: "Hola! Necesito ayuda");
+              },
             ),
             ListTile(
               leading: Icon(Icons.logout, color: Colors.teal),

@@ -10,7 +10,7 @@ class ValidateBloc2 with Validators {
 
   Stream<String> get rutStream => _rutController.stream.transform(validarRut);
   Stream<String> get correoStream =>
-      _correoController.stream.transform(validarcorreo);
+      _correoController.stream.transform(validarCorreo);
 
   Stream<bool> get formValidator =>
       CombineLatestStream.combine2(rutStream, correoStream, (a, b) => true);
@@ -18,11 +18,11 @@ class ValidateBloc2 with Validators {
   Function(String) get changerut => _rutController.sink.add;
   Function(String) get changeemail => _correoController.sink.add;
 
-  String get rut => _rutController.value;
-  String get correo => _correoController.value;
+  String get rut => _rutController.valueOrNull ?? '';
+  String get correo => _correoController.valueOrNull ?? '';
 
-  dispose() {
-    _rutController?.close();
-    _correoController?.close();
+  void dispose() {
+    _rutController.close();
+    _correoController.close();
   }
 }

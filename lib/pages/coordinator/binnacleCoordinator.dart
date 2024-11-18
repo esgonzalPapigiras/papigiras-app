@@ -9,9 +9,11 @@ import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/detailbinnacleCoodinator.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BitacoraCoordScreen extends StatefulWidget {
   @override
@@ -24,6 +26,31 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   List<ConsolidatedTourSalesDTO> itineraries = [];
   final usuarioProvider = new CoordinatorProviders();
+
+  void sendMessage({required String phone, required String message}) async {
+    final whatsappUrl =
+        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(
+        whatsappUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      print('No se puede abrir WhatsApp');
+      // Intenta con el esquema directo
+      final whatsappDirect = Uri.parse(
+          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
+      if (await canLaunchUrl(whatsappDirect)) {
+        await launchUrl(
+          whatsappDirect,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        throw 'WhatsApp no está instalado o no puede manejar la URL';
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -82,17 +109,30 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
                 Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
               ],
             ),
-            onTap: () {},
+            onTap: () {
+              sendMessage(
+                  phone: "+56944087015", message: "Hola! Necesito ayuda");
+            },
           ),
           ListTile(
             leading: Icon(Icons.report_problem, color: Colors.teal),
             title: Text('Reportar un Problema'),
-            onTap: () {},
+            onTap: () {
+              sendMessage(
+                  phone: "+56944087015", message: "Hola! Necesito ayuda");
+            },
           ),
           ListTile(
             leading: Icon(Icons.logout, color: Colors.teal),
             title: Text('Cerrar Sesión'),
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LoginCoordinator(),
+                ),
+              );
+            },
           ),
         ],
       ),

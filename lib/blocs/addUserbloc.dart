@@ -13,9 +13,9 @@ class AddUserBloc with Validators {
   Stream<String> get passwordStream =>
       _passwordController.stream.transform(validarPass);
   Stream<String> get credencialStream =>
-      _nombreApellidoController.stream.transform(validarcredencial);
+      _nombreApellidoController.stream.transform(validarPass);
   Stream<String> get correoStream =>
-      _correoController.stream.transform(validarcorreo);
+      _correoController.stream.transform(validarCorreo);
 
   Stream<bool> get formValidator => CombineLatestStream.combine4(rutStream,
       passwordStream, credencialStream, correoStream, (a, b, c, d) => true);

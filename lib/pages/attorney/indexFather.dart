@@ -4,10 +4,12 @@ import 'package:intl/intl.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
+import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/attorney/map.dart';
 import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/attorney/viewProgram.dart';
 import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TravelFatherDashboard extends StatefulWidget {
   final ResponseAttorney login;
@@ -27,6 +29,31 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
     String formattedDate = DateFormat('dd-MM-yyyy').format(parsedDate);
 
     return formattedDate;
+  }
+
+  void sendMessage({required String phone, required String message}) async {
+    final whatsappUrl =
+        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(
+        whatsappUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      print('No se puede abrir WhatsApp');
+      // Intenta con el esquema directo
+      final whatsappDirect = Uri.parse(
+          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
+      if (await canLaunchUrl(whatsappDirect)) {
+        await launchUrl(
+          whatsappDirect,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        throw 'WhatsApp no está instalado o no puede manejar la URL';
+      }
+    }
   }
 
   @override
@@ -86,7 +113,8 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                // Acción para contactar agencia
+                sendMessage(
+                    phone: "+56944087015", message: "Hola! Necesito ayuda");
               },
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -104,7 +132,8 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                // Acción para reportar un problema
+                sendMessage(
+                    phone: "+56944087015", message: "Hola! Necesito ayuda");
               },
             ),
             ListTile(
@@ -114,7 +143,12 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                 style: TextStyle(color: Colors.grey[800]),
               ),
               onTap: () {
-                // Acción para cerrar sesión
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LoginFather(),
+                  ),
+                );
               },
             ),
           ],
@@ -174,14 +208,16 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                             AssetImage('assets/profile.jpg'), // Foto del perfil
                       ),
                       SizedBox(height: 10),
-                      Text(
-                        widget.login.passengerName! +
-                            " " +
-                            widget.login.passengerApellidos!,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
+                      Center(
+                        child: Text(
+                          widget.login.passengerName! +
+                              " " +
+                              widget.login.passengerApellidos!,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
                         ),
                       ),
                       Text(
@@ -307,8 +343,10 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  MapScreen(login: widget.login),
+                              builder: (context) => MapScreen(
+                                login: widget.login,
+                                locations: [],
+                              ),
                             ),
                           );
                         },

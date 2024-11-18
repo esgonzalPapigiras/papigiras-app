@@ -6,6 +6,7 @@ import 'package:papigiras_app/dto/tourTripulation.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
+import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
@@ -13,6 +14,7 @@ import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BusCrewFatherScreen extends StatefulWidget {
   final ResponseAttorney login;
@@ -44,6 +46,31 @@ class _BusCrewFatherScreenState extends State<BusCrewFatherScreen> {
       setState(() {
         _isLoading = false; // Cambia el estado de carga
       });
+    }
+  }
+
+  void sendMessage({required String phone, required String message}) async {
+    final whatsappUrl =
+        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(
+        whatsappUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      print('No se puede abrir WhatsApp');
+      // Intenta con el esquema directo
+      final whatsappDirect = Uri.parse(
+          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
+      if (await canLaunchUrl(whatsappDirect)) {
+        await launchUrl(
+          whatsappDirect,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        throw 'WhatsApp no está instalado o no puede manejar la URL';
+      }
     }
   }
 
@@ -102,7 +129,10 @@ class _BusCrewFatherScreenState extends State<BusCrewFatherScreen> {
                 'Contactar Agencia',
                 style: TextStyle(color: Colors.grey[800]),
               ),
-              onTap: () {},
+              onTap: () {
+                sendMessage(
+                    phone: "+56944087015", message: "Hola! Necesito ayuda");
+              },
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -118,7 +148,10 @@ class _BusCrewFatherScreenState extends State<BusCrewFatherScreen> {
                 'Reportar un Problema',
                 style: TextStyle(color: Colors.grey[800]),
               ),
-              onTap: () {},
+              onTap: () {
+                sendMessage(
+                    phone: "+56944087015", message: "Hola! Necesito ayuda");
+              },
             ),
             ListTile(
               leading: Icon(Icons.logout, color: Colors.teal),
@@ -126,7 +159,14 @@ class _BusCrewFatherScreenState extends State<BusCrewFatherScreen> {
                 'Cerrar Sesión',
                 style: TextStyle(color: Colors.grey[800]),
               ),
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LoginFather(),
+                  ),
+                );
+              },
             ),
           ],
         ),

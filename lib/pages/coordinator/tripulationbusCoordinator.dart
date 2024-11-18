@@ -8,8 +8,10 @@ import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BusCrewCoorScreen extends StatefulWidget {
   final TourSales login;
@@ -25,6 +27,31 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
   List<TourTripulation> _tripulations = [];
   final usuarioProvider = CoordinatorProviders();
   bool _isLoading = true;
+
+  void sendMessage({required String phone, required String message}) async {
+    final whatsappUrl =
+        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(
+        whatsappUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      print('No se puede abrir WhatsApp');
+      // Intenta con el esquema directo
+      final whatsappDirect = Uri.parse(
+          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
+      if (await canLaunchUrl(whatsappDirect)) {
+        await launchUrl(
+          whatsappDirect,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        throw 'WhatsApp no está instalado o no puede manejar la URL';
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -99,7 +126,10 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                 'Contactar Agencia',
                 style: TextStyle(color: Colors.grey[800]),
               ),
-              onTap: () {},
+              onTap: () {
+                sendMessage(
+                    phone: "+56944087015", message: "Hola! Necesito ayuda");
+              },
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -115,7 +145,10 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                 'Reportar un Problema',
                 style: TextStyle(color: Colors.grey[800]),
               ),
-              onTap: () {},
+              onTap: () {
+                sendMessage(
+                    phone: "+56944087015", message: "Hola! Necesito ayuda");
+              },
             ),
             ListTile(
               leading: Icon(Icons.logout, color: Colors.teal),
@@ -123,7 +156,14 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                 'Cerrar Sesión',
                 style: TextStyle(color: Colors.grey[800]),
               ),
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LoginCoordinator(),
+                  ),
+                );
+              },
             ),
           ],
         ),

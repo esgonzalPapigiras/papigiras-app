@@ -4,9 +4,11 @@ import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
+import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MedicalRecordScreen extends StatefulWidget {
   final ResponseAttorney login;
@@ -22,6 +24,31 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
   final TextEditingController _alergiasController = TextEditingController();
   final TextEditingController _enfermedadesController = TextEditingController();
   final TextEditingController _medicamentosController = TextEditingController();
+
+  void sendMessage({required String phone, required String message}) async {
+    final whatsappUrl =
+        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(
+        whatsappUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      print('No se puede abrir WhatsApp');
+      // Intenta con el esquema directo
+      final whatsappDirect = Uri.parse(
+          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
+      if (await canLaunchUrl(whatsappDirect)) {
+        await launchUrl(
+          whatsappDirect,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        throw 'WhatsApp no está instalado o no puede manejar la URL';
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +109,8 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                   style: TextStyle(color: Colors.grey[800]),
                 ),
                 onTap: () {
-                  // Acción para contactar agencia
+                  sendMessage(
+                      phone: "+56944087015", message: "Hola! Necesito ayuda");
                 },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -100,7 +128,8 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                   style: TextStyle(color: Colors.grey[800]),
                 ),
                 onTap: () {
-                  // Acción para reportar un problema
+                  sendMessage(
+                      phone: "+56944087015", message: "Hola! Necesito ayuda");
                 },
               ),
               ListTile(
@@ -110,7 +139,12 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                   style: TextStyle(color: Colors.grey[800]),
                 ),
                 onTap: () {
-                  // Acción para cerrar sesión
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LoginFather(),
+                    ),
+                  );
                 },
               ),
             ],
