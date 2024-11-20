@@ -1,4 +1,4 @@
-package com.papigiras_app
+package com.papigirasApp
 
 import io.flutter.embedding.android.FlutterActivity
 
