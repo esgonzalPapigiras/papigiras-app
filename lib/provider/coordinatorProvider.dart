@@ -416,7 +416,7 @@ class CoordinatorProviders with ChangeNotifier {
       'Content-Type':
           'application/json' // Agregar el token en la cabecera de la solicitud
     });
-    if (resp.statusCode == 200) {
+    if (resp.body == true) {
       return true;
     } else {
       return false;
