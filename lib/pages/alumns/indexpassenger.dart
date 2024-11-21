@@ -104,15 +104,15 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Arancibia Carlos',
+                        '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 14,
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        '20.457.748-k',
+                        widget.login.passengerIdentificacion!,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.black,
@@ -247,20 +247,18 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
                       ),
                       SizedBox(height: 10),
                       Text(
-                        widget.login.passengerName! +
-                            " " +
-                            widget.login.passengerApellidos!,
+                        '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 14,
+                          color: Colors.black,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
                         ),
                       ),
                       Text(
                         widget.login.passengerIdentificacion!,
                         style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
+                          fontSize: 14,
+                          color: Colors.black,
                         ),
                       ),
                       SizedBox(height: 8),

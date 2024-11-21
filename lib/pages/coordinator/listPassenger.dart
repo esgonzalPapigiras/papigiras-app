@@ -81,7 +81,7 @@ class _ListPassengerCoordScreenState extends State<ListPassengerCoordScreen> {
       children: [
         Expanded(
           child: Text(
-            'Fichas Médicas',
+            'Listado Alumnos',
             textAlign:
                 TextAlign.center, // Centramos el texto dentro del Expanded
             style: TextStyle(

@@ -115,20 +115,11 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Arancibia Carlos',
+                        widget.login.tourTripulationNameId,
                         style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
+                            fontWeight: FontWeight.bold, fontSize: 10),
                       ),
-                      Text(
-                        '20.457.748-k',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
-                        ),
-                      ),
+                      Text(widget.login.tourTripulationIdentificationId),
                     ],
                   ),
                 ],

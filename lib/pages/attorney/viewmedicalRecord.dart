@@ -299,13 +299,12 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      widget.login.passengerName! +
-                                          " " +
-                                          widget.login.passengerApellidos!,
+                                      '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
                                       style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.grey[800]),
+                                        fontSize: 14,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     Text(
                                       widget.login.passengerIdentificacion!,

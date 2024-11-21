@@ -7,6 +7,7 @@ import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
+import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
@@ -199,10 +200,20 @@ class _DetalleBitacoraFatherScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Arancibia Carlos',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              Text('20.457.748-K'),
+              Text(
+                widget.login.passengerIdentificacion!,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                ),
+              ),
             ],
           ),
         ],
@@ -226,6 +237,22 @@ class _DetalleBitacoraFatherScreenState
       padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
       child: Row(
         children: [
+          Builder(
+            builder: (context) => IconButton(
+              icon: Icon(Icons.arrow_back,
+                  color: Colors.white, size: 30), // Flecha blanca
+              onPressed: () {
+                // Navegar a otra ruta cuando la flecha es presionada
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => BitacoraFatherScreen(
+                          login:
+                              widget.login)), // Reemplaza con la ruta deseada
+                );
+              },
+            ),
+          ),
           Spacer(),
           Image.asset(
             'assets/logo-letras-papigiras.png',

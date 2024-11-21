@@ -152,10 +152,10 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Arancibia Carlos',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                widget.login.tourTripulationNameId,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
               ),
-              Text('20.457.748-K'),
+              Text(widget.login.tourTripulationIdentificationId),
             ],
           ),
         ],

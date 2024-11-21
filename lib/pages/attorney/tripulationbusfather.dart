@@ -119,19 +119,16 @@ class _BusCrewFatherScreenState extends State<BusCrewFatherScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Arancibia Carlos',
+                        '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 14,
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        '20.457.748-k',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
-                        ),
+                        widget.login.passengerIdentificacion!,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),

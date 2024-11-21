@@ -181,10 +181,20 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Arancibia Carlos',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              Text('20.457.748-K'),
+              Text(
+                widget.login.passengerIdentificacion!,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                ),
+              ),
             ],
           ),
         ],

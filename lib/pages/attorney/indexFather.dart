@@ -104,15 +104,15 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Arancibia Carlos',
+                        '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 14,
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        '20.457.748-k',
+                        widget.login.passengerIdentificacion!,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.black,
@@ -247,9 +247,7 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                       SizedBox(height: 10),
                       Center(
                         child: Text(
-                          widget.login.passengerName! +
-                              " " +
-                              widget.login.passengerApellidos!,
+                          '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
