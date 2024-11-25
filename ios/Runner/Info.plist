@@ -38,7 +38,10 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Necesitamos acceso a tu ubicación para mostrar la dirección en tiempo real.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Necesitamos acceso a tus fotos para seleccionar una imagen.</string>
+	<string>Esta aplicación necesita acceso a la biblioteca de fotos para seleccionar imágenes y videos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Esta aplicación necesita permiso para guardar imágenes y videos en tu biblioteca de fotos.</string>
+
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

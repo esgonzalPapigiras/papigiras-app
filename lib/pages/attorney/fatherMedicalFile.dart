@@ -22,9 +22,67 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final usuarioProvider = new CoordinatorProviders();
+
+  final _formKey = GlobalKey<FormState>();
+
+  // Controladores de texto
+  final TextEditingController _nombreController = TextEditingController();
+  final TextEditingController _apellidoController = TextEditingController();
+  final TextEditingController _cursoController = TextEditingController();
+  final TextEditingController _colegioController = TextEditingController();
+  final TextEditingController _comunaController = TextEditingController();
+  final TextEditingController _rutController = TextEditingController();
+  final TextEditingController _nombreEmergenciaController =
+      TextEditingController();
+  final TextEditingController _relacionEmergenciaController =
+      TextEditingController();
+  final TextEditingController _telefonoEmergenciaController =
+      TextEditingController();
+  final TextEditingController _emailEmergenciaController =
+      TextEditingController();
+  final TextEditingController _especificarEnfermedadesController =
+      TextEditingController();
+  final TextEditingController _medicamento1Controller = TextEditingController();
+  final TextEditingController _dosis1Controller = TextEditingController();
+  final TextEditingController _medicamento2Controller = TextEditingController();
+  final TextEditingController _dosis2Controller = TextEditingController();
+  final TextEditingController _medicamentosEvitarController =
+      TextEditingController();
+  final TextEditingController _cuidadosEspecialesController =
+      TextEditingController();
+  final TextEditingController _firmaController = TextEditingController();
   final TextEditingController _alergiasController = TextEditingController();
   final TextEditingController _enfermedadesController = TextEditingController();
   final TextEditingController _medicamentosController = TextEditingController();
+
+  // Variables para seleccionar opciones
+  String? _grupoSanguineo;
+  String? _sexo;
+  bool _tieneFonasa = false;
+  bool _tieneIsapre = false;
+  String? _isapre;
+  bool _tieneEnfermedades = false;
+  bool _tomaMedicamentos = false;
+  bool _evitarMedicamentos = false;
+  bool _requiereCuidadosEspeciales = false;
+
+  DateTime? _fechaNacimiento;
+  DateTime? _fechaAutorizacion;
+
+  // Métodos de validación
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) return 'El correo es obligatorio';
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+    if (!emailRegex.hasMatch(value)) return 'Ingresa un correo válido';
+    return null;
+  }
+
+  String? _validateTelefono(String? value) {
+    if (value == null || value.isEmpty) return 'El teléfono es obligatorio';
+    final phoneRegex = RegExp(r'^[0-9]{9,12}$');
+    if (!phoneRegex.hasMatch(value)) return 'Ingresa un teléfono válido';
+    return null;
+  }
 
   void sendMessage({required String phone, required String message}) async {
     final whatsappUrl =
@@ -49,6 +107,12 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
         throw 'WhatsApp no está instalado o no puede manejar la URL';
       }
     }
+  }
+
+  String? _validateRut(String? value) {
+    if (value == null || value.isEmpty) return 'El RUT es obligatorio';
+    // Aquí puedes implementar una validación más avanzada de RUT chileno.
+    return null;
   }
 
   void logoutUser(BuildContext context) async {
@@ -191,22 +255,6 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
           ),
           child: Column(
             children: [
-              Builder(
-                builder: (context) => IconButton(
-                  icon: Icon(Icons.arrow_back,
-                      color: Colors.white, size: 30), // Flecha blanca
-                  onPressed: () {
-                    // Navegar a otra ruta cuando la flecha es presionada
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => TravelFatherDashboard(
-                              login: widget
-                                  .login)), // Reemplaza con la ruta deseada
-                    );
-                  },
-                ),
-              ),
               Padding(
                 padding: const EdgeInsets.symmetric(
                     vertical: 30.0, horizontal: 16.0),
@@ -298,62 +346,253 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                         SizedBox(height: 20),
                         Divider(),
                         SizedBox(height: 10),
-                        buildInfoSection('Alergias'),
-                        SizedBox(height: 10),
-                        buildInfoSectionEnfermedades('Enfermedades'),
-                        SizedBox(height: 10),
-                        buildInfoSectionMedicamentos('Medicamentos'),
-                        SizedBox(height: 20),
-                        // Botón Guardar Ficha Médica
-                        Center(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              RequestPassengerMedical medical =
-                                  RequestPassengerMedical(
-                                      alergias: _alergiasController.text,
-                                      enfermedades:
-                                          _enfermedadesController.text,
-                                      medicamentos:
-                                          _medicamentosController.text,
-                                      idPassenger: widget.login.passengerId!,
-                                      idTour: widget.login.tourId!);
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 1. DATOS DEL PASAJERO
+                              Text('1. Datos del Pasajero',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
+                              SizedBox(height: 10),
+                              _buildTextField(
+                                  'Nombres', _nombreController, null),
+                              _buildTextField(
+                                  'Apellidos', _apellidoController, null),
+                              _buildTextField('Curso', _cursoController, null),
+                              _buildTextField(
+                                  'Colegio', _colegioController, null),
+                              _buildTextField(
+                                  'Comuna', _comunaController, null),
+                              _buildTextField(
+                                  'RUT', _rutController, _validateRut),
+                              _buildDropdownField(
+                                'Grupo Sanguíneo',
+                                _grupoSanguineo,
+                                [
+                                  'A+',
+                                  'A-',
+                                  'B+',
+                                  'B-',
+                                  'AB+',
+                                  'AB-',
+                                  'O+',
+                                  'O-'
+                                ],
+                                (value) =>
+                                    setState(() => _grupoSanguineo = value),
+                              ),
+                              Divider(),
+                              SizedBox(height: 10),
 
-                              usuarioProvider.createMedicalRecord(medical);
-                              QuickAlert.show(
-                                context: context,
-                                type: QuickAlertType.success,
-                                title: 'Éxito',
-                                text: 'Ficha Médica Registrada',
-                                confirmBtnText: 'Continuar',
-                                onConfirmBtnTap: () {
-                                  Navigator.of(context)
-                                      .pop(); // Cierra el QuickAlert
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            TravelFatherDashboard(
-                                                login: widget.login)),
-                                  );
-                                },
-                              );
-                            },
-                            child: Text('Guardar Ficha Médica'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.teal,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 30,
-                                vertical: 15,
+                              // 2. CONTACTOS DE EMERGENCIA
+                              Text('2. Contactos de Emergencia',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
+                              _buildTextField('Nombre y Apellido',
+                                  _nombreEmergenciaController, null),
+                              _buildTextField('Relación con el Alumno(a)',
+                                  _relacionEmergenciaController, null),
+                              _buildTextField(
+                                  'Teléfono Celular',
+                                  _telefonoEmergenciaController,
+                                  _validateTelefono),
+                              _buildTextField('Correo Electrónico',
+                                  _emailEmergenciaController, _validateEmail),
+                              Divider(),
+                              SizedBox(height: 10),
+
+                              // 3. COBERTURA MÉDICA
+                              Text('3. Cobertura Médica',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
+                              _buildRadioGroup(
+                                '¿Tiene FONASA?',
+                                ['Sí', 'No'],
+                                _tieneFonasa ? 'Sí' : 'No',
+                                (value) => setState(
+                                    () => _tieneFonasa = value == 'Sí'),
                               ),
-                              textStyle: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                              _buildRadioGroup(
+                                '¿Tiene ISAPRE?',
+                                ['Sí', 'No'],
+                                _tieneIsapre ? 'Sí' : 'No',
+                                (value) => setState(() {
+                                  _tieneIsapre = value == 'Sí';
+                                  if (!_tieneIsapre) _isapre = null;
+                                }),
                               ),
-                            ),
+                              if (_tieneIsapre)
+                                _buildTextField('Especifique ISAPRE',
+                                    TextEditingController(), null),
+                              Divider(),
+                              SizedBox(height: 10),
+
+                              // 4. ANTECEDENTES MÉDICOS
+                              Text('4. Antecedentes Médicos',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
+                              _buildRadioGroup(
+                                '¿Tiene enfermedades crónicas o alergias?',
+                                ['Sí', 'No'],
+                                _tieneEnfermedades ? 'Sí' : 'No',
+                                (value) => setState(
+                                    () => _tieneEnfermedades = value == 'Sí'),
+                              ),
+                              if (_tieneEnfermedades)
+                                _buildTextField('Especifique',
+                                    _especificarEnfermedadesController, null),
+                              Divider(),
+                              SizedBox(height: 10),
+
+                              // 5. MEDICAMENTOS
+                              Text('5. Medicamentos',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
+                              _buildRadioGroup(
+                                '¿Toma medicamentos regularmente?',
+                                ['Sí', 'No'],
+                                _tomaMedicamentos ? 'Sí' : 'No',
+                                (value) => setState(
+                                    () => _tomaMedicamentos = value == 'Sí'),
+                              ),
+                              if (_tomaMedicamentos) ...[
+                                _buildTextField('Medicamento 1 (Nombre)',
+                                    _medicamento1Controller, null),
+                                _buildTextField(
+                                    'Dosis', _dosis1Controller, null),
+                                _buildTextField('Medicamento 2 (Nombre)',
+                                    _medicamento2Controller, null),
+                                _buildTextField(
+                                    'Dosis', _dosis2Controller, null),
+                              ],
+                              _buildRadioGroup(
+                                '¿Debe evitar algún medicamento?',
+                                ['Sí', 'No'],
+                                _evitarMedicamentos ? 'Sí' : 'No',
+                                (value) => setState(
+                                    () => _evitarMedicamentos = value == 'Sí'),
+                              ),
+                              if (_evitarMedicamentos)
+                                _buildTextField('Especifique',
+                                    _medicamentosEvitarController, null),
+                              Divider(),
+                              SizedBox(height: 10),
+
+                              // Botón Guardar
+                              Center(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    if (_formKey.currentState!.validate()) {
+                                      // Construir el objeto para enviar
+                                      RequestPassengerMedical medical =
+                                          RequestPassengerMedical(
+                                              nombres: _nombreController.text,
+                                              apellidos:
+                                                  _apellidoController.text,
+                                              curso: _cursoController.text,
+                                              colegio: _colegioController.text,
+                                              comuna: _comunaController.text,
+                                              rut: _rutController.text,
+                                              grupoSanguineo:
+                                                  _grupoSanguineo ?? '',
+                                              contactoEmergenciaNombre:
+                                                  _nombreEmergenciaController
+                                                      .text,
+                                              contactoEmergenciaRelacion:
+                                                  _relacionEmergenciaController
+                                                      .text,
+                                              contactoEmergenciaTelefono:
+                                                  _telefonoEmergenciaController
+                                                      .text,
+                                              contactoEmergenciaEmail:
+                                                  _emailEmergenciaController
+                                                      .text,
+                                              tieneFonasa: _tieneFonasa,
+                                              tieneIsapre: _tieneIsapre,
+                                              isapre:
+                                                  _tieneIsapre ? _isapre : null,
+                                              tieneEnfermedades:
+                                                  _tieneEnfermedades,
+                                              enfermedades: _tieneEnfermedades
+                                                  ? _especificarEnfermedadesController
+                                                      .text
+                                                  : null,
+                                              tomaMedicamentos:
+                                                  _tomaMedicamentos,
+                                              medicamentos: _tomaMedicamentos
+                                                  ? [
+                                                      {
+                                                        'nombre':
+                                                            _medicamento1Controller
+                                                                .text,
+                                                        'dosis':
+                                                            _dosis1Controller
+                                                                .text,
+                                                      },
+                                                      {
+                                                        'nombre':
+                                                            _medicamento2Controller
+                                                                .text,
+                                                        'dosis':
+                                                            _dosis2Controller
+                                                                .text,
+                                                      }
+                                                    ]
+                                                  : [],
+                                              evitarMedicamentos:
+                                                  _evitarMedicamentos,
+                                              medicamentosEvitar:
+                                                  _evitarMedicamentos
+                                                      ? _medicamentosEvitarController
+                                                          .text
+                                                      : null,
+                                              requiereCuidadosEspeciales:
+                                                  _requiereCuidadosEspeciales,
+                                              cuidadosEspeciales:
+                                                  _requiereCuidadosEspeciales
+                                                      ? _cuidadosEspecialesController
+                                                          .text
+                                                      : null,
+                                              fechaNacimiento:
+                                                  _fechaNacimiento ??
+                                                      DateTime.now(),
+                                              fechaAutorizacion:
+                                                  _fechaAutorizacion ??
+                                                      DateTime.now(),
+                                              idPassenger:
+                                                  widget.login.passengerId!,
+                                              idTour: widget.login.tourId!);
+
+                                      showMedicalAuthorization(
+                                          context, medical);
+                                    }
+                                  },
+                                  child: Text('Guardar Ficha Médica'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.teal,
+                                    foregroundColor: Colors.white,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 30,
+                                      vertical: 15,
+                                    ),
+                                    textStyle: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 20),
+                            ],
                           ),
                         ),
-                        SizedBox(height: 20),
                       ],
                     ),
                   ),
@@ -376,6 +615,48 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
             ],
           ),
         ));
+  }
+
+  void showMedicalAuthorization(
+      BuildContext context, RequestPassengerMedical medical) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.confirm,
+      title: 'AUTORIZACIÓN MÉDICA',
+      text:
+          'Autorizo a los encargados del viaje y a los servicios médicos correspondientes a realizar procedimientos médicos de urgencia en caso de ser necesario.',
+      confirmBtnText: 'Sí',
+      cancelBtnText: 'No',
+      confirmBtnColor: Colors.teal,
+      onConfirmBtnTap: () {
+        // Acción si el usuario selecciona "Sí"
+        Navigator.of(context).pop(); // Cierra el QuickAlert
+
+        usuarioProvider.createMedicalRecord(medical).then((response) {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.success,
+            title: 'Éxito',
+            text: 'Ficha Médica Registrada',
+            confirmBtnText: 'Continuar',
+            onConfirmBtnTap: () {
+              Navigator.of(context).pop(); // Cierra el QuickAlert
+            },
+          );
+        }).catchError((error) {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: 'Error',
+            text: 'No se pudo registrar la ficha médica',
+          );
+        });
+      },
+      onCancelBtnTap: () {
+        // Acción si el usuario selecciona "No" (opcional)
+        Navigator.of(context).pop(); // Cierra el QuickAlert
+      },
+    );
   }
 
   Widget buildInfoSection(String title) {
@@ -549,6 +830,72 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      String? Function(String?)? validator,
+      {TextInputType keyboardType = TextInputType.text}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 5),
+        TextFormField(
+          controller: controller,
+          validator: validator,
+          keyboardType: keyboardType,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Escribe aquí...',
+          ),
+        ),
+        SizedBox(height: 15),
+      ],
+    );
+  }
+
+  Widget _buildDropdownField(String label, String? value, List<String> options,
+      ValueChanged<String?> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 5),
+        DropdownButtonFormField<String>(
+          value: value,
+          items: options
+              .map((option) => DropdownMenuItem(
+                    value: option,
+                    child: Text(option),
+                  ))
+              .toList(),
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: 15),
+      ],
+    );
+  }
+
+  Widget _buildRadioGroup(String label, List<String> options,
+      String? groupValue, ValueChanged<String?> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+        ...options.map((option) {
+          return RadioListTile<String>(
+            value: option,
+            groupValue: groupValue,
+            title: Text(option),
+            onChanged: onChanged,
+          );
+        }).toList(),
+        SizedBox(height: 15),
+      ],
     );
   }
 }

@@ -140,20 +140,26 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
   // Permiso para acceder a la galería
   Future<void> requestPermissions() async {
     // Solicitar permiso para acceder a las fotos
-    PermissionStatus status = await Permission.photos.request();
+    PermissionStatus status = await Permission.photos.status;
 
     if (status.isGranted) {
-      // Si el permiso es concedido, se ejecuta la acción para elegir una imagen
-      print("Permiso para acceder a la galería concedido");
+      // Permiso ya concedido, procede con la acción
+      print("Permiso ya concedido para acceder a la galería");
       await pickImage();
-    } else if (status.isPermanentlyDenied) {
-      openAppSettings();
-      // Si el permiso es denegado
-      print("Permiso para acceder a la galería denegado");
     } else if (status.isDenied) {
-      // Si el permiso es denegado permanentemente, muestra una ventana para ir a la configuración
-      print("Permiso para acceder a la galería denegado permanentemente");
-      // Permite abrir la configuración de la app
+      // Si el permiso está denegado, solicita el permiso
+      PermissionStatus newStatus = await Permission.photos.request();
+      if (newStatus.isGranted) {
+        print("Permiso concedido tras solicitarlo");
+        await pickImage();
+      } else {
+        print("Permiso denegado tras solicitarlo");
+      }
+    } else if (status.isPermanentlyDenied) {
+      // Si está denegado permanentemente, dirige al usuario a la configuración
+      print(
+          "Permiso permanentemente denegado, solicita al usuario ir a configuración");
+      openAppSettings();
     }
   }
 

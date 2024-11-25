@@ -18,27 +18,38 @@ class _LoginPassengerState extends State<LoginPassenger> {
   final TextEditingController _passwordController = TextEditingController();
   bool _showError = false;
   bool _showErrorTwo = false;
+  bool _isPasswordHidden = true;
 
-  String formatRut(String rut) {
-    // Eliminar todo lo que no sea un número ni la letra 'K'
-    rut = rut.replaceAll(RegExp(r'[^0-9kK]'), '');
+  @override
+  void initState() {
+    super.initState();
+    _userController.addListener(() {
+      setState(() {
+        _showError = false; // Resetea el error cuando cambia el texto
+      });
+    });
+  }
 
-    if (rut.length > 1) {
-      final length = rut.length;
-      // Formatear el RUT con puntos cada 3 dígitos
-      String formatted = '${rut.substring(0, length - 1).replaceAllMapped(
-            RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]}.',
-          )}';
-      // Agregar el guion al final
-      if (rut.length > 7) {
-        formatted = '$formatted-${rut[length - 1]}';
-      } else {
-        formatted = '$formatted${rut[length - 1]}';
+  @override
+  void dispose() {
+    _userController.dispose();
+    super.dispose();
+  }
+
+  String _formatRut(String text) {
+    text = text.replaceAll(RegExp(r'[^0-9kK]'), '');
+    if (text.isEmpty) return '';
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      if (i == text.length - 1) {
+        buffer.write('-'); // Añade el guion antes del dígito verificador.
+      } else if ((text.length - i - 1) % 3 == 0 && i != text.length - 2) {
+        buffer.write('.'); // Añade puntos cada tres dígitos.
       }
-      return formatted;
+      buffer.write(text[i]);
     }
-    return rut;
+    return buffer.toString();
   }
 
   @override
@@ -117,20 +128,14 @@ class _LoginPassengerState extends State<LoginPassenger> {
                             borderRadius: BorderRadius.circular(10.0),
                           ),
                         ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(
-                              12), // Limitar a la longitud del RUT con puntos
-                          TextInputFormatter.withFunction(
-                            (oldValue, newValue) {
-                              // Formatear el texto con puntos y guion mientras se escribe
-                              String formatted = newValue.text;
-                              return newValue.copyWith(text: formatted);
-                            },
-                          ),
-                        ],
+                        keyboardType: TextInputType.text,
                         onChanged: (value) {
                           setState(() {
+                            _userController.text = _formatRut(value);
+                            _userController.selection =
+                                TextSelection.fromPosition(
+                              TextPosition(offset: _userController.text.length),
+                            );
                             _showError = false; // Oculta el error al escribir
                           });
                         },
@@ -146,6 +151,8 @@ class _LoginPassengerState extends State<LoginPassenger> {
                       SizedBox(height: 20.0),
                       TextField(
                         controller: _passwordController,
+                        obscureText:
+                            _isPasswordHidden, // Oculta el texto si es true
                         decoration: InputDecoration(
                           labelText: 'Contraseña',
                           labelStyle: TextStyle(color: Colors.grey),
@@ -161,6 +168,19 @@ class _LoginPassengerState extends State<LoginPassenger> {
                                     _showErrorTwo ? Colors.red : Colors.teal),
                             borderRadius: BorderRadius.circular(10.0),
                           ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordHidden
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordHidden =
+                                    !_isPasswordHidden; // Alterna visibilidad
+                              });
+                            },
+                          ),
                         ),
                         onChanged: (value) {
                           setState(() {
@@ -169,14 +189,6 @@ class _LoginPassengerState extends State<LoginPassenger> {
                           });
                         },
                       ),
-                      if (_showErrorTwo)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 5.0),
-                          child: Text(
-                            'Debes ingresar la contraseña',
-                            style: TextStyle(color: Colors.red, fontSize: 12.0),
-                          ),
-                        ),
                       SizedBox(height: 30.0),
                       ElevatedButton(
                         onPressed: () async {

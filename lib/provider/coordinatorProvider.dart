@@ -366,9 +366,19 @@ class CoordinatorProviders with ChangeNotifier {
         return appDocDir?.path ?? '';
       }
     } else if (Platform.isIOS) {
-      // En iOS, puedes usar el directorio de documentos
-      Directory? appDocDir = await getApplicationDocumentsDirectory();
-      return appDocDir.path;
+      // En iOS, usamos el directorio de documentos accesible a través de Archivos
+      Directory appSupportDir = await getApplicationDocumentsDirectory();
+
+      // Ruta accesible en "Archivos" de iOS
+      String sharedPath = appSupportDir.path;
+
+      // Aseguramos que existe el directorio
+      Directory sharedDir = Directory(sharedPath);
+      if (!await sharedDir.exists()) {
+        await sharedDir.create(recursive: true);
+      }
+
+      return sharedDir.path;
     }
     return '';
   }
