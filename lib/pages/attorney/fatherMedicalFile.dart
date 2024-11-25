@@ -42,6 +42,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
       TextEditingController();
   final TextEditingController _especificarEnfermedadesController =
       TextEditingController();
+  final TextEditingController _isapreController = TextEditingController();
   final TextEditingController _medicamento1Controller = TextEditingController();
   final TextEditingController _dosis1Controller = TextEditingController();
   final TextEditingController _medicamento2Controller = TextEditingController();
@@ -109,22 +110,38 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
     }
   }
 
-  String? _validateRut(String? value) {
-    if (value == null || value.isEmpty) return 'El RUT es obligatorio';
-    // Aquí puedes implementar una validación más avanzada de RUT chileno.
-    return null;
+  String? _formatRut(String? text) {
+    if (text == null || text.isEmpty)
+      return null; // Manejo de entrada nula o vacía
+
+    // Eliminar cualquier carácter que no sea un número o 'k'/'K'
+    text = text.replaceAll(RegExp(r'[^0-9kK]'), '');
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      if (i == text.length - 1) {
+        // Añade el guion antes del dígito verificador
+        buffer.write('-');
+      } else if ((text.length - i - 1) % 3 == 0 && i != text.length - 2) {
+        // Añade un punto cada tres dígitos antes del guion
+        buffer.write('.');
+      }
+      buffer.write(text[i]);
+    }
+
+    return buffer.toString();
   }
 
   void logoutUser(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+    await prefs.clear(); // Borrar el estado de la sesión
 
     // Redirigir al login o realizar otra acción
-    Navigator.pushReplacement(
+    Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (context) => LoginFather(),
-      ),
+      MaterialPageRoute(builder: (context) => LoginFather()),
+      (route) =>
+          false, // Esto elimina todas las rutas anteriores de la pila de navegación
     );
   }
 
@@ -366,8 +383,18 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                                   'Colegio', _colegioController, null),
                               _buildTextField(
                                   'Comuna', _comunaController, null),
-                              _buildTextField(
-                                  'RUT', _rutController, _validateRut),
+                              _buildTextFieldRut(
+                                'RUT',
+                                _rutController,
+                                (value) {
+                                  // Aquí puedes incluir validación adicional si es necesario
+                                  if (value == null || value.isEmpty)
+                                    return 'El RUT es obligatorio';
+                                  return null;
+                                },
+                                keyboardType: TextInputType.text,
+                                formatter: _formatRut,
+                              ),
                               _buildDropdownField(
                                 'Grupo Sanguíneo',
                                 _grupoSanguineo,
@@ -428,7 +455,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                               ),
                               if (_tieneIsapre)
                                 _buildTextField('Especifique ISAPRE',
-                                    TextEditingController(), null),
+                                    _isapreController, null),
                               Divider(),
                               SizedBox(height: 10),
 
@@ -516,8 +543,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                                                       .text,
                                               tieneFonasa: _tieneFonasa,
                                               tieneIsapre: _tieneIsapre,
-                                              isapre:
-                                                  _tieneIsapre ? _isapre : null,
+                                              isapre: _isapreController.text,
                                               tieneEnfermedades:
                                                   _tieneEnfermedades,
                                               enfermedades: _tieneEnfermedades
@@ -849,6 +875,44 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
             border: OutlineInputBorder(),
             hintText: 'Escribe aquí...',
           ),
+        ),
+        SizedBox(height: 15),
+      ],
+    );
+  }
+
+  Widget _buildTextFieldRut(
+    String label,
+    TextEditingController controller,
+    String? Function(String?)? validator, {
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String)? formatter, // Función para formatear el texto
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 5),
+        TextFormField(
+          controller: controller,
+          validator: validator,
+          keyboardType: keyboardType,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Escribe aquí...',
+          ),
+          onChanged: (value) {
+            if (formatter != null) {
+              final formattedValue = formatter(value);
+              if (formattedValue != null && formattedValue != controller.text) {
+                controller.value = TextEditingValue(
+                  text: formattedValue,
+                  selection:
+                      TextSelection.collapsed(offset: formattedValue.length),
+                );
+              }
+            }
+          },
         ),
         SizedBox(height: 15),
       ],

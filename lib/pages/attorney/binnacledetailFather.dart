@@ -107,14 +107,14 @@ class _DetalleBitacoraFatherScreenState
 
   void logoutUser(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+    await prefs.clear(); // Borrar el estado de la sesión
 
     // Redirigir al login o realizar otra acción
-    Navigator.pushReplacement(
+    Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (context) => LoginFather(),
-      ),
+      MaterialPageRoute(builder: (context) => LoginFather()),
+      (route) =>
+          false, // Esto elimina todas las rutas anteriores de la pila de navegación
     );
   }
 

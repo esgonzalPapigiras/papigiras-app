@@ -202,6 +202,15 @@ class _LoginFatherState extends State<LoginFather> {
                                     _userController.text,
                                     _passwordController.text);
                             if (login != null && login.isActive!) {
+                              SharedPreferences prefs =
+                                  await SharedPreferences.getInstance();
+                              prefs.setString('token', login.tokenKey!);
+                              final now = DateTime.now();
+                              final expiryDate = now.add(Duration(
+                                  days:
+                                      3)); // Fecha de expiración: 3 días a partir de ahora
+                              await prefs.setString(
+                                  'tokenExpiry', expiryDate.toIso8601String());
                               // Si login tiene datos, muestra QuickAlert de éxito y navega a la siguiente pantalla
                               QuickAlert.show(
                                 context: context,

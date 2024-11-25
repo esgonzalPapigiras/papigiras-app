@@ -121,7 +121,14 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                               onConfirmBtnTap: () async {
                                 SharedPreferences prefs =
                                     await SharedPreferences.getInstance();
-                                await prefs.setBool('isLoggedIn', true);
+                                prefs.setString('token', login.tokenKey);
+                                final now = DateTime.now();
+                                final expiryDate = now.add(Duration(
+                                    days:
+                                        3)); // Fecha de expiración: 3 días a partir de ahora
+                                await prefs.setString('tokenExpiry',
+                                    expiryDate.toIso8601String());
+
                                 Navigator.of(context)
                                     .pop(); // Cierra el QuickAlert
                                 Navigator.push(

@@ -8,32 +8,35 @@ class TourSales {
   final String tourTripulationNameId;
   final String tourTripulationIdentificationId;
   final Map<String, int> passengerCountsBySex;
+  final String tokenKey;
 
-  TourSales({
-    required this.tourSalesId,
-    required this.tourSalesInit,
-    required this.tourSalesFinal,
-    required this.nameClient,
-    required this.courseClient,
-    required this.seasonClient,
-    required this.tourTripulationNameId,
-    required this.tourTripulationIdentificationId,
-    required this.passengerCountsBySex,
-  });
+  TourSales(
+      {required this.tourSalesId,
+      required this.tourSalesInit,
+      required this.tourSalesFinal,
+      required this.nameClient,
+      required this.courseClient,
+      required this.seasonClient,
+      required this.tourTripulationNameId,
+      required this.tourTripulationIdentificationId,
+      required this.passengerCountsBySex,
+      required this.tokenKey});
 
   // Método para crear una instancia de TourSales desde un JSON
   factory TourSales.fromJson(Map<String, dynamic> json) {
     return TourSales(
-      tourSalesId: json['tourSalesId'],
-      tourSalesInit: json['tourSalesInit'],
-      tourSalesFinal: json['tourSalesFinal'],
-      nameClient: json['nameClient'],
-      courseClient: json['courseClient'],
-      seasonClient: json['seasonClient'],
-      tourTripulationNameId: json['tourTripulationNameId'],
-      tourTripulationIdentificationId: json['tourTripulationIdentificationId'],
-      passengerCountsBySex: Map<String, int>.from(json['passengerCountsBySex']),
-    );
+        tourSalesId: json['tourSalesId'],
+        tourSalesInit: json['tourSalesInit'],
+        tourSalesFinal: json['tourSalesFinal'],
+        nameClient: json['nameClient'],
+        courseClient: json['courseClient'],
+        seasonClient: json['seasonClient'],
+        tourTripulationNameId: json['tourTripulationNameId'],
+        tourTripulationIdentificationId:
+            json['tourTripulationIdentificationId'],
+        passengerCountsBySex:
+            Map<String, int>.from(json['passengerCountsBySex']),
+        tokenKey: json['tokenKey']);
   }
 
   // Método para convertir una instancia de TourSales a JSON
@@ -48,6 +51,7 @@ class TourSales {
       'tourTripulationNameId': tourTripulationNameId,
       'tourTripulationIdentificationId': tourTripulationIdentificationId,
       'passengerCountsBySex': passengerCountsBySex,
+      'tokenKey': tokenKey
     };
   }
 }

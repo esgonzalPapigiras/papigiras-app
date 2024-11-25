@@ -18,6 +18,7 @@ class ResponseAttorney {
   final String? tourName;
   final int? tourYear;
   final bool? isActive;
+  final String? tokenKey;
 
   // Constructor con parámetros
   ResponseAttorney(
@@ -39,7 +40,8 @@ class ResponseAttorney {
       this.tourCourse,
       this.tourName,
       this.tourYear,
-      this.isActive});
+      this.isActive,
+      this.tokenKey});
 
   // Método para convertir el objeto a un mapa (por ejemplo, para enviar en una solicitud HTTP)
   Map<String, dynamic> toMap() {
@@ -62,7 +64,8 @@ class ResponseAttorney {
       'tourCourse': tourCourse,
       'tourName': tourName,
       'tourYear': tourYear,
-      'isActive': isActive
+      'isActive': isActive,
+      'tokenKey': tokenKey
     };
   }
 
@@ -87,7 +90,8 @@ class ResponseAttorney {
         tourCourse: map['tourCourse'],
         tourName: map['tourName'],
         tourYear: map['tourYear'],
-        isActive: map['isActive']);
+        isActive: map['isActive'],
+        tokenKey: map['tokenKey']);
   }
 
   factory ResponseAttorney.fromJson(Map<String, dynamic> json) {
@@ -110,6 +114,7 @@ class ResponseAttorney {
         tourCourse: json['tourCourse'],
         tourName: json['tourName'],
         tourYear: json['tourYear'],
-        isActive: json['isActive']);
+        isActive: json['isActive'],
+        tokenKey: json['tokenKey']);
   }
 }

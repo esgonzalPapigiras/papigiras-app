@@ -40,7 +40,7 @@ class RequestPassengerMedical {
       required this.contactoEmergenciaEmail,
       required this.tieneFonasa,
       required this.tieneIsapre,
-      this.isapre,
+      required this.isapre,
       required this.tieneEnfermedades,
       this.enfermedades,
       required this.tomaMedicamentos,

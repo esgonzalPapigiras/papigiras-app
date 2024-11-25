@@ -28,17 +28,27 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
   bool _isAscending = true; // Bandera para ordenación
   List<PassengerList> pasajeros = [];
   final usuarioProvider = CoordinatorProviders();
+
   void logoutUser(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false); // Borrar el estado de la sesión
+    await prefs.clear(); // Borrar el estado de la sesión
 
     // Redirigir al login o realizar otra acción
-    Navigator.pushReplacement(
+    Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (context) => LoginCoordinator(),
-      ),
+      MaterialPageRoute(builder: (context) => LoginCoordinator()),
+      (route) =>
+          false, // Esto elimina todas las rutas anteriores de la pila de navegación
     );
+  }
+
+  Future<bool> isSessionValid() async {
+    final prefs = await SharedPreferences.getInstance();
+    final expiryDateString = prefs.getString('expiryDate');
+    if (expiryDateString == null) return false;
+
+    final expiryDate = DateTime.parse(expiryDateString);
+    return DateTime.now().isBefore(expiryDate);
   }
 
   @override

@@ -179,6 +179,8 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
     }
   }
 
+  bool _isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -222,62 +224,110 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
               SizedBox(height: 24),
               Center(
                 child: ElevatedButton(
-                  onPressed: () async {
-                    // Validaciones de los campos
-                    if (tituloController.text.isEmpty ||
-                        descripcionController.text.isEmpty ||
-                        notaCierreController.text.isEmpty) {
-                      QuickAlert.show(
-                        context: context,
-                        type: QuickAlertType.error,
-                        title: 'Error',
-                        text: 'Por favor complete todos los campos',
-                        confirmBtnText: 'OK',
-                        onConfirmBtnTap: () {
-                          Navigator.of(context).pop(); // Cierra el QuickAlert
-                        },
-                      );
-                      return;
-                    }
+                  onPressed: _isLoading
+                      ? null // Deshabilitar el botón si está en estado de carga
+                      : () async {
+                          // Cambiar el estado a cargando
+                          setState(() {
+                            _isLoading = true;
+                          });
 
-                    // Crear el objeto RequestHito
-                    RequestHito hito = RequestHito(
-                      titulo: tituloController.text,
-                      descripcion: descripcionController.text,
-                      ubicacion: _location,
-                      notaCierre: notaCierreController.text,
-                      latitud: position.latitude.toString(),
-                      longitud: position.longitude.toString(),
-                      hora: _formattedTime,
-                      idTour: widget.login.tourSalesId,
-                    );
-
-                    // Llamada al método para agregar el Hito
-                    var consolidate = await usuarioProvider.addHito(hito);
-                    if (consolidate != null) {
-                      await usuarioProvider.addHitoFoto(
-                          consolidate.binnacleDetailId,
-                          widget.login.tourSalesId.toString(),
-                          _imageFiles);
-                      QuickAlert.show(
-                        context: context,
-                        type: QuickAlertType.success,
-                        title: 'Éxito',
-                        text: 'Hito agregado con éxito',
-                        confirmBtnText: 'Continuar',
-                        onConfirmBtnTap: () {
-                          Navigator.of(context).pop(); // Cierra el QuickAlert
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TravelCoordinatorDashboard(
-                                  login: widget.login),
-                            ),
+                          // Mostrar el mensaje de "Cargando"
+                          QuickAlert.show(
+                            context: context,
+                            type: QuickAlertType.loading,
+                            title: 'Estamos cargando',
+                            text: 'Por favor espere un momento',
                           );
+
+                          // Validaciones de los campos
+                          if (tituloController.text.isEmpty ||
+                              descripcionController.text.isEmpty ||
+                              notaCierreController.text.isEmpty) {
+                            Navigator.of(context).pop(); // Cierra el QuickAlert
+                            QuickAlert.show(
+                              context: context,
+                              type: QuickAlertType.error,
+                              title: 'Error',
+                              text: 'Por favor complete todos los campos',
+                              confirmBtnText: 'OK',
+                              onConfirmBtnTap: () {
+                                Navigator.of(context)
+                                    .pop(); // Cierra el QuickAlert
+                              },
+                            );
+                            setState(() {
+                              _isLoading =
+                                  false; // Habilitar el botón nuevamente
+                            });
+                            return;
+                          }
+
+                          // Crear el objeto RequestHito
+                          RequestHito hito = RequestHito(
+                            titulo: tituloController.text,
+                            descripcion: descripcionController.text,
+                            ubicacion: _location,
+                            notaCierre: notaCierreController.text,
+                            latitud: position.latitude.toString(),
+                            longitud: position.longitude.toString(),
+                            hora: _formattedTime,
+                            idTour: widget.login.tourSalesId,
+                          );
+
+                          // Simular un retraso de 20 segundos
+                          await Future.delayed(Duration(seconds: 20));
+
+                          // Llamada al método para agregar el Hito
+                          var consolidate = await usuarioProvider.addHito(hito);
+                          if (consolidate != null) {
+                            await usuarioProvider.addHitoFoto(
+                                consolidate.binnacleDetailId,
+                                widget.login.tourSalesId.toString(),
+                                _imageFiles);
+                            Navigator.of(context)
+                                .pop(); // Cierra el QuickAlert de "Cargando"
+                            QuickAlert.show(
+                              context: context,
+                              type: QuickAlertType.success,
+                              title: 'Éxito',
+                              text: 'Hito agregado con éxito',
+                              confirmBtnText: 'Continuar',
+                              onConfirmBtnTap: () {
+                                Navigator.of(context)
+                                    .pop(); // Cierra el QuickAlert
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        TravelCoordinatorDashboard(
+                                            login: widget.login),
+                                  ),
+                                );
+                              },
+                            );
+                          } else {
+                            Navigator.of(context)
+                                .pop(); // Cierra el QuickAlert de "Cargando"
+                            QuickAlert.show(
+                              context: context,
+                              type: QuickAlertType.error,
+                              title: 'Error',
+                              text:
+                                  'No se pudo agregar el hito, intente nuevamente',
+                              confirmBtnText: 'OK',
+                              onConfirmBtnTap: () {
+                                Navigator.of(context)
+                                    .pop(); // Cierra el QuickAlert
+                              },
+                            );
+                          }
+
+                          // Habilitar el botón después de completar la operación
+                          setState(() {
+                            _isLoading = false;
+                          });
                         },
-                      );
-                    }
-                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF3AC5C9),
                     padding: EdgeInsets.symmetric(horizontal: 60, vertical: 12),
@@ -285,10 +335,19 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: Text(
-                    'Agregar',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          'Agregar',
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
                 ),
               ),
               SizedBox(height: 30),
