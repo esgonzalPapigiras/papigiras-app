@@ -275,7 +275,7 @@ class _LoginPassengerState extends State<LoginPassenger> {
                 ),
               ),
               // Enlace de recuperación de contraseña fuera del container
-              TextButton(
+              /*TextButton(
                 onPressed: () {
                   // Acción para recuperar la contraseña
                   print("Recuperar contraseña presionado");
@@ -287,7 +287,7 @@ class _LoginPassengerState extends State<LoginPassenger> {
                     decoration: TextDecoration.underline,
                   ),
                 ),
-              ),
+              ),*/
             ],
           ),
         ),

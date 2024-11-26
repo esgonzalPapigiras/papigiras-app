@@ -320,21 +320,26 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
                             Divider(),
                             SizedBox(height: 10),
                             buildInfoSectionEmergencyContact(
-                                'd',
-                                medicalRecord?.emergencyContactName ??
+                                'Grupo Sanguineo',
+                                medicalRecord?.bloodType ??
                                     "No hay alergias registradas"),
                             buildInfoSection(
                                 'Contacto Emergencia',
-                                '${medicalRecord!.bloodType}\n${medicalRecord.emergencyContactRelation}\n${medicalRecord.emergencyContactEmail}\n${medicalRecord.emergencyContactPhone}' ??
+                                '${medicalRecord!.emergencyContactName}\n${medicalRecord.emergencyContactRelation}\n${medicalRecord.emergencyContactEmail}\n${medicalRecord.emergencyContactPhone}' ??
                                     "No hay contacto de emergencia registrado"),
                             SizedBox(height: 10),
                             buildInfoSectionEnfermedades(
-                                'Enfermedades',
+                                'Medicamentos',
                                 medicalRecord?.medications ??
                                     "No hay enfermedades registradas"),
                             SizedBox(height: 10),
                             buildInfoSectionMedicamentos(
-                                'Medicamentos',
+                                'Enfermedades',
+                                medicalRecord?.diseases ??
+                                    "No hay medicamentos registrados"),
+                            SizedBox(height: 10),
+                            buildInfoSectionMedicamentos(
+                                'Medicamentos Prohibidos',
                                 medicalRecord?.avoidMedications ??
                                     "No hay medicamentos registrados"),
                             SizedBox(height: 200),
@@ -369,7 +374,7 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
         SizedBox(height: 5),
         Container(
           constraints: BoxConstraints(
-            maxHeight: 80,
+            maxHeight: 100,
           ),
           decoration: BoxDecoration(
             color: Colors.grey[100],
@@ -437,7 +442,7 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
         SizedBox(height: 5),
         Container(
           constraints: BoxConstraints(
-            maxHeight: 80,
+            maxHeight: 100,
           ),
           decoration: BoxDecoration(
             color: Colors.grey[100],

@@ -179,7 +179,7 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                 ),
               ),
             ),
-            // Enlace fuera del container
+            /*// Enlace fuera del container
             TextButton(
               onPressed: () {
                 // Acción para recuperar la contraseña
@@ -195,7 +195,7 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                   decoration: TextDecoration.underline,
                 ),
               ),
-            ),
+            ),*/
           ],
         ),
       ),
