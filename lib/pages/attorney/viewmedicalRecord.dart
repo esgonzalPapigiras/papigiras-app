@@ -319,19 +319,23 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
                             SizedBox(height: 20),
                             Divider(),
                             SizedBox(height: 10),
-                            buildInfoSection(
-                                'Alergias',
-                                medicalRecord?.allergiesPassengersRecord ??
+                            buildInfoSectionEmergencyContact(
+                                'd',
+                                medicalRecord?.emergencyContactName ??
                                     "No hay alergias registradas"),
+                            buildInfoSection(
+                                'Contacto Emergencia',
+                                '${medicalRecord!.bloodType}\n${medicalRecord.emergencyContactRelation}\n${medicalRecord.emergencyContactEmail}\n${medicalRecord.emergencyContactPhone}' ??
+                                    "No hay contacto de emergencia registrado"),
                             SizedBox(height: 10),
                             buildInfoSectionEnfermedades(
                                 'Enfermedades',
-                                medicalRecord?.medicalPasesengerRecord ??
+                                medicalRecord?.medications ??
                                     "No hay enfermedades registradas"),
                             SizedBox(height: 10),
                             buildInfoSectionMedicamentos(
                                 'Medicamentos',
-                                medicalRecord?.medicationsPassengersRecord ??
+                                medicalRecord?.avoidMedications ??
                                     "No hay medicamentos registrados"),
                             SizedBox(height: 200),
                           ],
@@ -351,6 +355,40 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
   }
 
   Widget buildInfoSection(String title, String content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$title:',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: 5),
+        Container(
+          constraints: BoxConstraints(
+            maxHeight: 80,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: EdgeInsets.all(10),
+          child: SingleChildScrollView(
+            // Permite desplazamiento si el texto es largo
+            child: Text(
+              content, // Muestra el contenido con los saltos de línea
+              style: TextStyle(color: Colors.grey[800]),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildInfoSectionEmergencyContact(String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

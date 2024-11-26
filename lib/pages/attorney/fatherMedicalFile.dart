@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
+import 'package:papigiras_app/pages/attorney/fatherWelcome.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
@@ -666,7 +667,14 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
             text: 'Ficha Médica Registrada',
             confirmBtnText: 'Continuar',
             onConfirmBtnTap: () {
-              Navigator.of(context).pop(); // Cierra el QuickAlert
+              Navigator.of(context).pop();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      TravelFatherDashboard(login: widget.login),
+                ),
+              ); // Cierra el QuickAlert
             },
           );
         }).catchError((error) {

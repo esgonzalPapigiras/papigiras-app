@@ -512,10 +512,11 @@ class CoordinatorProviders with ChangeNotifier {
       'Authorization':
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
-    LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
-    PassengersMedicalRecordDTO login =
-        new PassengersMedicalRecordDTO.fromJson(decorespoCreate);
+
     if (resp.statusCode == 200) {
+      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+      PassengersMedicalRecordDTO login =
+          new PassengersMedicalRecordDTO.fromJson(decorespoCreate);
       return login;
     } else {
       throw Exception('Failed to load services');

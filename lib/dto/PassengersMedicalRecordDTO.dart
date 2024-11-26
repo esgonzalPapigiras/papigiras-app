@@ -1,17 +1,35 @@
 class PassengersMedicalRecordDTO {
   final int idPassengersMedicalRecord;
-  final String allergiesPassengersRecord;
-  final String medicationsPassengersRecord;
-  final String medicalPasesengerRecord;
+  final String bloodType; // grupoSanguineo
+  final String emergencyContactName; // contactoEmergenciaNombre
+  final String emergencyContactRelation; // contactoEmergenciaRelacion
+  final String emergencyContactPhone; // contactoEmergenciaTelefono
+  final String emergencyContactEmail; // contactoEmergenciaEmail
+  final bool hasFonasa; // tieneFonasa
+  final bool hasIsapre; // tieneIsapre
+  final String? isapre; // isapre
+  final String diseases; // enfermedades
+  final String medications; // medicamentos
+  final String avoidMedications; // medicamentosEvitar
+  final String authorizationDate; // fechaAutorizacion
   final int passengerId; // Solo el ID del pasajero
   final int tourSalesId;
 
   // Constructor
   PassengersMedicalRecordDTO({
     required this.idPassengersMedicalRecord,
-    required this.allergiesPassengersRecord,
-    required this.medicationsPassengersRecord,
-    required this.medicalPasesengerRecord,
+    required this.bloodType,
+    required this.emergencyContactName,
+    required this.emergencyContactRelation,
+    required this.emergencyContactPhone,
+    required this.emergencyContactEmail,
+    required this.hasFonasa,
+    required this.hasIsapre,
+    this.isapre,
+    required this.diseases,
+    required this.medications,
+    required this.avoidMedications,
+    required this.authorizationDate,
     required this.passengerId,
     required this.tourSalesId,
   });
@@ -20,9 +38,18 @@ class PassengersMedicalRecordDTO {
   factory PassengersMedicalRecordDTO.fromJson(Map<String, dynamic> json) {
     return PassengersMedicalRecordDTO(
       idPassengersMedicalRecord: json['idPassengersMedicalRecord'],
-      allergiesPassengersRecord: json['allergiesPassengersRecord'],
-      medicationsPassengersRecord: json['medicationsPassengersRecord'],
-      medicalPasesengerRecord: json['medicalPasesengerRecord'],
+      bloodType: json['bloodType'],
+      emergencyContactName: json['emergencyContactName'],
+      emergencyContactRelation: json['emergencyContactRelation'],
+      emergencyContactPhone: json['emergencyContactPhone'],
+      emergencyContactEmail: json['emergencyContactEmail'],
+      hasFonasa: json['hasFonasa'],
+      hasIsapre: json['hasIsapre'],
+      isapre: json['isapre'],
+      diseases: json['diseases'],
+      medications: json['medications'],
+      avoidMedications: json['avoidMedications'],
+      authorizationDate: json['authorizationDate'],
       passengerId: json['passengerId'],
       tourSalesId: json['tourSalesId'],
     );
@@ -32,9 +59,18 @@ class PassengersMedicalRecordDTO {
   Map<String, dynamic> toJson() {
     return {
       'idPassengersMedicalRecord': idPassengersMedicalRecord,
-      'allergiesPassengersRecord': allergiesPassengersRecord,
-      'medicationsPassengersRecord': medicationsPassengersRecord,
-      'medicalPasesengerRecord': medicalPasesengerRecord,
+      'bloodType': bloodType,
+      'emergencyContactName': emergencyContactName,
+      'emergencyContactRelation': emergencyContactRelation,
+      'emergencyContactPhone': emergencyContactPhone,
+      'emergencyContactEmail': emergencyContactEmail,
+      'hasFonasa': hasFonasa,
+      'hasIsapre': hasIsapre,
+      'isapre': isapre,
+      'diseases': diseases,
+      'medications': medications,
+      'avoidMedications': avoidMedications,
+      'authorizationDate': authorizationDate,
       'passengerId': passengerId,
       'tourSalesId': tourSalesId,
     };

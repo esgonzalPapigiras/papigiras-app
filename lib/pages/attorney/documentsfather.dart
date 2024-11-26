@@ -419,12 +419,12 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
+                  BitacoraFatherScreen(login: widget.login)),
               buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
                   BusCrewFatherScreen(login: widget.login)),
               buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
                   DocumentFatherScreen(login: widget.login)),
-              buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
-                  BitacoraFatherScreen(login: widget.login)),
             ],
           ),
         ],
