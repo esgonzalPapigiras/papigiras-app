@@ -452,9 +452,9 @@ class CoordinatorProviders with ChangeNotifier {
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
 
-    LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
-    ResponseAttorney login = new ResponseAttorney.fromJson(decorespoCreate);
     if (resp.statusCode == 200) {
+      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+      ResponseAttorney login = new ResponseAttorney.fromJson(decorespoCreate);
       return login;
     } else {
       return null;
@@ -472,9 +472,9 @@ class CoordinatorProviders with ChangeNotifier {
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
 
-    LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
-    ResponseAttorney login = new ResponseAttorney.fromJson(decorespoCreate);
     if (resp.statusCode == 200) {
+      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+      ResponseAttorney login = new ResponseAttorney.fromJson(decorespoCreate);
       return login;
     } else {
       return null;
@@ -661,6 +661,66 @@ class CoordinatorProviders with ChangeNotifier {
     });
     if (resp.statusCode == 200) {
       notifyListeners();
+    } else {
+      throw Exception('Failed to load services');
+    }
+  }
+
+  Future<void> addHitoFotoPassenger(
+      String hito, String tourId, XFile imageFiles) async {
+    String? token = await _loadToken();
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/add/fotos/passenger');
+
+    // Crea un objeto MultipartRequest para enviar datos multipart
+    var request = http.MultipartRequest('POST', url);
+
+    // Añadir parámetros adicionales
+    request.fields['passengerId'] =
+        hito.toString(); // El hitoId debe ser parte del objeto hito
+    request.fields['tourId'] = tourId.toString();
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = token;
+    } // El tourId debe ser parte del objeto hito
+
+    var file = await http.MultipartFile.fromPath(
+      'image', // Este es el nombre del campo en tu API
+      imageFiles.path,
+      filename: imageFiles.name,
+    );
+    request.files.add(file);
+
+    // Realiza la solicitud
+    try {
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        print('Hito fotos agregadas con éxito');
+        // Aquí puedes manejar la respuesta si es necesario
+      } else {
+        print('Error al enviar las fotos: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error al enviar la solicitud: $e');
+    }
+  }
+
+  Future<String> getPicturePassenger(String passenger, String tourId) async {
+    String? token = await _loadToken();
+    var url = Uri.https(
+        'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/get/fotos/passenger',
+        {'tourId': tourId, 'passengerId': passenger.toString()});
+    final resp = await http.post(url, headers: {
+      'Content-Type': 'application/json',
+      'Authorization':
+          token ?? '' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      String decodedResponse = json.decode(utf8.decode(resp.bodyBytes));
+
+      notifyListeners();
+      return decodedResponse;
     } else {
       throw Exception('Failed to load services');
     }

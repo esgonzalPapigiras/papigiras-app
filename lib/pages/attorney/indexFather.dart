@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
@@ -24,6 +27,8 @@ class TravelFatherDashboard extends StatefulWidget {
 class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final usuarioProvider = new CoordinatorProviders();
+  XFile? _image;
+  String? _imageUrl;
 
   String formatDate(String date) {
     // Parsear la fecha en el formato original (yyyy-MM-dd)
@@ -33,6 +38,30 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
     String formattedDate = DateFormat('dd-MM-yyyy').format(parsedDate);
 
     return formattedDate;
+  }
+
+  // Método para seleccionar una imagen de la galería
+  Future<void> _pickImage() async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      setState(() {
+        _image = image;
+      });
+      // Luego de seleccionar la imagen, se sube al servidor
+      await usuarioProvider.addHitoFotoPassenger(
+          widget.login.passengerId.toString(),
+          widget.login.tourId.toString(),
+          image); // 1 es un ejemplo de hitoId
+      _loadImage(); // Recargamos la imagen después de la subida
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImage(); // Cargar la imagen al inicio
   }
 
   void sendMessage({required String phone, required String message}) async {
@@ -73,6 +102,21 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
     );
   }
 
+  Future<void> _loadImage() async {
+    try {
+      String imageUrl = await usuarioProvider.getPicturePassenger(
+          widget.login.passengerIdentificacion.toString(),
+          widget.login.tourId.toString());
+      setState(() {
+        _imageUrl = imageUrl; // Si la imagen existe, la cargamos
+      });
+    } catch (e) {
+      setState(() {
+        _imageUrl = null; // Si no hay imagen, usar la imagen predeterminada
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,8 +139,16 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                       shape: BoxShape.circle,
                     ),
                     child: CircleAvatar(
-                      radius: 35, // Tamaño de la imagen
-                      backgroundImage: AssetImage('assets/profile.jpg'),
+                      radius: 35,
+                      backgroundImage: _image != null
+                          ? FileImage(File(_image!.path))
+                              as ImageProvider<Object> // Imagen seleccionada
+                          : _imageUrl != null
+                              ? NetworkImage(_imageUrl!) as ImageProvider<
+                                  Object> // Imagen desde el servidor
+                              : AssetImage('assets/profile.jpg')
+                                  as ImageProvider<
+                                      Object>, // Imagen por defecto
                     ),
                   ),
                   SizedBox(width: 16), // Espacio entre la imagen y el texto
@@ -239,10 +291,21 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(height: 20),
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundImage:
-                            AssetImage('assets/profile.jpg'), // Foto del perfil
+                      GestureDetector(
+                        onTap:
+                            _pickImage, // Abre el selector de imagen al presionar
+                        child: CircleAvatar(
+                          radius: 40,
+                          backgroundImage: _image != null
+                              ? FileImage(File(_image!.path)) as ImageProvider<
+                                  Object> // Imagen seleccionada
+                              : _imageUrl != null
+                                  ? NetworkImage(_imageUrl!) as ImageProvider<
+                                      Object> // Imagen desde el servidor
+                                  : AssetImage('assets/profile.jpg')
+                                      as ImageProvider<
+                                          Object>, // Imagen por defecto
+                        ),
                       ),
                       SizedBox(height: 10),
                       Center(

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/fatherMedicalFile.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
@@ -13,6 +16,28 @@ class WelcomeFatherScreen extends StatefulWidget {
 
 class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
   final usuarioProvider = new CoordinatorProviders();
+  XFile? _image;
+  String? _imageUrl;
+
+  Future<void> _loadImage() async {
+    try {
+      String imageUrl = await usuarioProvider.getPicturePassenger(
+          widget.login.passengerId.toString(), widget.login.tourId.toString());
+      setState(() {
+        _imageUrl = imageUrl; // Si la imagen existe, la cargamos
+      });
+    } catch (e) {
+      setState(() {
+        _imageUrl = null; // Si no hay imagen, usar la imagen predeterminada
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImage(); // Cargar la imagen al inicio
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +90,14 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
                   ),
                   child: CircleAvatar(
                     radius: 60,
-                    backgroundImage: AssetImage('assets/profile.jpg'),
+                    backgroundImage: _image != null
+                        ? FileImage(File(_image!.path))
+                            as ImageProvider<Object> // Imagen seleccionada
+                        : _imageUrl != null
+                            ? NetworkImage(_imageUrl!) as ImageProvider<
+                                Object> // Imagen desde el servidor
+                            : AssetImage('assets/profile.jpg')
+                                as ImageProvider<Object>, // Imagen por defecto
                   ),
                 ),
                 SizedBox(height: 20),
