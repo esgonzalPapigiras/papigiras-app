@@ -171,8 +171,10 @@ class CoordinatorProviders with ChangeNotifier {
     // Añadir parámetros adicionales
     request.fields['hitoId'] =
         hito.toString(); // El hitoId debe ser parte del objeto hito
-    request.fields['tourId'] =
-        tourId.toString(); // El tourId debe ser parte del objeto hito
+    request.fields['tourId'] = tourId.toString();
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = token;
+    } // El tourId debe ser parte del objeto hito
 
     // Añadir las imágenes
     for (int i = 0; i < imageFiles.length; i++) {
@@ -396,32 +398,47 @@ class CoordinatorProviders with ChangeNotifier {
   }
 
   Future<String> getDownloadDirectory() async {
-    if (Platform.isAndroid) {
-      // En Android, obtienes la carpeta de "Descargas" desde el almacenamiento externo
-      Directory? downloadsDirectory = Directory('/storage/emulated/0/Download');
-      if (await downloadsDirectory.exists()) {
-        return downloadsDirectory.path;
-      } else {
-        // Si no se encuentra el directorio, se retorna el directorio general de almacenamiento
-        Directory? appDocDir = await getExternalStorageDirectory();
-        return appDocDir?.path ?? '';
+    try {
+      if (Platform.isAndroid) {
+        // Intentar obtener el directorio de descargas predeterminado en Android
+        Directory? downloadsDirectory =
+            Directory('/storage/emulated/0/Download');
+        if (await downloadsDirectory.exists()) {
+          return downloadsDirectory.path;
+        } else {
+          // Usar el almacenamiento externo de la aplicación como fallback
+          Directory? appDocDir = await getExternalStorageDirectory();
+          return appDocDir?.path ?? '';
+        }
+      } else if (Platform.isIOS) {
+        // Obtener el directorio de documentos en iOS
+        Directory appSupportDir = await getApplicationDocumentsDirectory();
+
+        // Crear una subcarpeta de descargas
+        String sharedPath = '${appSupportDir.path}/Downloads';
+
+        // Validar o crear el directorio
+        await _ensureDirectoryExists(sharedPath);
+
+        return sharedPath;
       }
-    } else if (Platform.isIOS) {
-      // En iOS, usamos el directorio de documentos accesible a través de Archivos
-      Directory appSupportDir = await getApplicationDocumentsDirectory();
-
-      // Ruta accesible en "Archivos" de iOS
-      String sharedPath = appSupportDir.path;
-
-      // Aseguramos que existe el directorio
-      Directory sharedDir = Directory(sharedPath);
-      if (!await sharedDir.exists()) {
-        await sharedDir.create(recursive: true);
-      }
-
-      return sharedDir.path;
+    } catch (e) {
+      // Registrar el error y retornar un directorio seguro
+      print('Error al obtener el directorio de descargas: $e');
+      return '';
     }
     return '';
+  }
+
+  /// Método auxiliar para asegurar que un directorio exista
+  Future<void> _ensureDirectoryExists(String path) async {
+    Directory dir = Directory(path);
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+      print('Directorio creado en $path');
+    } else {
+      print('Directorio ya existe en $path');
+    }
   }
 
   Future<ResponseAttorney?> validateLoginUserFather(

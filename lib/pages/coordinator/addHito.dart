@@ -139,15 +139,14 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
 
   // Permiso para acceder a la galería
   Future<void> requestPermissions() async {
-    // Solicitar permiso para acceder a las fotos
     PermissionStatus status = await Permission.photos.status;
 
     if (status.isGranted) {
-      // Permiso ya concedido, procede con la acción
+      // Permiso ya concedido
       print("Permiso ya concedido para acceder a la galería");
       await pickImage();
-    } else if (status.isDenied) {
-      // Si el permiso está denegado, solicita el permiso
+    } else if (status.isDenied || status.isLimited) {
+      // Si el permiso está denegado o limitado, solicita el permiso
       PermissionStatus newStatus = await Permission.photos.request();
       if (newStatus.isGranted) {
         print("Permiso concedido tras solicitarlo");
@@ -263,17 +262,21 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                             return;
                           }
 
+                          DateTime now = DateTime.now();
+                          String formattedDate =
+                              DateFormat('dd/MM/yyyy').format(now);
+
                           // Crear el objeto RequestHito
                           RequestHito hito = RequestHito(
-                            titulo: tituloController.text,
-                            descripcion: descripcionController.text,
-                            ubicacion: _location,
-                            notaCierre: notaCierreController.text,
-                            latitud: position.latitude.toString(),
-                            longitud: position.longitude.toString(),
-                            hora: _formattedTime,
-                            idTour: widget.login.tourSalesId,
-                          );
+                              titulo: tituloController.text,
+                              descripcion: descripcionController.text,
+                              ubicacion: _location,
+                              notaCierre: notaCierreController.text,
+                              latitud: position.latitude.toString(),
+                              longitud: position.longitude.toString(),
+                              hora: _formattedTime,
+                              idTour: widget.login.tourSalesId,
+                              fecha: formattedDate);
 
                           // Simular un retraso de 20 segundos
                           await Future.delayed(Duration(seconds: 20));

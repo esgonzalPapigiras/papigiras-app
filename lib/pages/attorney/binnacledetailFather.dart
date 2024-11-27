@@ -306,7 +306,7 @@ class _DetalleBitacoraFatherScreenState
 
       // Agregar las imágenes a las entradas
     }
-    String time = hitoDetail.hora ?? 'Sin hora';
+    String time = hitoDetail.fecha ?? 'Sin hora';
     String activity = hitoDetail.titulo ?? 'Actividad no disponible';
     String description = hitoDetail.descripcion ?? 'Descripción no disponible';
     entries.add({

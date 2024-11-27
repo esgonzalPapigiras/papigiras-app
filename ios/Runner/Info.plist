@@ -33,6 +33,10 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Necesitamos acceso a la cámara para tomar una foto.</string>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Necesitamos acceso a tu ubicación para mostrar la dirección en tiempo real.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
@@ -41,7 +45,6 @@
 	<string>Esta aplicación necesita acceso a la biblioteca de fotos para seleccionar imágenes y videos.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Esta aplicación necesita permiso para guardar imágenes y videos en tu biblioteca de fotos.</string>
-
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

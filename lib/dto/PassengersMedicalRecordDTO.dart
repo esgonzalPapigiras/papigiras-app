@@ -8,7 +8,7 @@ class PassengersMedicalRecordDTO {
   final bool hasFonasa; // tieneFonasa
   final bool hasIsapre; // tieneIsapre
   final String? isapre; // isapre
-  final String diseases; // enfermedades
+  final String? diseases; // enfermedades
   final String medications; // medicamentos
   final String avoidMedications; // medicamentosEvitar
   final String authorizationDate; // fechaAutorizacion

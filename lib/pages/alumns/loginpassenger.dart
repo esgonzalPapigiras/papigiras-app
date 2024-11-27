@@ -198,50 +198,65 @@ class _LoginPassengerState extends State<LoginPassenger> {
                               _showError = false;
                               _showErrorTwo = false;
                             });
-                            final login = await usuarioProvider
-                                .validateLoginUserPassenger(
-                                    _userController.text,
-                                    _passwordController.text);
-                            if (login != null && login.isActive!) {
-                              SharedPreferences prefs =
-                                  await SharedPreferences.getInstance();
-                              prefs.setString('token', login.tokenKey!);
-                              final now = DateTime.now();
-                              final expiryDate = now.add(Duration(
-                                  days:
-                                      3)); // Fecha de expiración: 3 días a partir de ahora
-                              await prefs.setString(
-                                  'tokenExpiry', expiryDate.toIso8601String());
-                              // Si login tiene datos, muestra QuickAlert de éxito y navega a la siguiente pantalla
-                              QuickAlert.show(
-                                context: context,
-                                type: QuickAlertType.success,
-                                title: 'Éxito',
-                                text: 'Bienvenido',
-                                confirmBtnText: 'Continuar',
-                                onConfirmBtnTap: () async {
-                                  SharedPreferences prefs =
-                                      await SharedPreferences.getInstance();
-                                  await prefs.setBool('isLoggedIn', true);
-                                  Navigator.of(context)
-                                      .pop(); // Cierra el QuickAlert
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          TravelPassengerDashboard(
-                                              login: login),
-                                    ),
-                                  );
-                                },
-                              );
+                            if (_userController.text.isNotEmpty &&
+                                _passwordController.text.isNotEmpty) {
+                              final login = await usuarioProvider
+                                  .validateLoginUserPassenger(
+                                      _userController.text,
+                                      _passwordController.text);
+                              if (login != null && login.isActive!) {
+                                SharedPreferences prefs =
+                                    await SharedPreferences.getInstance();
+                                prefs.setString('token', login.tokenKey!);
+                                final now = DateTime.now();
+                                final expiryDate = now.add(Duration(
+                                    days:
+                                        3)); // Fecha de expiración: 3 días a partir de ahora
+                                await prefs.setString('tokenExpiry',
+                                    expiryDate.toIso8601String());
+                                // Si login tiene datos, muestra QuickAlert de éxito y navega a la siguiente pantalla
+                                QuickAlert.show(
+                                  context: context,
+                                  type: QuickAlertType.success,
+                                  title: 'Éxito',
+                                  text: 'Bienvenido',
+                                  confirmBtnText: 'Continuar',
+                                  onConfirmBtnTap: () async {
+                                    SharedPreferences prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.setBool('isLoggedIn', true);
+                                    Navigator.of(context)
+                                        .pop(); // Cierra el QuickAlert
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            TravelPassengerDashboard(
+                                                login: login),
+                                      ),
+                                    );
+                                  },
+                                );
+                              } else {
+                                // Si login es null, muestra QuickAlert de error y no navega
+                                QuickAlert.show(
+                                  context: context,
+                                  type: QuickAlertType.error,
+                                  title: 'Error',
+                                  text: 'Usuario no encontrado o desactivado',
+                                  confirmBtnText: 'Aceptar',
+                                  onConfirmBtnTap: () {
+                                    Navigator.of(context)
+                                        .pop(); // Cierra el QuickAlert
+                                  },
+                                );
+                              }
                             } else {
-                              // Si login es null, muestra QuickAlert de error y no navega
                               QuickAlert.show(
                                 context: context,
                                 type: QuickAlertType.error,
                                 title: 'Error',
-                                text: 'Usuario no encontrado o desactivado',
+                                text: 'Ingresar usuario y contraseña',
                                 confirmBtnText: 'Aceptar',
                                 onConfirmBtnTap: () {
                                   Navigator.of(context)
@@ -249,6 +264,7 @@ class _LoginPassengerState extends State<LoginPassenger> {
                                 },
                               );
                             }
+
                             // Maneja la respuesta del login si es necesario
                           } else {
                             setState(() {
