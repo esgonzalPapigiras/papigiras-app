@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/fatherMedicalFile.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
@@ -21,10 +22,12 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
 
   Future<void> _loadImage() async {
     try {
-      String imageUrl = await usuarioProvider.getPicturePassenger(
-          widget.login.passengerId.toString(), widget.login.tourId.toString());
+      Responseimagepassenger imageUrl =
+          await usuarioProvider.getPicturePassenger(
+              widget.login.passengerId.toString(),
+              widget.login.tourId.toString());
       setState(() {
-        _imageUrl = imageUrl; // Si la imagen existe, la cargamos
+        _imageUrl = imageUrl.image; // Si la imagen existe, la cargamos
       });
     } catch (e) {
       setState(() {

@@ -12,6 +12,7 @@ import 'package:papigiras_app/dto/PassengerList.dart';
 import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
 import 'package:papigiras_app/dto/ProgramViewDto.dart';
 import 'package:papigiras_app/dto/RequestActivities.dart';
+import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/binnacle.dart';
 import 'package:papigiras_app/dto/binnacleaddlist.dart';
 import 'package:papigiras_app/dto/positionMap.dart';
@@ -215,6 +216,7 @@ class CoordinatorProviders with ChangeNotifier {
     if (resp.statusCode == 200) {
       Map<String, dynamic> decodedResponse =
           json.decode(utf8.decode(resp.bodyBytes));
+
       DetailHitoList login = new DetailHitoList.fromJson(decodedResponse);
       notifyListeners();
       return login;
@@ -705,7 +707,8 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<String> getPicturePassenger(String passenger, String tourId) async {
+  Future<Responseimagepassenger> getPicturePassenger(
+      String passenger, String tourId) async {
     String? token = await _loadToken();
     var url = Uri.https(
         'ms-papigiras-app-ezkbu.ondigitalocean.app',
@@ -717,10 +720,14 @@ class CoordinatorProviders with ChangeNotifier {
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
     if (resp.statusCode == 200) {
-      String decodedResponse = json.decode(utf8.decode(resp.bodyBytes));
+      Map<String, dynamic> decodedResponse =
+          json.decode(utf8.decode(resp.bodyBytes));
+
+      Responseimagepassenger login =
+          new Responseimagepassenger.fromJson(decodedResponse);
 
       notifyListeners();
-      return decodedResponse;
+      return login;
     } else {
       throw Exception('Failed to load services');
     }

@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
@@ -104,16 +106,36 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
 
   Future<void> _loadImage() async {
     try {
-      String imageUrl = await usuarioProvider.getPicturePassenger(
-          widget.login.passengerIdentificacion.toString(),
-          widget.login.tourId.toString());
-      setState(() {
-        _imageUrl = imageUrl; // Si la imagen existe, la cargamos
-      });
+      Responseimagepassenger imageUrl =
+          await usuarioProvider.getPicturePassenger(
+        widget.login.passengerIdentificacion.toString(),
+        widget.login.tourId.toString(),
+      );
+
+      if (imageUrl.image.isNotEmpty) {
+        setState(() {
+          _imageUrl = imageUrl.image; // Si la imagen existe, la cargamos
+        });
+      } else {
+        setState(() {
+          _imageUrl = null; // Si no hay imagen, usar la predeterminada
+        });
+      }
     } catch (e) {
       setState(() {
-        _imageUrl = null; // Si no hay imagen, usar la imagen predeterminada
+        _imageUrl = null; // Si ocurre un error, usar la predeterminada
       });
+    }
+  }
+
+  bool _isBase64(String data) {
+    try {
+      base64Decode(data
+          .split(',')
+          .last); // Intenta decodificar eliminando un posible prefijo
+      return true;
+    } catch (e) {
+      return false; // Si falla, no es Base64
     }
   }
 
@@ -139,16 +161,23 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                       shape: BoxShape.circle,
                     ),
                     child: CircleAvatar(
-                      radius: 35,
+                      radius: 40,
                       backgroundImage: _image != null
-                          ? FileImage(File(_image!.path))
-                              as ImageProvider<Object> // Imagen seleccionada
-                          : _imageUrl != null
-                              ? NetworkImage(_imageUrl!) as ImageProvider<
-                                  Object> // Imagen desde el servidor
+                          ? FileImage(File(_image!.path)) as ImageProvider<
+                              Object> // Imagen seleccionada desde el dispositivo
+                          : (_imageUrl != null && _imageUrl!.isNotEmpty)
+                              ? (_isBase64(
+                                      _imageUrl!) // Verifica si la URL es una imagen en Base64
+                                  ? MemoryImage(base64Decode(
+                                      _imageUrl!
+                                          .split(',')
+                                          .last)) as ImageProvider<
+                                      Object> // Decodifica y muestra imagen Base64
+                                  : NetworkImage(_imageUrl!) as ImageProvider<
+                                      Object>) // Carga imagen desde el servidor
                               : AssetImage('assets/profile.jpg')
                                   as ImageProvider<
-                                      Object>, // Imagen por defecto
+                                      Object>, // Imagen predeterminada
                     ),
                   ),
                   SizedBox(width: 16), // Espacio entre la imagen y el texto
@@ -295,16 +324,23 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                         onTap:
                             _pickImage, // Abre el selector de imagen al presionar
                         child: CircleAvatar(
-                          radius: 40,
+                          radius: 100,
                           backgroundImage: _image != null
                               ? FileImage(File(_image!.path)) as ImageProvider<
-                                  Object> // Imagen seleccionada
-                              : _imageUrl != null
-                                  ? NetworkImage(_imageUrl!) as ImageProvider<
-                                      Object> // Imagen desde el servidor
+                                  Object> // Imagen seleccionada desde el dispositivo
+                              : (_imageUrl != null && _imageUrl!.isNotEmpty)
+                                  ? (_isBase64(
+                                          _imageUrl!) // Verifica si la URL es una imagen en Base64
+                                      ? MemoryImage(base64Decode(
+                                          _imageUrl!
+                                              .split(',')
+                                              .last)) as ImageProvider<
+                                          Object> // Decodifica y muestra imagen Base64
+                                      : NetworkImage(_imageUrl!) as ImageProvider<
+                                          Object>) // Carga imagen desde el servidor
                                   : AssetImage('assets/profile.jpg')
                                       as ImageProvider<
-                                          Object>, // Imagen por defecto
+                                          Object>, // Imagen predeterminada
                         ),
                       ),
                       SizedBox(height: 10),
