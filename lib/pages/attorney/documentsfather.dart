@@ -180,7 +180,7 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
             ),
             onTap: () {
               sendMessage(
-                  phone: "+56944087015", message: "Hola! Necesito ayuda");
+                  phone: "+56932157564", message: "Hola! Necesito ayuda");
             },
           ),
           ListTile(
@@ -188,7 +188,7 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
             title: Text('Reportar un Problema'),
             onTap: () {
               sendMessage(
-                  phone: "+56944087015", message: "Hola! Necesito ayuda");
+                  phone: "+56932157564", message: "Hola! Necesito ayuda");
             },
           ),
           ListTile(

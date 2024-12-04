@@ -1,19 +1,19 @@
 class PassengersMedicalRecordDTO {
-  final int idPassengersMedicalRecord;
-  final String bloodType; // grupoSanguineo
-  final String emergencyContactName; // contactoEmergenciaNombre
-  final String emergencyContactRelation; // contactoEmergenciaRelacion
-  final String emergencyContactPhone; // contactoEmergenciaTelefono
-  final String emergencyContactEmail; // contactoEmergenciaEmail
+  final int? idPassengersMedicalRecord;
+  final String? bloodType; // grupoSanguineo
+  final String? emergencyContactName; // contactoEmergenciaNombre
+  final String? emergencyContactRelation; // contactoEmergenciaRelacion
+  final String? emergencyContactPhone; // contactoEmergenciaTelefono
+  final String? emergencyContactEmail; // contactoEmergenciaEmail
   final bool hasFonasa; // tieneFonasa
   final bool hasIsapre; // tieneIsapre
   final String? isapre; // isapre
   final String? diseases; // enfermedades
   final String medications; // medicamentos
-  final String avoidMedications; // medicamentosEvitar
-  final String authorizationDate; // fechaAutorizacion
-  final int passengerId; // Solo el ID del pasajero
-  final int tourSalesId;
+  final String? avoidMedications; // medicamentosEvitar
+  final String? authorizationDate; // fechaAutorizacion
+  final int? passengerId; // Solo el ID del pasajero
+  final int? tourSalesId;
 
   // Constructor
   PassengersMedicalRecordDTO({

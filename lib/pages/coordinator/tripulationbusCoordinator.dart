@@ -143,7 +143,7 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
               ),
               onTap: () {
                 sendMessage(
-                    phone: "+56944087015", message: "Hola! Necesito ayuda");
+                    phone: "+56932157564", message: "Hola! Necesito ayuda");
               },
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -162,7 +162,7 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
               ),
               onTap: () {
                 sendMessage(
-                    phone: "+56944087015", message: "Hola! Necesito ayuda");
+                    phone: "+56932157564", message: "Hola! Necesito ayuda");
               },
             ),
             ListTile(
@@ -286,8 +286,14 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                                                           FontWeight.bold),
                                                 ),
                                                 TextSpan(
-                                                  text: _tripulations[0]
-                                                      .tourTripulationBusPatent,
+                                                  text: _tripulations
+                                                              .isNotEmpty &&
+                                                          _tripulations[0]
+                                                                  .tourTripulationBusPatent !=
+                                                              null
+                                                      ? _tripulations[0]
+                                                          .tourTripulationBusPatent!
+                                                      : "Sin patente",
                                                   style: TextStyle(
                                                       color: Colors.grey[800]),
                                                 ),
@@ -305,8 +311,14 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                                                           FontWeight.bold),
                                                 ),
                                                 TextSpan(
-                                                  text: _tripulations[0]
-                                                      .tourTripulationBusBrand,
+                                                  text: _tripulations
+                                                              .isNotEmpty &&
+                                                          _tripulations[0]
+                                                                  .tourTripulationBusBrand !=
+                                                              null
+                                                      ? _tripulations[0]
+                                                          .tourTripulationBusBrand!
+                                                      : "Sin marca",
                                                   style: TextStyle(
                                                       color: Colors.grey[800]),
                                                 ),
@@ -324,8 +336,14 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                                                           FontWeight.bold),
                                                 ),
                                                 TextSpan(
-                                                  text: _tripulations[0]
-                                                      .tourTripulationBusModel,
+                                                  text: _tripulations
+                                                              .isNotEmpty &&
+                                                          _tripulations[0]
+                                                                  .tourTripulationBusModel !=
+                                                              null
+                                                      ? _tripulations[0]
+                                                          .tourTripulationBusModel!
+                                                      : "Sin modelo",
                                                   style: TextStyle(
                                                       color: Colors.grey[800]),
                                                 ),
@@ -343,8 +361,15 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                                                           FontWeight.bold),
                                                 ),
                                                 TextSpan(
-                                                  text: _tripulations[0]
-                                                      .tourTripulationBusYear,
+                                                  text: _tripulations
+                                                              .isNotEmpty &&
+                                                          _tripulations[0]
+                                                                  .tourTripulationBusYear !=
+                                                              null
+                                                      ? _tripulations[0]
+                                                          .tourTripulationBusYear
+                                                          .toString()
+                                                      : "Año no disponible",
                                                   style: TextStyle(
                                                       color: Colors.grey[800]),
                                                 ),
@@ -362,8 +387,14 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
                                                           FontWeight.bold),
                                                 ),
                                                 TextSpan(
-                                                  text: _tripulations[0]
-                                                      .tourTripulationBusEnterprise,
+                                                  text: _tripulations
+                                                              .isNotEmpty &&
+                                                          _tripulations[0]
+                                                                  .tourTripulationBusEnterprise !=
+                                                              null
+                                                      ? _tripulations[0]
+                                                          .tourTripulationBusEnterprise!
+                                                      : "Sin empresa",
                                                   style: TextStyle(
                                                       color: Colors.grey[800]),
                                                 ),

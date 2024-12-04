@@ -209,7 +209,7 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
               ),
               onTap: () {
                 sendMessage(
-                    phone: "+56944087015", message: "Hola! Necesito ayuda");
+                    phone: "+56932157564", message: "Hola! Necesito ayuda");
               },
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -228,7 +228,7 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
               ),
               onTap: () {
                 sendMessage(
-                    phone: "+56944087015", message: "Hola! Necesito ayuda");
+                    phone: "+56932157564", message: "Hola! Necesito ayuda");
               },
             ),
             ListTile(
@@ -422,12 +422,12 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
                             buildInfoSectionEnfermedades(
                                 'Medicamentos',
                                 medicalRecord?.medications ??
-                                    "No hay enfermedades registradas"),
+                                    "No hay medicamentos registradas"),
                             SizedBox(height: 10),
                             buildInfoSectionMedicamentos(
                                 'Enfermedades',
                                 medicalRecord?.diseases ??
-                                    "No hay medicamentos registrados"),
+                                    "No hay enfermedades registradas"),
                             SizedBox(height: 10),
                             buildInfoSectionMedicamentos(
                                 'Medicamentos Prohibidos',
@@ -533,7 +533,7 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
         SizedBox(height: 5),
         Container(
           constraints: BoxConstraints(
-            maxHeight: 100,
+            maxHeight: 80,
           ),
           decoration: BoxDecoration(
             color: Colors.grey[100],

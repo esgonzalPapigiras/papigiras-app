@@ -199,7 +199,7 @@ class _ListPassengerCoordScreenState extends State<ListPassengerCoordScreen> {
             ),
             onTap: () {
               sendMessage(
-                  phone: "+56944087015", message: "Hola! Necesito ayuda");
+                  phone: "+56932157564", message: "Hola! Necesito ayuda");
             },
           ),
           ListTile(
@@ -207,7 +207,7 @@ class _ListPassengerCoordScreenState extends State<ListPassengerCoordScreen> {
             title: Text('Reportar un Problema'),
             onTap: () {
               sendMessage(
-                  phone: "+56944087015", message: "Hola! Necesito ayuda");
+                  phone: "+56932157564", message: "Hola! Necesito ayuda");
             },
           ),
           ListTile(

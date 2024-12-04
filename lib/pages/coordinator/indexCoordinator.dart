@@ -146,7 +146,7 @@ class _TravelCoordinatorDashboardState
               ),
               onTap: () {
                 sendMessage(
-                    phone: "+56944087015", message: "Hola! Necesito ayuda");
+                    phone: "+56932157564", message: "Hola! Necesito ayuda");
                 // Acción para contactar agencia
               },
               trailing: Row(
@@ -166,7 +166,7 @@ class _TravelCoordinatorDashboardState
               ),
               onTap: () {
                 sendMessage(
-                    phone: "+56944087015",
+                    phone: "+56932157564",
                     message:
                         "Hola! Necesito ayuda"); // Acción para reportar un problema
               },

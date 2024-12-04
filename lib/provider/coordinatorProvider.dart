@@ -58,7 +58,8 @@ class CoordinatorProviders with ChangeNotifier {
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
 
-    LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+    LinkedHashMap<String, dynamic> decorespoCreate =
+        json.decode(utf8.decode(resp.bodyBytes));
     TourSales login = new TourSales.fromJson(decorespoCreate);
     if (resp.statusCode == 200) {
       return login;
@@ -77,7 +78,7 @@ class CoordinatorProviders with ChangeNotifier {
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
     if (resp.statusCode == 200) {
-      List decorespoCreate = json.decode(resp.body);
+      List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
       return decorespoCreate
           .map((job) => new TourTripulation.fromJson(job))
           .toList();
@@ -96,7 +97,7 @@ class CoordinatorProviders with ChangeNotifier {
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
     if (resp.statusCode == 200) {
-      List decorespoCreate = json.decode(resp.body);
+      List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
       return decorespoCreate.map((job) => new Itinerary.fromJson(job)).toList();
     } else {
       throw Exception('Failed to load services');
@@ -113,7 +114,7 @@ class CoordinatorProviders with ChangeNotifier {
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
     if (resp.statusCode == 200) {
-      List decorespoCreate = json.decode(resp.body);
+      List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
       return decorespoCreate
           .map((job) => new ActivitiesList.fromJson(job))
           .toList();
@@ -150,7 +151,8 @@ class CoordinatorProviders with ChangeNotifier {
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
     if (resp.statusCode == 200) {
-      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+      LinkedHashMap<String, dynamic> decorespoCreate =
+          json.decode(utf8.decode(resp.bodyBytes));
       ConsolidatedTourSalesDTO login =
           new ConsolidatedTourSalesDTO.fromJson(decorespoCreate);
       notifyListeners();
@@ -455,7 +457,8 @@ class CoordinatorProviders with ChangeNotifier {
     });
 
     if (resp.statusCode == 200) {
-      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+      LinkedHashMap<String, dynamic> decorespoCreate =
+          json.decode(utf8.decode(resp.bodyBytes));
       ResponseAttorney login = new ResponseAttorney.fromJson(decorespoCreate);
       return login;
     } else {
@@ -475,7 +478,8 @@ class CoordinatorProviders with ChangeNotifier {
     });
 
     if (resp.statusCode == 200) {
-      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+      LinkedHashMap<String, dynamic> decorespoCreate =
+          json.decode(utf8.decode(resp.bodyBytes));
       ResponseAttorney login = new ResponseAttorney.fromJson(decorespoCreate);
       return login;
     } else {
@@ -533,7 +537,8 @@ class CoordinatorProviders with ChangeNotifier {
     });
 
     if (resp.statusCode == 200) {
-      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+      LinkedHashMap<String, dynamic> decorespoCreate =
+          json.decode(utf8.decode(resp.bodyBytes));
       PassengersMedicalRecordDTO login =
           new PassengersMedicalRecordDTO.fromJson(decorespoCreate);
       return login;
@@ -553,7 +558,8 @@ class CoordinatorProviders with ChangeNotifier {
     });
 
     if (resp.statusCode == 200) {
-      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(resp.body);
+      LinkedHashMap<String, dynamic> decorespoCreate =
+          json.decode(utf8.decode(resp.bodyBytes));
       ProgramViewDto login = new ProgramViewDto.fromJson(decorespoCreate);
       return login;
     } else {

@@ -103,7 +103,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
               ),
               onTap: () {
                 sendMessage(
-                    phone: "+56944087015",
+                    phone: "+56932157564",
                     message:
                         "Hola! Necesito ayuda"); // Acción para contactar agencia
               },
@@ -124,7 +124,7 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
               ),
               onTap: () {
                 sendMessage(
-                    phone: "+56944087015",
+                    phone: "+56932157564",
                     message:
                         "Hola! Necesito ayuda"); // Acción para reportar un problema
               },
