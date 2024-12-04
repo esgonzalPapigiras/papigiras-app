@@ -10,6 +10,7 @@ import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
+import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -70,7 +71,7 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => LoginCoordinator()),
+      MaterialPageRoute(builder: (context) => WelcomeScreen()),
       (route) =>
           false, // Esto elimina todas las rutas anteriores de la pila de navegación
     );

@@ -7,6 +7,7 @@ import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/attorney/loginFather.dart';
+import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,7 +69,7 @@ class _ViewProgramScreenState extends State<ViewProgramScreen> {
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => LoginFather()),
+      MaterialPageRoute(builder: (context) => WelcomeScreen()),
       (route) =>
           false, // Esto elimina todas las rutas anteriores de la pila de navegación
     );

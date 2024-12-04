@@ -14,6 +14,7 @@ import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/attorney/viewProgram.dart';
 import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
+import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:qr/qr.dart';
@@ -301,7 +302,7 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => LoginPassenger()),
+      MaterialPageRoute(builder: (context) => WelcomeScreen()),
       (route) =>
           false, // Esto elimina todas las rutas anteriores de la pila de navegación
     );

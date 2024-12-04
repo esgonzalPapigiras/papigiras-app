@@ -12,6 +12,7 @@ import 'package:papigiras_app/pages/attorney/fatherWelcome.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
+import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -205,7 +206,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => LoginFather()),
+      MaterialPageRoute(builder: (context) => WelcomeScreen()),
       (route) =>
           false, // Esto elimina todas las rutas anteriores de la pila de navegación
     );

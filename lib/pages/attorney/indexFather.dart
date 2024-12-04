@@ -14,6 +14,7 @@ import 'package:papigiras_app/pages/attorney/map.dart';
 import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/attorney/viewProgram.dart';
 import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
+import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -98,7 +99,7 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => LoginFather()),
+      MaterialPageRoute(builder: (context) => WelcomeScreen()),
       (route) =>
           false, // Esto elimina todas las rutas anteriores de la pila de navegación
     );
