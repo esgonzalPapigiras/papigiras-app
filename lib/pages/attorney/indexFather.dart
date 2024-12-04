@@ -94,7 +94,11 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
 
   void logoutUser(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Borrar el estado de la sesión
+    // Eliminar los datos de usuario
+    await prefs.remove('userRut');
+    await prefs.remove('userPassword');
+    await prefs.clear();
+    // Borrar el estado de la sesión
 
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(

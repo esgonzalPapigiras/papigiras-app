@@ -597,7 +597,7 @@ class _TravelCoordinatorDashboardState
                                       width:
                                           4), // Espacio entre el icono y el texto
 
-                                  buildInfoSection('Observaciones'),
+                                  //buildInfoSection('Observaciones'),
                                 ],
                               ),
                             ],

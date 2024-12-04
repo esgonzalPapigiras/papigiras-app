@@ -27,6 +27,25 @@ class _LoginFatherState extends State<LoginFather> {
         _showError = false; // Resetea el error cuando cambia el texto
       });
     });
+    _loadUserData();
+  }
+
+  void _loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Recupera los datos guardados del usuario
+    String? storedRut = prefs.getString('userRut');
+    String? storedPassword = prefs.getString('userPassword');
+
+    // Si los datos existen, colócalos en los controladores de los campos
+    setState(() {
+      if (storedRut != null) {
+        _userController.text = storedRut;
+      }
+      if (storedPassword != null) {
+        _passwordController.text = storedPassword;
+      }
+    });
   }
 
   @override
@@ -208,6 +227,12 @@ class _LoginFatherState extends State<LoginFather> {
                                 SharedPreferences prefs =
                                     await SharedPreferences.getInstance();
                                 prefs.setString('token', login.tokenKey!);
+
+                                // Guarda los datos del usuario
+                                await prefs.setString(
+                                    'userRut', _userController.text);
+                                await prefs.setString(
+                                    'userPassword', _passwordController.text);
                                 final now = DateTime.now();
                                 final expiryDate = now.add(Duration(
                                     days:

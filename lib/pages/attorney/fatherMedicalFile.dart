@@ -40,7 +40,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
   final TextEditingController _cursoController = TextEditingController();
   final TextEditingController _colegioController = TextEditingController();
   final TextEditingController _comunaController = TextEditingController();
-  final TextEditingController _rutController = TextEditingController();
+  TextEditingController _rutController = TextEditingController();
   final TextEditingController _nombreEmergenciaController =
       TextEditingController();
   final TextEditingController _relacionEmergenciaController =
@@ -85,7 +85,10 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
   @override
   void initState() {
     super.initState();
-    _loadImage(); // Cargar la imagen al inicio
+    _loadImage();
+    _rutController = TextEditingController(
+        text:
+            widget.login.passengerIdentificacion); // Cargar la imagen al inicio
   }
 
   // Variables para seleccionar opciones
@@ -474,15 +477,6 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold)),
                               SizedBox(height: 10),
-                              _buildTextField(
-                                  'Nombres', _nombreController, null),
-                              _buildTextField(
-                                  'Apellidos', _apellidoController, null),
-                              _buildTextField('Curso', _cursoController, null),
-                              _buildTextField(
-                                  'Colegio', _colegioController, null),
-                              _buildTextField(
-                                  'Comuna', _comunaController, null),
                               _buildTextFieldRut(
                                 'RUT',
                                 _rutController,
@@ -506,7 +500,8 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                                   'AB+',
                                   'AB-',
                                   'O+',
-                                  'O-'
+                                  'O-',
+                                  'Otro'
                                 ],
                                 (value) =>
                                     setState(() => _grupoSanguineo = value),
@@ -523,7 +518,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                                   _nombreEmergenciaController, null),
                               _buildTextField('Relación con el Alumno(a)',
                                   _relacionEmergenciaController, null),
-                              _buildTextField(
+                              _buildTextFieldCelular(
                                   'Teléfono Celular',
                                   _telefonoEmergenciaController,
                                   _validateTelefono),
@@ -966,6 +961,28 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
     );
   }
 
+  Widget _buildTextFieldCelular(String label, TextEditingController controller,
+      String? Function(String?)? validator,
+      {TextInputType keyboardType = TextInputType.text}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 5),
+        TextFormField(
+          controller: controller,
+          validator: validator,
+          keyboardType: keyboardType,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: '923223212 ejemplo',
+          ),
+        ),
+        SizedBox(height: 15),
+      ],
+    );
+  }
+
   Widget _buildTextField(String label, TextEditingController controller,
       String? Function(String?)? validator,
       {TextInputType keyboardType = TextInputType.text}) {
@@ -980,7 +997,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
           keyboardType: keyboardType,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
-            hintText: 'Escribe aquí...',
+            hintText: 'Escribe Aqui ....',
           ),
         ),
         SizedBox(height: 15),
@@ -993,33 +1010,17 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
     TextEditingController controller,
     String? Function(String?)? validator, {
     TextInputType keyboardType = TextInputType.text,
-    String? Function(String)? formatter, // Función para formatear el texto
+    String? Function(String)? formatter,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 5),
-        TextFormField(
-          controller: controller,
-          validator: validator,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: 'Escribe aquí...',
-          ),
-          onChanged: (value) {
-            if (formatter != null) {
-              final formattedValue = formatter(value);
-              if (formattedValue != null && formattedValue != controller.text) {
-                controller.value = TextEditingValue(
-                  text: formattedValue,
-                  selection:
-                      TextSelection.collapsed(offset: formattedValue.length),
-                );
-              }
-            }
-          },
+        // Mostrar el RUT en un Text no editable
+        Text(
+          controller.text.isEmpty ? 'RUT no disponible' : controller.text,
+          style: TextStyle(fontSize: 16, color: Colors.black),
         ),
         SizedBox(height: 15),
       ],
