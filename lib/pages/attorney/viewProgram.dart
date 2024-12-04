@@ -1,7 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
 import 'package:papigiras_app/dto/ProgramViewDto.dart';
+import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
@@ -28,9 +33,65 @@ class _ViewProgramScreenState extends State<ViewProgramScreen> {
   final TextEditingController _medicamentosController = TextEditingController();
   Future<ProgramViewDto>? _hitoDetailFuture;
 
+  XFile? _image;
+  String? _imageUrl;
+
+  Future<void> _pickImage() async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      setState(() {
+        _image = image;
+      });
+      // Luego de seleccionar la imagen, se sube al servidor
+      await usuarioProvider.addHitoFotoPassenger(
+          widget.login.passengerId.toString(),
+          widget.login.tourId.toString(),
+          image); // 1 es un ejemplo de hitoId
+      _loadImage(); // Recargamos la imagen después de la subida
+    }
+  }
+
+  Future<void> _loadImage() async {
+    try {
+      Responseimagepassenger imageUrl =
+          await usuarioProvider.getPicturePassenger(
+        widget.login.passengerIdentificacion.toString(),
+        widget.login.tourId.toString(),
+      );
+
+      if (imageUrl.image.isNotEmpty) {
+        setState(() {
+          _imageUrl = imageUrl.image; // Si la imagen existe, la cargamos
+        });
+      } else {
+        setState(() {
+          _imageUrl = null; // Si no hay imagen, usar la predeterminada
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _imageUrl = null; // Si ocurre un error, usar la predeterminada
+      });
+    }
+  }
+
+  bool _isBase64(String data) {
+    try {
+      base64Decode(data
+          .split(',')
+          .last); // Intenta decodificar eliminando un posible prefijo
+      return true;
+    } catch (e) {
+      return false; // Si falla, no es Base64
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadImage();
     // Inicia la llamada al servicio para obtener los detalles del hito
     _hitoDetailFuture =
         usuarioProvider.getviewProgram(widget.login.tourId.toString());
@@ -96,8 +157,23 @@ class _ViewProgramScreenState extends State<ViewProgramScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: CircleAvatar(
-                      radius: 35, // Tamaño de la imagen
-                      backgroundImage: AssetImage('assets/profile.jpg'),
+                      radius: 40,
+                      backgroundImage: _image != null
+                          ? FileImage(File(_image!.path)) as ImageProvider<
+                              Object> // Imagen seleccionada desde el dispositivo
+                          : (_imageUrl != null && _imageUrl!.isNotEmpty)
+                              ? (_isBase64(
+                                      _imageUrl!) // Verifica si la URL es una imagen en Base64
+                                  ? MemoryImage(base64Decode(
+                                      _imageUrl!
+                                          .split(',')
+                                          .last)) as ImageProvider<
+                                      Object> // Decodifica y muestra imagen Base64
+                                  : NetworkImage(_imageUrl!) as ImageProvider<
+                                      Object>) // Carga imagen desde el servidor
+                              : AssetImage('assets/profile.jpg')
+                                  as ImageProvider<
+                                      Object>, // Imagen predeterminada
                     ),
                   ),
                   SizedBox(width: 16), // Espacio entre la imagen y el texto
@@ -286,9 +362,26 @@ class _ViewProgramScreenState extends State<ViewProgramScreen> {
                                     shape: BoxShape.circle,
                                   ),
                                   child: CircleAvatar(
-                                    radius: 60,
-                                    backgroundImage:
-                                        AssetImage('assets/profile.jpg'),
+                                    radius: 40,
+                                    backgroundImage: _image != null
+                                        ? FileImage(File(_image!.path))
+                                            as ImageProvider<
+                                                Object> // Imagen seleccionada desde el dispositivo
+                                        : (_imageUrl != null &&
+                                                _imageUrl!.isNotEmpty)
+                                            ? (_isBase64(
+                                                    _imageUrl!) // Verifica si la URL es una imagen en Base64
+                                                ? MemoryImage(base64Decode(
+                                                    _imageUrl!
+                                                        .split(',')
+                                                        .last)) as ImageProvider<
+                                                    Object> // Decodifica y muestra imagen Base64
+                                                : NetworkImage(_imageUrl!)
+                                                    as ImageProvider<
+                                                        Object>) // Carga imagen desde el servidor
+                                            : AssetImage('assets/profile.jpg')
+                                                as ImageProvider<
+                                                    Object>, // Imagen predeterminada
                                   ),
                                 ),
                                 SizedBox(width: 15),

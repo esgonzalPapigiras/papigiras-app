@@ -233,8 +233,23 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: CircleAvatar(
-                        radius: 35, // Tamaño de la imagen
-                        backgroundImage: AssetImage('assets/profile.jpg'),
+                        radius: 35,
+                        backgroundImage: _image != null
+                            ? FileImage(File(_image!.path)) as ImageProvider<
+                                Object> // Imagen seleccionada desde el dispositivo
+                            : (_imageUrl != null && _imageUrl!.isNotEmpty)
+                                ? (_isBase64(
+                                        _imageUrl!) // Verifica si la URL es una imagen en Base64
+                                    ? MemoryImage(base64Decode(
+                                        _imageUrl!
+                                            .split(',')
+                                            .last)) as ImageProvider<
+                                        Object> // Decodifica y muestra imagen Base64
+                                    : NetworkImage(_imageUrl!) as ImageProvider<
+                                        Object>) // Carga imagen desde el servidor
+                                : AssetImage('assets/profile.jpg')
+                                    as ImageProvider<
+                                        Object>, // Imagen predeterminada
                       ),
                     ),
                     SizedBox(width: 16), // Espacio entre la imagen y el texto

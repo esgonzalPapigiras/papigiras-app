@@ -732,4 +732,23 @@ class CoordinatorProviders with ChangeNotifier {
       throw Exception('Failed to load services');
     }
   }
+
+  Future<List<double>> uniqueID(String gps) async {
+    String? token = await _loadToken();
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/gps/data', {'rut': gps.toString()});
+    final resp = await http.get(url, headers: {
+      'Content-Type': 'application/json',
+      'Authorization':
+          token ?? '' // Agregar el token en la cabecera de la solicitud
+    });
+    if (resp.statusCode == 200) {
+      List<dynamic> decodedResponse = json.decode(resp.body);
+      List<double> gpsCoordinates =
+          decodedResponse.map((coord) => double.parse(coord)).toList();
+      return gpsCoordinates;
+    } else {
+      throw Exception('Failed to load GPS data');
+    }
+  }
 }
