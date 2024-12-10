@@ -67,7 +67,7 @@ class _LoginFatherState extends State<LoginFather> {
       }
       buffer.write(text[i]);
     }
-    return buffer.toString();
+    return buffer.toString().toUpperCase();
   }
 
   @override

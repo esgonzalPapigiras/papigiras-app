@@ -70,7 +70,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _startUpdatingGPS() {
-    _updateTimer = Timer.periodic(Duration(seconds: 5), (timer) async {
+    _updateTimer = Timer.periodic(Duration(seconds: 40), (timer) async {
       await _updateCoordinatorPosition();
     });
   }

@@ -82,8 +82,10 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Color(0xFF3AC5C9),
-        body: Container(
+      backgroundColor: Color(0xFF3AC5C9),
+      body: SingleChildScrollView(
+        // Envuelves el contenido con un SingleChildScrollView
+        child: Container(
           decoration: BoxDecoration(
             image: DecorationImage(
               image: AssetImage('assets/background.png'),
@@ -92,11 +94,10 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
           ),
           child: Center(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment
-                  .center, // Esto asegura que el contenido se alinee horizontalmente
+              mainAxisAlignment: MainAxisAlignment
+                  .start, // Cambia a start para mantener el contenido al inicio
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Logo y nombre de la app
                 Image.asset(
                   'assets/logo-papigiras.png',
                   height: 350,
@@ -107,7 +108,6 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
                   style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
                 SizedBox(height: 10),
-                // Nombre del pasajero centrado
                 Text(
                   widget.login.passengerName! +
                       " " +
@@ -117,34 +117,28 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
-                  textAlign:
-                      TextAlign.center, // Asegura que el texto esté centrado
+                  textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 20),
-                // Imagen de perfil
                 Container(
-                  padding: EdgeInsets.all(4), // Ancho del borde
+                  padding: EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white, // Color del borde
+                    color: Colors.white,
                     shape: BoxShape.circle,
                   ),
                   child: CircleAvatar(
                     radius: 40,
                     backgroundImage: _image != null
-                        ? FileImage(File(_image!.path)) as ImageProvider<
-                            Object> // Imagen seleccionada desde el dispositivo
+                        ? FileImage(File(_image!.path)) as ImageProvider<Object>
                         : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                            ? (_isBase64(
-                                    _imageUrl!) // Verifica si la URL es una imagen en Base64
+                            ? (_isBase64(_imageUrl!)
                                 ? MemoryImage(base64Decode(
-                                    _imageUrl!
-                                        .split(',')
-                                        .last)) as ImageProvider<
-                                    Object> // Decodifica y muestra imagen Base64
-                                : NetworkImage(_imageUrl!) as ImageProvider<
-                                    Object>) // Carga imagen desde el servidor
-                            : AssetImage('assets/profile.jpg') as ImageProvider<
-                                Object>, // Imagen predeterminada
+                                        _imageUrl!.split(',').last))
+                                    as ImageProvider<Object>
+                                : NetworkImage(_imageUrl!)
+                                    as ImageProvider<Object>)
+                            : AssetImage('assets/profile.jpg')
+                                as ImageProvider<Object>,
                   ),
                 ),
                 SizedBox(height: 20),
@@ -153,7 +147,6 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
                   style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
                 SizedBox(height: 40),
-                // Botón de continuación
                 ElevatedButton(
                   onPressed: () async {
                     if (await usuarioProvider.validateMedicalRecord(
@@ -161,15 +154,17 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) =>
-                                TravelFatherDashboard(login: widget.login)),
+                          builder: (context) =>
+                              TravelFatherDashboard(login: widget.login),
+                        ),
                       );
                     } else {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) =>
-                                MedicalRecordScreen(login: widget.login)),
+                          builder: (context) =>
+                              MedicalRecordScreen(login: widget.login),
+                        ),
                       );
                     }
                   },
@@ -185,9 +180,12 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
                     style: TextStyle(fontSize: 18.0, color: Colors.white),
                   ),
                 ),
+                SizedBox(height: 20), // Espaciado al final
               ],
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

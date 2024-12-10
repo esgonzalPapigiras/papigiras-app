@@ -49,7 +49,7 @@ class _LoginPassengerState extends State<LoginPassenger> {
       }
       buffer.write(text[i]);
     }
-    return buffer.toString();
+    return buffer.toString().toUpperCase();
   }
 
   @override
