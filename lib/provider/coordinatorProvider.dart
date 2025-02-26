@@ -58,10 +58,10 @@ class CoordinatorProviders with ChangeNotifier {
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
 
-    LinkedHashMap<String, dynamic> decorespoCreate =
-        json.decode(utf8.decode(resp.bodyBytes));
-    TourSales login = new TourSales.fromJson(decorespoCreate);
     if (resp.statusCode == 200) {
+      LinkedHashMap<String, dynamic> decorespoCreate =
+          json.decode(utf8.decode(resp.bodyBytes));
+      TourSales login = new TourSales.fromJson(decorespoCreate);
       return login;
     } else {
       return null;
