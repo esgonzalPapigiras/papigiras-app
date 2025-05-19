@@ -1,0 +1,2 @@
+C:/Users/Giovanni Benvenuto/git-reale/papigiras-app/android/app/.cxx/Debug/1r6t4n70/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/Giovanni Benvenuto/git-reale/papigiras-app/android/app/.cxx/Debug/1r6t4n70/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -1,13 +1,12 @@
 buildscript {
-    ext.kotlin_version = '1.8.0' // Cambia esta versión
+    ext.kotlin_version = '1.8.10'  // Asegúrate de que esta versión sea compatible
     repositories {
         google()
         mavenCentral()
     }
-
     dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.0'  // Actualiza aquí
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.android.tools.build:gradle:7.3.1'
     }
 }
 
