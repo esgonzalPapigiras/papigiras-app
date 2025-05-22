@@ -1,5 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
+import 'package:papigiras_app/dto/responseAttorney.dart';
+import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
+import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
@@ -14,6 +19,126 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
   final usuarioProvider = new CoordinatorProviders();
   final TextEditingController _codigoGiraController = TextEditingController();
   bool _showError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _codigoGiraController.addListener(() {
+      setState(() {
+        _showError = false; // Resetea el error cuando cambia el texto
+      });
+    });
+    _loadUserData();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _checkLoginStatus();
+    });
+  }
+
+  void _loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Recupera los datos guardados del usuario
+    String? storedRut = prefs.getString('codigoGira');
+    String? storedPassword = prefs.getString('userPassword');
+
+    // Si los datos existen, colócalos en los controladores de los campos
+    setState(() {
+      if (storedRut != null) {
+        _codigoGiraController.text = storedRut;
+      }
+    });
+  }
+
+  Future<void> _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    String? token = await _loadToken(); // _loadToken ya maneja la expiración
+
+    if (isLoggedIn && token != null) {
+      String? loginJson = prefs.getString('loginData');
+      if (loginJson != null) {
+        String role = prefs.getString('userRole') ??
+            ''; // Usar un valor por defecto o manejar error si es nulo
+        var loginMap = jsonDecode(loginJson);
+
+        if (!mounted)
+          return; // Comprobar si el widget sigue montado antes de navegar
+
+        try {
+          // Envolver en try-catch por si el JSON no coincide con los DTOs
+          if (role == 'coordinator') {
+            TourSales login = TourSales.fromJson(loginMap);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      TravelCoordinatorDashboard(login: login)),
+            );
+          } else if (role == 'passenger') {
+            ResponseAttorney login = ResponseAttorney.fromJson(loginMap);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => TravelPassengerDashboard(login: login)),
+            );
+          } else if (role == 'father') {
+            ResponseAttorney login = ResponseAttorney.fromJson(loginMap);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => TravelFatherDashboard(login: login)),
+            );
+          } else {
+            // Rol desconocido o inválido, limpiar sesión para re-login
+            await _clearSession(prefs);
+          }
+        } catch (e) {
+          // Error al deserializar, limpiar sesión
+          print("Error deserializando loginData: $e");
+          await _clearSession(prefs);
+        }
+      } else {
+        // Estado inconsistente: isLoggedIn es true pero no hay loginData. Limpiar sesión.
+        await _clearSession(prefs);
+      }
+    }
+  }
+
+  Future<void> _clearSession(SharedPreferences prefs) async {
+    await prefs.remove('token');
+    await prefs.remove('tokenExpiry');
+    await prefs.setBool('isLoggedIn', false);
+    await prefs.remove('loginData');
+    await prefs.remove('userRole');
+  }
+
+  Future<String?> _loadToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+    String? tokenExpiryStr = prefs.getString('tokenExpiry');
+
+    if (token != null && tokenExpiryStr != null) {
+      DateTime tokenExpiry = DateTime.parse(tokenExpiryStr);
+      final now = DateTime.now();
+
+      // Si el token ha expirado, eliminarlo y devolver null
+      if (tokenExpiry.isBefore(now)) {
+        await prefs.remove('token');
+        await prefs.remove('tokenExpiry');
+        return null; // El token ha expirado
+      } else {
+        return token; // El token es válido
+      }
+    } else {
+      return null; // No hay token guardado
+    }
+  }
+
+  @override
+  void dispose() {
+    _codigoGiraController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,8 +233,12 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                           setState(() {
                             _showError = false;
                           });
-                          final login = await usuarioProvider
-                              .validateLoginUser(_codigoGiraController.text);
+
+                          // Realizar la solicitud de login
+                          final login = await usuarioProvider.validateLoginUser(
+                            _codigoGiraController.text,
+                          );
+
                           if (login != null) {
                             // Si login tiene datos, muestra QuickAlert de éxito y navega a la siguiente pantalla
                             QuickAlert.show(
@@ -121,22 +250,39 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                               onConfirmBtnTap: () async {
                                 SharedPreferences prefs =
                                     await SharedPreferences.getInstance();
-                                prefs.setString('token', login.tokenKey);
+
+                                // Guardar el token
+                                await prefs.setString('token', login.tokenKey);
+
+                                // Establecer la fecha de expiración a 3 días a partir de ahora
                                 final now = DateTime.now();
                                 final expiryDate = now.add(Duration(
-                                    days:
-                                        3)); // Fecha de expiración: 3 días a partir de ahora
+                                    days: 3)); // Fecha de expiración: 3 días
                                 await prefs.setString('tokenExpiry',
                                     expiryDate.toIso8601String());
 
-                                Navigator.of(context)
-                                    .pop(); // Cierra el QuickAlert
+                                // Guardar el rol como 'coordinator'
+                                await prefs.setString(
+                                    'userRole', 'coordinator');
+
+                                // Marcar como logueado
+                                await prefs.setBool('isLoggedIn', true);
+
+                                // Serializar el objeto login y guardarlo como una cadena JSON
+                                String loginJson = jsonEncode(login.toJson());
+                                await prefs.setString('loginData', loginJson);
+
+                                // Cerrar el QuickAlert
+                                Navigator.of(context).pop();
+
+                                // Navegar a la pantalla del coordinador
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         TravelCoordinatorDashboard(
-                                            login: login),
+                                      login: login,
+                                    ),
                                   ),
                                 );
                               },
@@ -155,10 +301,10 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                               },
                             );
                           }
-                          // Maneja la respuesta del login si es necesario
                         } else {
                           setState(() {
-                            _showError = true;
+                            _showError =
+                                true; // Muestra el error si el campo está vacío
                           });
                         }
                       },

@@ -117,4 +117,29 @@ class ResponseAttorney {
         isActive: json['isActive'],
         tokenKey: json['tokenKey']);
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'passengerId': passengerId,
+      'passengerName': passengerName,
+      'passengerApellidos': passengerApellidos,
+      'passengerIdentificacion': passengerIdentificacion,
+      'passengerDiet': passengerDiet,
+      'passengerEmail': passengerEmail,
+      'passengerBirthDate': passengerBirthDate,
+      'passengerGender': passengerGender,
+      'tourId': tourId,
+      'coordinatorName': coordinatorName,
+      'coordinatorPhone': coordinatorPhone,
+      'coordinatorIdentificator': coordinatorIdentificator,
+      'tourSalesdateInitial': tourSalesdateInitial,
+      'tourSalesdateFinal': tourSalesdateFinal,
+      'tourSalesUuid': tourSalesUuid,
+      'tourCourse': tourCourse,
+      'tourName': tourName,
+      'tourYear': tourYear,
+      'isActive': isActive,
+      'tokenKey': tokenKey,
+    };
+  }
 }

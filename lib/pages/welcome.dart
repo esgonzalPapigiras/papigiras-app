@@ -1,9 +1,27 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/dto/TourSales.dart';
+import 'package:papigiras_app/dto/responseAttorney.dart';
+import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
 import 'package:papigiras_app/pages/alumns/loginpassenger.dart';
+import 'package:papigiras_app/pages/attorney/indexFather.dart';
+import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/pages/attorney/loginFather.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
+  @override
+  _WelcomeScreenState createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

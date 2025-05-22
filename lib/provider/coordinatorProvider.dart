@@ -43,27 +43,68 @@ class CoordinatorProviders with ChangeNotifier {
   // Cargar token desde SharedPreferences
   Future<String?> _loadToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('token') ?? '';
-    notifyListeners();
-    return _token;
+    String? token = prefs.getString('token');
+    String? tokenExpiryStr = prefs.getString('tokenExpiry');
+
+    if (token != null && tokenExpiryStr != null) {
+      DateTime tokenExpiry = DateTime.parse(tokenExpiryStr);
+      final now = DateTime.now();
+
+      // Si el token ha expirado, eliminarlo y devolver null
+      if (tokenExpiry.isBefore(now)) {
+        await prefs.remove('token');
+        await prefs.remove('tokenExpiry');
+        return null; // El token ha expirado
+      } else {
+        return token; // El token es válido
+      }
+    } else {
+      return null; // No hay token guardado
+    }
+  }
+
+  Future<void> checkLoginStatus(BuildContext context) async {
+    String? token = await _loadToken();
+    if (token == null) {
+      // Si el token es nulo, el usuario debe iniciar sesión
+      Navigator.pushReplacementNamed(context, '/login');
+    } else {
+      // Si el token es válido, navega a la siguiente pantalla (por ejemplo, dashboard)
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    }
   }
 
   Future<TourSales?> validateLoginUser(String tourCode) async {
+    // Cargar el token y verificar su validez
     String? token = await _loadToken();
+
+    // Si no hay token válido, no podemos continuar con la solicitud
+    if (token == null) {
+      return null; // El token no es válido o ha expirado
+    }
+
+    // URL del endpoint para la solicitud
     var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
         '/app/services/coordinator', {'tourCode': tourCode});
+
+    // Realizar la solicitud HTTP
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
-      'Authorization':
-          token ?? '' // Agregar el token en la cabecera de la solicitud
+      'Authorization': token, // Agregar el token en la cabecera de la solicitud
     });
 
+    // Verificar si la respuesta es exitosa
     if (resp.statusCode == 200) {
+      // Si la respuesta es correcta, decodificamos el JSON
       LinkedHashMap<String, dynamic> decorespoCreate =
           json.decode(utf8.decode(resp.bodyBytes));
-      TourSales login = new TourSales.fromJson(decorespoCreate);
-      return login;
+
+      // Crear el objeto `TourSales` a partir del JSON
+      TourSales login = TourSales.fromJson(decorespoCreate);
+
+      return login; // Devolver el objeto de respuesta
     } else {
+      // Si la respuesta no es exitosa, devolver null
       return null;
     }
   }
@@ -447,42 +488,67 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<ResponseAttorney?> validateLoginUserFather(
       String rut, String password) async {
+    // Cargar el token y verificar su validez
     String? token = await _loadToken();
+
+    // Si no hay token válido, no podemos continuar con la solicitud
+    if (token == null) {
+      return null; // El token no es válido o ha expirado
+    }
+
+    // URL del endpoint para la solicitud
     var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
         '/app/services/attorney/login', {'user': rut, 'password': password});
+
+    // Realizar la solicitud HTTP
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
-      'Authorization':
-          token ?? '' // Agregar el token en la cabecera de la solicitud
+      'Authorization': token, // Agregar el token en la cabecera de la solicitud
     });
 
+    // Verificar si la respuesta es exitosa
     if (resp.statusCode == 200) {
+      // Si la respuesta es correcta, decodificamos el JSON
       LinkedHashMap<String, dynamic> decorespoCreate =
           json.decode(utf8.decode(resp.bodyBytes));
-      ResponseAttorney login = new ResponseAttorney.fromJson(decorespoCreate);
-      return login;
+
+      // Crear el objeto `ResponseAttorney` a partir del JSON
+      ResponseAttorney login = ResponseAttorney.fromJson(decorespoCreate);
+
+      return login; // Devolver el objeto de respuesta
     } else {
+      // Si la respuesta no es exitosa, devolver null
       return null;
     }
   }
 
   Future<ResponseAttorney?> validateLoginUserPassenger(
       String rut, String password) async {
+    // Cargar el token y verificar su validez
     String? token = await _loadToken();
+
+    // URL del endpoint para la solicitud
     var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
         '/app/services/passenger/login', {'user': rut, 'password': password});
+
+    // Realizar la solicitud HTTP
     final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization':
-          token ?? '' // Agregar el token en la cabecera de la solicitud
+      'Content-Type':
+          'application/json', // Agregar el token en la cabecera de la solicitud
     });
 
+    // Verificar si la respuesta es exitosa
     if (resp.statusCode == 200) {
+      // Si la respuesta es correcta, decodificamos el JSON
       LinkedHashMap<String, dynamic> decorespoCreate =
           json.decode(utf8.decode(resp.bodyBytes));
-      ResponseAttorney login = new ResponseAttorney.fromJson(decorespoCreate);
-      return login;
+
+      // Crear el objeto `ResponseAttorney` a partir del JSON
+      ResponseAttorney login = ResponseAttorney.fromJson(decorespoCreate);
+
+      return login; // Devolver el objeto de respuesta
     } else {
+      // Si la respuesta no es exitosa, devolver null
       return null;
     }
   }

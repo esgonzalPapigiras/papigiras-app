@@ -16,8 +16,9 @@ class MyApp extends StatelessWidget {
         child: MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Material App',
-            initialRoute: 'welcome',
+            home: WelcomeScreen(), // Usa `home` en lugar de `initialRoute`
             routes: {
+          // Aquí defines las rutas adicionales
           'welcome': (BuildContext context) => WelcomeScreen(),
         }));
   }
