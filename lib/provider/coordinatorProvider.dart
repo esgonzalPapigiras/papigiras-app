@@ -78,19 +78,14 @@ class CoordinatorProviders with ChangeNotifier {
     // Cargar el token y verificar su validez
     String? token = await _loadToken();
 
-    // Si no hay token válido, no podemos continuar con la solicitud
-    if (token == null) {
-      return null; // El token no es válido o ha expirado
-    }
-
     // URL del endpoint para la solicitud
     var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
         '/app/services/coordinator', {'tourCode': tourCode});
 
     // Realizar la solicitud HTTP
     final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token, // Agregar el token en la cabecera de la solicitud
+      'Content-Type':
+          'application/json', // Agregar el token en la cabecera de la solicitud
     });
 
     // Verificar si la respuesta es exitosa
@@ -491,19 +486,14 @@ class CoordinatorProviders with ChangeNotifier {
     // Cargar el token y verificar su validez
     String? token = await _loadToken();
 
-    // Si no hay token válido, no podemos continuar con la solicitud
-    if (token == null) {
-      return null; // El token no es válido o ha expirado
-    }
-
     // URL del endpoint para la solicitud
     var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
         '/app/services/attorney/login', {'user': rut, 'password': password});
 
     // Realizar la solicitud HTTP
     final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token, // Agregar el token en la cabecera de la solicitud
+      'Content-Type':
+          'application/json', // Agregar el token en la cabecera de la solicitud
     });
 
     // Verificar si la respuesta es exitosa
