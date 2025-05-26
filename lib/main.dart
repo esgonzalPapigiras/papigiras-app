@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:papigiras_app/pages/attorney/fatherMedicalFile.dart';
-import 'package:papigiras_app/pages/attorney/fatherWelcome.dart';
 import 'package:papigiras_app/pages/welcome.dart';
-import 'package:papigiras_app/provider/provider.dart';
+import 'package:papigiras_app/utils/LocationService.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) =>
+          LocationService(), // Proveedor del servicio de ubicación
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Provider(
-        child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Material App',
-            home: WelcomeScreen(), // Usa `home` en lugar de `initialRoute`
-            routes: {
-          // Aquí defines las rutas adicionales
-          'welcome': (BuildContext context) => WelcomeScreen(),
-        }));
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Material App',
+      home: WelcomeScreen(), // Usa `home` en lugar de `initialRoute`
+      routes: {
+        'welcome': (BuildContext context) => WelcomeScreen(),
+        // Define otras rutas aquí
+      },
+    );
   }
 }

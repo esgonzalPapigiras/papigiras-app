@@ -8,12 +8,13 @@ import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:papigiras_app/utils/LocationService.dart';
+import 'package:provider/provider.dart';
 
 class BusCrewCoorScreen extends StatefulWidget {
   final TourSales login;
@@ -68,6 +69,9 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.clear(); // Borrar el estado de la sesión
 
+    final locationService =
+        Provider.of<LocationService>(context, listen: false);
+    locationService.stopTracking();
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,

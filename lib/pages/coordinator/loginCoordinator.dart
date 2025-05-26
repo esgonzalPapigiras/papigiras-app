@@ -1,14 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:papigiras_app/utils/LocationService.dart';
+import 'package:provider/provider.dart';
 
 class LoginCoordinator extends StatefulWidget {
   @override
@@ -19,6 +24,7 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
   final usuarioProvider = new CoordinatorProviders();
   final TextEditingController _codigoGiraController = TextEditingController();
   bool _showError = false;
+  late Timer _locationTimer; // Timer para obtener ubicación cada 10 segundos
 
   @override
   void initState() {
@@ -275,6 +281,31 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                                 // Cerrar el QuickAlert
                                 Navigator.of(context).pop();
 
+                                LocationPermission permission =
+                                    await Geolocator.requestPermission();
+                                if (permission == LocationPermission.denied ||
+                                    permission ==
+                                        LocationPermission.deniedForever) {
+                                  // Si no concede permiso, muestras un error y sales.
+                                  QuickAlert.show(
+                                    context: context,
+                                    type: QuickAlertType.error,
+                                    title: 'Permiso denegado',
+                                    text:
+                                        'Necesitamos permiso de ubicación para continuar.',
+                                    confirmBtnText: 'Aceptar',
+                                    onConfirmBtnTap: () =>
+                                        Navigator.of(context).pop(),
+                                  );
+                                  return;
+                                }
+
+                                // 2) Si el permiso está OK, arrancas el tracking
+                                final locationService =
+                                    Provider.of<LocationService>(context,
+                                        listen: false);
+                                locationService.startTracking();
+
                                 // Navegar a la pantalla del coordinador
                                 Navigator.push(
                                   context,
@@ -325,23 +356,6 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                 ),
               ),
             ),
-            /*// Enlace fuera del container
-            TextButton(
-              onPressed: () {
-                // Acción para recuperar la contraseña
-                print("Recuperar contraseña presionado");
-              },
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero, // Quitar el padding si es necesario
-              ),
-              child: Text(
-                '¿Has olvidado tu contraseña? Recupérala aquí',
-                style: TextStyle(
-                  color: Colors.white,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),*/
           ],
         ),
       ),

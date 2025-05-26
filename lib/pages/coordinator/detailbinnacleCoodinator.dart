@@ -4,18 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/DetailHitoList.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
-import 'package:papigiras_app/pages/coordinator/activities.dart';
-import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/contador.dart';
-import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
-import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:papigiras_app/utils/LocationService.dart';
+import 'package:provider/provider.dart';
 
 class DetalleBitacoraCoordScreen extends StatefulWidget {
   @override
@@ -61,6 +56,9 @@ class _DetalleBitacoraCoordScreenState
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.clear(); // Borrar el estado de la sesión
 
+    final locationService =
+        Provider.of<LocationService>(context, listen: false);
+    locationService.stopTracking();
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,
@@ -259,14 +257,6 @@ class _DetalleBitacoraCoordScreenState
 
   List<Widget> _buildBinnacleEntries(DetailHitoList hitoDetail) {
     List<Map<String, dynamic>> entries = [];
-
-    // Se asume que las imágenes están en formato base64 en la lista hitoDetail.images
-    // Agrupamos las imágenes por actividad
-    for (var i = 0; i < hitoDetail.images!.length; i++) {
-      String base64Image = hitoDetail.images![i];
-
-      // Agregar las imágenes a las entradas
-    }
     String time = hitoDetail.hora ?? 'Sin hora';
     String activity = hitoDetail.titulo ?? 'Actividad no disponible';
     String description = hitoDetail.descripcion ?? 'Descripción no disponible';
@@ -334,61 +324,6 @@ class _DetalleBitacoraCoordScreenState
         ),
       );
     }).toList();
-  }
-
-  Widget _buildCustomBottomNavigationBar() {
-    return Container(
-      padding:
-          EdgeInsets.symmetric(vertical: 10), // Ajuste del espacio vertical
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 5,
-            blurRadius: 10,
-            offset: Offset(0, -3),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildBottomButton(
-                  Icons.connect_without_contact_sharp,
-                  'Actividades',
-                  null,
-                  ActivitiesCoordScreen(login: widget.login)),
-              Transform.translate(
-                offset:
-                    Offset(0, -20), // Ajuste de posición para el botón central
-                child: buildBottomButtonHito(Icons.add_circle, 'Hito', null,
-                    BusCrewCoorScreen(login: widget.login)),
-              ),
-              buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
-                  CountDownCoordScreen(login: widget.login)),
-            ],
-          ),
-          SizedBox(height: 10), // Espacio entre filas
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildBottomButton(Icons.medical_information, 'Fichas Medicas',
-                  null, MedicalCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
-                  BusCrewCoorScreen(login: widget.login)),
-              buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
-                  DocumentCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
-                  BitacoraCoordScreen(login: widget.login)),
-            ],
-          ),
-        ],
-      ),
-    );
   }
 
   Widget buildBottomButton(

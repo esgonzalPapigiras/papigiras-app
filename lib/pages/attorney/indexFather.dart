@@ -2,9 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
@@ -16,6 +19,7 @@ import 'package:papigiras_app/pages/attorney/viewProgram.dart';
 import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:papigiras_app/utils/TraceMap.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -476,6 +480,9 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                           ],
                         ),
                       ),
+                      SizedBox(height: 20),
+                      // Aquí reemplazas el Container estático por tu mapa dinámico:
+                      TraceMap(tourCode: widget.login.tourId!),
                       SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: () {

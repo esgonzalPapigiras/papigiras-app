@@ -1,0 +1,2 @@
+C:/Users/benve/Documents/repositoriosSigbatec/papigiras-app/android/app/.cxx/Debug/1v4121f5/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/benve/Documents/repositoriosSigbatec/papigiras-app/android/app/.cxx/Debug/1v4121f5/x86_64/CMakeFiles/rebuild_cache.dir

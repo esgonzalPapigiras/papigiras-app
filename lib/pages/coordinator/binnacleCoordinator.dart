@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/binnacle.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
@@ -9,13 +8,14 @@ import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/detailbinnacleCoodinator.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:papigiras_app/utils/LocationService.dart';
+import 'package:provider/provider.dart';
 
 class BitacoraCoordScreen extends StatefulWidget {
   @override
@@ -58,6 +58,9 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.clear(); // Borrar el estado de la sesión
 
+    final locationService =
+        Provider.of<LocationService>(context, listen: false);
+    locationService.stopTracking();
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,
