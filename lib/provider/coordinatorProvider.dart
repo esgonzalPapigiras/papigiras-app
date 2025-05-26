@@ -19,6 +19,7 @@ import 'package:papigiras_app/dto/positionMap.dart';
 import 'package:papigiras_app/dto/requestHito.dart';
 import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
+import 'package:papigiras_app/dto/updateMedicalRecord.dart';
 import 'package:papigiras_app/utils/PDFViewer.dart';
 import 'dart:convert';
 import 'package:path/path.dart' as path;
@@ -813,4 +814,6 @@ class CoordinatorProviders with ChangeNotifier {
       throw Exception('Failed to load GPS data');
     }
   }
+
+  void sendMedicalDataEdit(RequestPassengerMedicalEdit medical) {}
 }

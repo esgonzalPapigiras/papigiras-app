@@ -11,6 +11,7 @@ import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/attorney/loginFather.dart';
+import 'package:papigiras_app/pages/attorney/medicalRecordScreenEdit.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
@@ -433,6 +434,41 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
                                 'Medicamentos Prohibidos',
                                 medicalRecord?.avoidMedications ??
                                     "No hay medicamentos registrados"),
+                            SizedBox(height: 10),
+                            Align(
+                              alignment: Alignment.center,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          MedicalRecordScreenEdit(
+                                        login: widget.login,
+                                        record: medicalRecord!,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: Icon(Icons.edit, color: Colors.white),
+                                label: Text(
+                                  'Editar',
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 16),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.teal,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 30.0,
+                                    vertical: 15.0,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20.0),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 20),
                             SizedBox(height: 200),
                           ],
                         ),
