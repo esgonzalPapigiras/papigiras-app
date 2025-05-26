@@ -503,7 +503,36 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                                                 medicamentosEvitar);
 
                                     usuarioProvider
-                                        .sendMedicalDataEdit(medical);
+                                        .sendMedicalDataEdit(medical)
+                                        .then((response) {
+                                      QuickAlert.show(
+                                        context: context,
+                                        type: QuickAlertType.success,
+                                        title: 'Éxito',
+                                        text: 'Ficha Médica Actualizada',
+                                        confirmBtnText: 'Continuar',
+                                        onConfirmBtnTap: () {
+                                          Navigator.of(context).pop();
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ViewMedicalRecordScreen(
+                                                      login: widget.login),
+                                            ),
+                                          ); // Cierra el QuickAlert
+                                        },
+                                      );
+                                    }).catchError((error) {
+                                      QuickAlert.show(
+                                        context: context,
+                                        type: QuickAlertType.error,
+                                        title: 'Error',
+                                        text:
+                                            'No se pudo Actualizar la ficha médica',
+                                      );
+                                    });
+                                    ;
                                   },
                                   child: Text('Guardar Ficha Médica'),
                                   style: ElevatedButton.styleFrom(

@@ -815,5 +815,22 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  void sendMedicalDataEdit(RequestPassengerMedicalEdit medical) {}
+  Future<bool> sendMedicalDataEdit(RequestPassengerMedicalEdit medical) async {
+    String? token = await _loadToken();
+    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '/app/services/medical-records-edit');
+
+    final resp =
+        await http.post(url, body: jsonEncode(medical.toJson()), headers: {
+      'Content-Type': 'application/json',
+      'Authorization':
+          token ?? '' // Agregar el token en la cabecera de la solicitud
+    });
+
+    if (resp.statusCode == 200) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 }
