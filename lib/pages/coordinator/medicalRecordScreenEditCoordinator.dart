@@ -252,6 +252,11 @@ class _MedicalRecordScreenEditState
 
   @override
   Widget build(BuildContext context) {
+    if (_record == null) {
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
         key: _scaffoldKey,
         backgroundColor: Color(0xFF3AC5C9),
@@ -506,7 +511,7 @@ class _MedicalRecordScreenEditState
                                   _record!.avoidMedications ??
                                       "No hay medicamentos registradas"),
 
-                              // Botón Guardar
+                              SizedBox(height: 10),
                               Center(
                                 child: ElevatedButton(
                                   onPressed: () {
