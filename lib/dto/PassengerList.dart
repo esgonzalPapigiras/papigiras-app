@@ -3,12 +3,14 @@ class PassengerList {
   final int passengerId;
   final String passengerIdentification;
   final bool passengerverificate;
+  final String? passengerApellidos;
 
   PassengerList(
       {required this.passengerName,
       required this.passengerId,
       required this.passengerIdentification,
-      required this.passengerverificate});
+      required this.passengerverificate,
+      required this.passengerApellidos});
 
   // Método para crear una instancia de PassengerList desde un JSON
   factory PassengerList.fromJson(Map<String, dynamic> json) {
@@ -16,7 +18,8 @@ class PassengerList {
         passengerName: json['passengerName'],
         passengerId: json['passengerId'],
         passengerIdentification: json['passengerIdentification'],
-        passengerverificate: json['passengerverificate']);
+        passengerverificate: json['passengerverificate'],
+        passengerApellidos: json['passengerApellidos']);
   }
 
   // Método para convertir una instancia de PassengerList a JSON
@@ -25,7 +28,8 @@ class PassengerList {
       'passengerName': passengerName,
       'passengerId': passengerId,
       'passengerIdentification': passengerIdentification,
-      'passengerverificate': passengerverificate
+      'passengerverificate': passengerverificate,
+      'passengerApellidos': passengerApellidos
     };
   }
 }

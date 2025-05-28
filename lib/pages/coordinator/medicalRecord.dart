@@ -8,6 +8,7 @@ import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/medicalRecordScreenEditCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
@@ -71,8 +72,10 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
           'name': passenger
               .passengerName, // Asegúrate de que esto coincida con tu DTO
           'id': passenger.passengerIdentification,
-          'idPassenger':
-              passenger.passengerId // Asegúrate de que esto coincida con tu DTO
+          'idPassenger': passenger.passengerId,
+
+          'passengerApellidos': passenger
+              .passengerApellidos // Asegúrate de que esto coincida con tu DTO
         };
       }).toList();
     });
@@ -332,48 +335,88 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
     return documents.map((document) {
       return Card(
         margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-        child: ListTile(
-          leading: Icon(
-            Icons.medical_services,
-            color: Colors.teal,
-            size: 40,
-          ),
-          title: Text(
-            document['name'],
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(document['id']),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0), // Espaciado para mayor comodidad
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                onPressed: () {
-                  usuarioProvider.viewDocumentMedicalRecord(
-                      widget.login.tourSalesId.toString(),
-                      document['idPassenger'].toString(),
-                      context,
-                      document['id'].toString());
-                },
+              // Título y subtítulo
+              ListTile(
+                leading: Icon(
+                  Icons.medical_services,
+                  color: Colors.teal,
+                  size: 40,
+                ),
+                title: Text(
+                  document['name'],
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+                subtitle: Text(
+                  document['id'],
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ),
-              IconButton(
-                icon: Icon(Icons.download, color: Colors.teal),
-                onPressed: () {
-                  usuarioProvider.downloadDocumentMedicalRecord(
-                      widget.login.tourSalesId.toString(),
-                      document['idPassenger'].toString(),
-                      document['id'].toString());
-                  QuickAlert.show(
-                    context: context,
-                    type: QuickAlertType.success,
-                    title: 'Éxito',
-                    text: 'Documento Descargado',
-                    confirmBtnText: 'Continuar',
-                    onConfirmBtnTap: () {
-                      Navigator.of(context).pop(); // Cierra el QuickAlert
-                    },
-                  );
-                },
+              // Centrar los botones en el Card
+              Center(
+                // Usamos Center para centrar los botones en el Card
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment
+                      .center, // Centra los botones horizontalmente
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.teal),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                MedicalRecordScreenEditCoordinator(
+                                    login: widget.login,
+                                    idPassenger:
+                                        document['idPassenger'].toString(),
+                                    idDocumento: document['id'].toString(),
+                                    nombrepassenger:
+                                        document['name'].toString(),
+                                    passengerApellidos:
+                                        document['passengerApellidos']
+                                            .toString()),
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.remove_red_eye, color: Colors.teal),
+                      onPressed: () {
+                        usuarioProvider.viewDocumentMedicalRecord(
+                          widget.login.tourSalesId.toString(),
+                          document['idPassenger'].toString(),
+                          context,
+                          document['id'].toString(),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.download, color: Colors.teal),
+                      onPressed: () {
+                        usuarioProvider.downloadDocumentMedicalRecord(
+                          widget.login.tourSalesId.toString(),
+                          document['idPassenger'].toString(),
+                          document['id'].toString(),
+                        );
+                        QuickAlert.show(
+                          context: context,
+                          type: QuickAlertType.success,
+                          title: 'Éxito',
+                          text: 'Documento Descargado',
+                          confirmBtnText: 'Continuar',
+                          onConfirmBtnTap: () {
+                            Navigator.of(context).pop(); // Cierra el QuickAlert
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

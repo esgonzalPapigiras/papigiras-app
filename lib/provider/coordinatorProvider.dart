@@ -201,44 +201,47 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<void> addHitoFoto(
       int hito, String tourId, List<XFile> imageFiles) async {
-    String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/create-hito/fotos');
+    // Inicia la tarea en un Future para no bloquear el hilo principal
+    Future(() async {
+      String? token = await _loadToken();
+      var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+          '/app/services/create-hito/fotos');
 
-    // Crea un objeto MultipartRequest para enviar datos multipart
-    var request = http.MultipartRequest('POST', url);
+      // Crea un objeto MultipartRequest para enviar datos multipart
+      var request = http.MultipartRequest('POST', url);
 
-    // Añadir parámetros adicionales
-    request.fields['hitoId'] =
-        hito.toString(); // El hitoId debe ser parte del objeto hito
-    request.fields['tourId'] = tourId.toString();
-    if (token != null && token.isNotEmpty) {
-      request.headers['Authorization'] = token;
-    } // El tourId debe ser parte del objeto hito
+      // Añadir parámetros adicionales
+      request.fields['hitoId'] =
+          hito.toString(); // El hitoId debe ser parte del objeto hito
+      request.fields['tourId'] = tourId.toString();
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = token;
+      } // El tourId debe ser parte del objeto hito
 
-    // Añadir las imágenes
-    for (int i = 0; i < imageFiles.length; i++) {
-      var file = await http.MultipartFile.fromPath(
-        'images', // Este es el nombre del campo en tu API
-        imageFiles[i].path,
-        filename: imageFiles[i].name,
-      );
-      request.files.add(file);
-    }
-
-    // Realiza la solicitud
-    try {
-      var response = await request.send();
-
-      if (response.statusCode == 200) {
-        print('Hito fotos agregadas con éxito');
-        // Aquí puedes manejar la respuesta si es necesario
-      } else {
-        print('Error al enviar las fotos: ${response.statusCode}');
+      // Añadir las imágenes
+      for (int i = 0; i < imageFiles.length; i++) {
+        var file = await http.MultipartFile.fromPath(
+          'images', // Este es el nombre del campo en tu API
+          imageFiles[i].path,
+          filename: imageFiles[i].name,
+        );
+        request.files.add(file);
       }
-    } catch (e) {
-      print('Error al enviar la solicitud: $e');
-    }
+
+      // Realiza la solicitud sin esperar la respuesta
+      try {
+        var response = await request.send();
+
+        if (response.statusCode == 200) {
+          print('Hito fotos agregadas con éxito');
+          // Aquí puedes manejar la respuesta si es necesario
+        } else {
+          print('Error al enviar las fotos: ${response.statusCode}');
+        }
+      } catch (e) {
+        print('Error al enviar la solicitud: $e');
+      }
+    });
   }
 
   Future<DetailHitoList> getHitoComplete(String hito, String tourId) async {
@@ -818,8 +821,9 @@ class CoordinatorProviders with ChangeNotifier {
   Future<bool> sendMedicalDataEdit(RequestPassengerMedicalEdit medical) async {
     String? token = await _loadToken();
     var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/medical-records-edit');
+        '/app/services/medical-records/edit');
 
+    print(token);
     final resp =
         await http.post(url, body: jsonEncode(medical.toJson()), headers: {
       'Content-Type': 'application/json',

@@ -279,7 +279,7 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                               fecha: formattedDate);
 
                           // Simular un retraso de 20 segundos
-                          await Future.delayed(Duration(seconds: 20));
+                          await Future.delayed(Duration(seconds: 5));
 
                           // Llamada al método para agregar el Hito
                           var consolidate = await usuarioProvider.addHito(hito);
