@@ -63,7 +63,6 @@ dependencies:
   shared_preferences: ^2.0.10
   flutter_compass: ^0.8.1
   flutter_launcher_icons: ^0.13.1
-  background_locator_2: ^2.0.6
   flutter_image_compress: ^2.4.0
 dev_dependencies:
   flutter_test:
