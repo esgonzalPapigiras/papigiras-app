@@ -31,9 +31,9 @@ class TourSales {
         nameClient: json['nameClient'],
         courseClient: json['courseClient'],
         seasonClient: json['seasonClient'],
-        tourTripulationNameId: json['tourTripulationNameId'],
+        tourTripulationNameId: json['tourTripulationNameId'] ?? '',
         tourTripulationIdentificationId:
-            json['tourTripulationIdentificationId'],
+            json['tourTripulationIdentificationId'] ?? '',
         passengerCountsBySex:
             Map<String, int>.from(json['passengerCountsBySex']),
         tokenKey: json['tokenKey']);

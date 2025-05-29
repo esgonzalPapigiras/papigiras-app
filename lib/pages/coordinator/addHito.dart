@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
@@ -12,6 +13,7 @@ import 'dart:async';
 import 'package:papigiras_app/dto/requestHito.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:papigiras_app/utils/LocationService.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quickalert/quickalert.dart';
 
@@ -46,6 +48,9 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
     super.initState();
     _getCurrentTimeInChile();
     _checkLocationService();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LocationService>().startTracking();
+    });
   }
 
   @override

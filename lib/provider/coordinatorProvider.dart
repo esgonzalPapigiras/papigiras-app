@@ -4,12 +4,14 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:papigiras_app/dto/DetailHitoList.dart';
 import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/PassengerList.dart';
 import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
+import 'package:papigiras_app/dto/PositionCoordinator.dart';
 import 'package:papigiras_app/dto/ProgramViewDto.dart';
 import 'package:papigiras_app/dto/RequestActivities.dart';
 import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
@@ -200,48 +202,71 @@ class CoordinatorProviders with ChangeNotifier {
   }
 
   Future<void> addHitoFoto(
-      int hito, String tourId, List<XFile> imageFiles) async {
-    // Inicia la tarea en un Future para no bloquear el hilo principal
-    Future(() async {
-      String? token = await _loadToken();
-      var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-          '/app/services/create-hito/fotos');
+    int hito,
+    String tourId,
+    List<XFile> imageFiles,
+  ) async {
+    final token = await _loadToken();
+    final uri = Uri.https(
+      'ms-papigiras-app-ezkbu.ondigitalocean.app',
+      '/app/services/create-hito/fotos',
+    );
 
-      // Crea un objeto MultipartRequest para enviar datos multipart
-      var request = http.MultipartRequest('POST', url);
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['hitoId'] = hito.toString()
+      ..fields['tourId'] = tourId;
 
-      // Añadir parámetros adicionales
-      request.fields['hitoId'] =
-          hito.toString(); // El hitoId debe ser parte del objeto hito
-      request.fields['tourId'] = tourId.toString();
-      if (token != null && token.isNotEmpty) {
-        request.headers['Authorization'] = token;
-      } // El tourId debe ser parte del objeto hito
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = token;
+    }
 
-      // Añadir las imágenes
-      for (int i = 0; i < imageFiles.length; i++) {
-        var file = await http.MultipartFile.fromPath(
-          'images', // Este es el nombre del campo en tu API
-          imageFiles[i].path,
-          filename: imageFiles[i].name,
-        );
-        request.files.add(file);
+    // Directorio temporal para guardar la imagen comprimida
+    final tmpDir = await getTemporaryDirectory();
+
+    for (final image in imageFiles) {
+      // 1) Comprime la imagen a maxWidth 800px, calidad 80%
+      final compressedPath = '${tmpDir.path}/${image.name}';
+      final result = await FlutterImageCompress.compressAndGetFile(
+        image.path,
+        compressedPath,
+        quality: 50,
+        minWidth: 500,
+        minHeight: 500,
+        format: CompressFormat.jpeg,
+      );
+
+      if (result == null) {
+        print('No se pudo comprimir ${image.path}, enviando original');
+        // si falla, envía original:
+        request.files.add(await http.MultipartFile.fromPath(
+          'images',
+          image.path,
+          filename: image.name,
+        ));
+      } else {
+        // 2) Adjunta la versión comprimida
+        request.files.add(await http.MultipartFile.fromPath(
+          'images',
+          result.path,
+          filename: image.name,
+        ));
       }
+    }
 
-      // Realiza la solicitud sin esperar la respuesta
-      try {
-        var response = await request.send();
+    // Enviar la petición y esperar la respuesta
+    try {
+      final streamedResp = await request.send();
+      final status = streamedResp.statusCode;
+      final body = await streamedResp.stream.bytesToString();
 
-        if (response.statusCode == 200) {
-          print('Hito fotos agregadas con éxito');
-          // Aquí puedes manejar la respuesta si es necesario
-        } else {
-          print('Error al enviar las fotos: ${response.statusCode}');
-        }
-      } catch (e) {
-        print('Error al enviar la solicitud: $e');
+      if (status == 200) {
+        print('Hito fotos agregadas con éxito');
+      } else {
+        print('Error $status: $body');
       }
-    });
+    } catch (e) {
+      print('Error al enviar las fotos: $e');
+    }
   }
 
   Future<DetailHitoList> getHitoComplete(String hito, String tourId) async {
@@ -799,20 +824,20 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<List<double>> uniqueID(String gps) async {
+  Future<PositionCoordinator> uniqueID(String gps) async {
     String? token = await _loadToken();
     var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/gps/data', {'rut': gps.toString()});
+        '/app/services/gps/data', {'idTour': gps.toString()});
     final resp = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
     if (resp.statusCode == 200) {
-      List<dynamic> decodedResponse = json.decode(resp.body);
-      List<double> gpsCoordinates =
-          decodedResponse.map((coord) => double.parse(coord)).toList();
-      return gpsCoordinates;
+      Map<String, dynamic> coord = json.decode(utf8.decode(resp.bodyBytes));
+      PositionCoordinator coordenadas = new PositionCoordinator.fromJson(coord);
+
+      return coordenadas;
     } else {
       throw Exception('Failed to load GPS data');
     }

@@ -33,12 +33,13 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
   final usuarioProvider = CoordinatorProviders();
 
   void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Borrar el estado de la sesión
+    // Borrar el estado de la sesión
 
     final locationService =
         Provider.of<LocationService>(context, listen: false);
     locationService.stopTracking();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,
@@ -62,6 +63,9 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
     super.initState();
     // Llama a fetchDocuments al iniciar el widget
     _fetchItineraries(widget.login.tourSalesId.toString());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LocationService>().startTracking();
+    });
   }
 
   Future<void> _fetchItineraries(String tourCode) async {

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
@@ -14,9 +15,11 @@ import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:papigiras_app/utils/LocationService.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 
 class MedicalRecordScreenEditCoordinator extends StatefulWidget {
   final TourSales login;
@@ -110,7 +113,10 @@ class _MedicalRecordScreenEditState
   void initState() {
     super.initState();
     _loadRecord(); // <-- traemos datos
-    _loadImage(); // <-- mantenemos tu carga de imagen
+    _loadImage();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LocationService>().startTracking();
+    }); // <-- mantenemos tu carga de imagen
   }
 
   @override
@@ -238,9 +244,13 @@ class _MedicalRecordScreenEditState
   }
 
   void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Borrar el estado de la sesión
+    // Borrar el estado de la sesión
 
+    final locationService =
+        Provider.of<LocationService>(context, listen: false);
+    locationService.stopTracking();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,

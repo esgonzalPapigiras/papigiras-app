@@ -34,6 +34,9 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
     super.initState();
     // Llama a fetchDocuments al iniciar el widget
     _documentsFuture = fetchDocuments(widget.login.tourSalesId.toString());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LocationService>().startTracking();
+    });
   }
 
   void sendMessage({required String phone, required String message}) async {
@@ -127,12 +130,13 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
   }
 
   void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Borrar el estado de la sesión
+    // Borrar el estado de la sesión
 
     final locationService =
         Provider.of<LocationService>(context, listen: false);
     locationService.stopTracking();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,

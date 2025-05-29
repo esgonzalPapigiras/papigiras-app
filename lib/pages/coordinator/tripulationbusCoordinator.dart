@@ -66,12 +66,13 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
   }
 
   void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Borrar el estado de la sesión
+    // Borrar el estado de la sesión
 
     final locationService =
         Provider.of<LocationService>(context, listen: false);
     locationService.stopTracking();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,
@@ -84,7 +85,10 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTripulations(widget.login.tourSalesId.toString()); // Usar tourSalesId
+    _loadTripulations(widget.login.tourSalesId.toString());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LocationService>().startTracking();
+    }); // Usar tourSalesId
   }
 
   Future<void> _loadTripulations(String tourCode) async {

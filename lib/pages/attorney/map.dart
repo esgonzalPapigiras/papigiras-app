@@ -6,6 +6,7 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:papigiras_app/dto/PositionCoordinator.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
@@ -70,16 +71,17 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _startUpdatingGPS() {
-    _updateTimer = Timer.periodic(Duration(seconds: 40), (timer) async {
+    _updateTimer = Timer.periodic(Duration(seconds: 30), (timer) async {
       await _updateCoordinatorPosition();
     });
   }
 
   Future<void> _updateCoordinatorPosition() async {
     try {
-      List<double> result = await usuarioProvider
-          .uniqueID(widget.login.coordinatorIdentificator.toString());
-      LatLng newPosition = LatLng(result[0], result[1]);
+      PositionCoordinator result =
+          await usuarioProvider.uniqueID(widget.login.tourId.toString());
+      LatLng newPosition = LatLng(result.positionCoordinatorLatitud,
+          result.positionCoordinatorLongitud);
 
       setState(() {
         _coordinatorPosition = newPosition;

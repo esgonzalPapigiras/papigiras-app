@@ -59,6 +59,9 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
     // Inicia la llamada al servicio para obtener los detalles del hito
     _hitoDetailFuture =
         usuarioProvider.getviewProgram(widget.login.tourSalesId.toString());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LocationService>().startTracking();
+    });
   }
 
   @override
@@ -286,12 +289,13 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
   }
 
   void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Borrar el estado de la sesión
-
+    // Borrar el estado de la sesión
     final locationService =
         Provider.of<LocationService>(context, listen: false);
     locationService.stopTracking();
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,
