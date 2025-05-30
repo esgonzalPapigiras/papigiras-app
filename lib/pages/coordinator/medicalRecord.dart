@@ -35,11 +35,12 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
   void logoutUser(BuildContext context) async {
     // Borrar el estado de la sesión
 
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
     final locationService =
         Provider.of<LocationService>(context, listen: false);
     locationService.stopTracking();
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(
       context,
