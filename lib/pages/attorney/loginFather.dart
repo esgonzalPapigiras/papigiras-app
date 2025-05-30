@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
+import 'package:papigiras_app/pages/attorney/fatherWelcome.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
@@ -351,7 +352,7 @@ class _LoginFatherState extends State<LoginFather> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          TravelFatherDashboard(login: login),
+                                          WelcomeFatherScreen(login: login),
                                     ),
                                   );
                                 },

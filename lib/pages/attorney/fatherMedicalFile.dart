@@ -417,7 +417,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                                 shape: BoxShape.circle,
                               ),
                               child: CircleAvatar(
-                                radius: 100,
+                                radius: 60,
                                 backgroundImage: _image != null
                                     ? FileImage(
                                         File(

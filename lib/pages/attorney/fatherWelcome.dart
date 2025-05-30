@@ -82,109 +82,121 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF3AC5C9),
-      body: SingleChildScrollView(
-        // Envuelves el contenido con un SingleChildScrollView
-        child: Container(
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/background.png'),
+      body: Stack(
+        children: [
+          // 1) Imagen de fondo ocupa toda la pantalla
+          Positioned.fill(
+            child: Image.asset(
+              'assets/background.png',
               fit: BoxFit.cover,
             ),
           ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment
-                  .start, // Cambia a start para mantener el contenido al inicio
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/logo-papigiras.png',
-                  height: 350,
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'Bienvenidos a bordo junto a:',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  widget.login.passengerName! +
-                      " " +
-                      widget.login.passengerApellidos!,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 20),
-                Container(
-                  padding: EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundImage: _image != null
-                        ? FileImage(File(_image!.path)) as ImageProvider<Object>
-                        : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                            ? (_isBase64(_imageUrl!)
-                                ? MemoryImage(base64Decode(
-                                        _imageUrl!.split(',').last))
+
+          // 2) Tu contenido con SafeArea + scroll
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(height: 20),
+                        Image.asset(
+                          'assets/logo-papigiras.png',
+                          height: 350,
+                        ),
+                        SizedBox(height: 20),
+                        Text(
+                          'Bienvenidos a bordo junto a:',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          '${widget.login.passengerName} ${widget.login.passengerApellidos}',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 20),
+                        Container(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: CircleAvatar(
+                            radius: 40,
+                            backgroundImage: _image != null
+                                ? FileImage(File(_image!.path))
                                     as ImageProvider<Object>
-                                : NetworkImage(_imageUrl!)
-                                    as ImageProvider<Object>)
-                            : AssetImage('assets/profile.jpg')
-                                as ImageProvider<Object>,
-                  ),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  '¡Emprenderemos este viaje inolvidable!',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-                SizedBox(height: 40),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (await usuarioProvider.validateMedicalRecord(
-                        widget.login.passengerId.toString())) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              TravelFatherDashboard(login: widget.login),
+                                : (_imageUrl != null && _imageUrl!.isNotEmpty)
+                                    ? (_isBase64(_imageUrl!)
+                                        ? MemoryImage(base64Decode(
+                                                _imageUrl!.split(',').last))
+                                            as ImageProvider<Object>
+                                        : NetworkImage(_imageUrl!)
+                                            as ImageProvider<Object>)
+                                    : AssetImage('assets/profile.jpg')
+                                        as ImageProvider<Object>,
+                          ),
                         ),
-                      );
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              MedicalRecordScreen(login: widget.login),
+                        SizedBox(height: 20),
+                        Text(
+                          '¡Emprenderemos este viaje inolvidable!',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
+                        SizedBox(height: 40),
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (await usuarioProvider.validateMedicalRecord(
+                                widget.login.passengerId.toString())) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => TravelFatherDashboard(
+                                      login: widget.login),
+                                ),
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      MedicalRecordScreen(login: widget.login),
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 15),
+                          ),
+                          child: Text(
+                            'Continuar',
+                            style:
+                                TextStyle(fontSize: 18.0, color: Colors.white),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                      ],
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   ),
-                  child: Text(
-                    'Continuar',
-                    style: TextStyle(fontSize: 18.0, color: Colors.white),
-                  ),
-                ),
-                SizedBox(height: 20), // Espaciado al final
-              ],
+                );
+              },
             ),
           ),
-        ),
+        ],
       ),
     );
   }
