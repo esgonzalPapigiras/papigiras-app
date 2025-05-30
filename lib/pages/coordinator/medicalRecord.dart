@@ -78,8 +78,11 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
           'id': passenger.passengerIdentification,
           'idPassenger': passenger.passengerId,
 
-          'passengerApellidos': passenger
-              .passengerApellidos // Asegúrate de que esto coincida con tu DTO
+          'passengerApellidos': passenger.passengerApellidos,
+          'countMedicalRecordOk': passenger.countMedicalRecordOk,
+          'countMedicalRecordNoOk': passenger.countMedicalRecordNoOk,
+          'statusMedicalRecord': passenger
+              .statusMedicalRecord // Asegúrate de que esto coincida con tu DTO
         };
       }).toList();
     });
@@ -97,48 +100,105 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
   }
 
   Widget _buildFilterOptions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                'Fichas Médicas',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: _sortDocuments,
+              child: Row(
+                children: [
+                  Text(
+                    'De la A a la Z',
+                    style: TextStyle(
+                      fontSize: 8,
+                      color: Colors.teal,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(
+                    _isAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                    color: Colors.teal,
+                    size: 10,
+                  ),
+                  SizedBox(width: 2),
+                  Icon(
+                    _isAscending ? Icons.arrow_downward : Icons.arrow_downward,
+                    color: Colors.teal,
+                    size: 10,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: 12),
+
+        // Aquí el conteo centrado "llenas / no llenas"
+        Center(
           child: Text(
-            'Fichas Médicas',
-            textAlign:
-                TextAlign.center, // Centramos el texto dentro del Expanded
+            'Contador de fichas',
             style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
               color: Colors.grey[800],
             ),
           ),
         ),
-        GestureDetector(
-          onTap: _sortDocuments,
-          child: Row(
-            children: [
-              Text(
-                'De la A a la Z',
+
+        SizedBox(height: 8),
+
+        // --- Aquí el contador color-coded (verde = llenas, rojo = no llenas) ---
+        if (documents.isNotEmpty)
+          Center(
+            child: RichText(
+              text: TextSpan(
+                // Aquí pones el color base (por ejemplo gris oscuro)
                 style: TextStyle(
-                  fontSize: 8, // Tamaño de fuente reducido
-                  color: Colors.teal,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
                 ),
+                children: [
+                  TextSpan(
+                    text: '${documents[0]['countMedicalRecordOk']}',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                  // Ahora el slash hereda el color gris
+                  TextSpan(text: ' / '),
+                  TextSpan(
+                    text: '${documents[0]['countMedicalRecordNoOk']}',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ],
               ),
-              SizedBox(width: 4), // Espacio entre el texto y los iconos
-              Icon(
-                _isAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                color: Colors.teal,
-                size: 10,
+            ),
+          )
+        else
+          Center(
+            child: Text(
+              'Sin datos de fichas',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[500],
               ),
-              SizedBox(width: 2), // Espacio pequeño entre los dos iconos
-              Icon(
-                _isAscending ? Icons.arrow_downward : Icons.arrow_downward,
-                color: Colors.teal,
-                size: 10,
-              ),
-            ],
+            ),
           ),
-        ),
       ],
     );
   }
@@ -361,67 +421,62 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
                 ),
               ),
               // Centrar los botones en el Card
-              Center(
-                // Usamos Center para centrar los botones en el Card
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment
-                      .center, // Centra los botones horizontalmente
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.edit, color: Colors.teal),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                MedicalRecordScreenEditCoordinator(
-                                    login: widget.login,
-                                    idPassenger:
-                                        document['idPassenger'].toString(),
-                                    idDocumento: document['id'].toString(),
-                                    nombrepassenger:
-                                        document['name'].toString(),
-                                    passengerApellidos:
-                                        document['passengerApellidos']
-                                            .toString()),
-                          ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                      onPressed: () {
-                        usuarioProvider.viewDocumentMedicalRecord(
-                          widget.login.tourSalesId.toString(),
-                          document['idPassenger'].toString(),
-                          context,
-                          document['id'].toString(),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.download, color: Colors.teal),
-                      onPressed: () {
-                        usuarioProvider.downloadDocumentMedicalRecord(
-                          widget.login.tourSalesId.toString(),
-                          document['idPassenger'].toString(),
-                          document['id'].toString(),
-                        );
-                        QuickAlert.show(
-                          context: context,
-                          type: QuickAlertType.success,
-                          title: 'Éxito',
-                          text: 'Documento Descargado',
-                          confirmBtnText: 'Continuar',
-                          onConfirmBtnTap: () {
-                            Navigator.of(context).pop(); // Cierra el QuickAlert
-                          },
-                        );
-                      },
-                    ),
-                  ],
+              if (document['statusMedicalRecord'] == 'Lleno')
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit, color: Colors.teal),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  MedicalRecordScreenEditCoordinator(
+                                login: widget.login,
+                                idPassenger: document['idPassenger'].toString(),
+                                idDocumento: document['id'].toString(),
+                                nombrepassenger: document['name'].toString(),
+                                passengerApellidos:
+                                    document['passengerApellidos'].toString(),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.remove_red_eye, color: Colors.teal),
+                        onPressed: () {
+                          usuarioProvider.viewDocumentMedicalRecord(
+                            widget.login.tourSalesId.toString(),
+                            document['idPassenger'].toString(),
+                            context,
+                            document['id'].toString(),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.download, color: Colors.teal),
+                        onPressed: () {
+                          usuarioProvider.downloadDocumentMedicalRecord(
+                            widget.login.tourSalesId.toString(),
+                            document['idPassenger'].toString(),
+                            document['id'].toString(),
+                          );
+                          QuickAlert.show(
+                            context: context,
+                            type: QuickAlertType.success,
+                            title: 'Éxito',
+                            text: 'Documento Descargado',
+                            confirmBtnText: 'Continuar',
+                            onConfirmBtnTap: () => Navigator.of(context).pop(),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),
