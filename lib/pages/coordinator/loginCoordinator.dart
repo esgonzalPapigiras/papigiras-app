@@ -35,6 +35,9 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
       });
     });
     _loadUserData();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _checkLoginStatus();
+    });
   }
 
   void _loadUserData() async {
