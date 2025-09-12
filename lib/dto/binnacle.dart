@@ -7,6 +7,7 @@ class ConsolidatedTourSalesDTO {
   final String binnacleLatitud;
   final String binnacleLongitud;
   final String binnacleHora;
+  final String binnacleFecha;
 
   ConsolidatedTourSalesDTO({
     required this.binnacleDetailId,
@@ -17,6 +18,7 @@ class ConsolidatedTourSalesDTO {
     required this.binnacleLatitud,
     required this.binnacleLongitud,
     required this.binnacleHora,
+    required this.binnacleFecha
   });
 
   // Método para crear una instancia de ConsolidatedTourSalesDTO desde un JSON
@@ -30,6 +32,7 @@ class ConsolidatedTourSalesDTO {
       binnacleLatitud: json['binnacleLatitud'],
       binnacleLongitud: json['binnacleLongitud'],
       binnacleHora: json['binnacleHora'],
+      binnacleFecha: json['binnacleFecha'],
     );
   }
 
@@ -44,6 +47,7 @@ class ConsolidatedTourSalesDTO {
       'binnacleLatitud': binnacleLatitud,
       'binnacleLongitud': binnacleLongitud,
       'binnacleHora': binnacleHora,
+      'binnacleFecha':binnacleFecha
     };
   }
 }

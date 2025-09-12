@@ -145,6 +145,7 @@ class _TraceMapState extends State<TraceMap> {
                                 style: TextStyle(fontWeight: FontWeight.bold)),
                             SizedBox(height: 4),
                             Text(dto.binnacleDescripcion),
+                            Text(dto.binnacleFecha),
                           ],
                         ),
                       ),

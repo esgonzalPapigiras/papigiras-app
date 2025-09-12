@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/PassengerList.dart';
@@ -68,21 +71,19 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
 
   Future<void> _fetchItineraries(String tourCode) async {
     try {
-      // Obtiene la lista de pasajeros
       pasajeros = await usuarioProvider.getListPassenger(tourCode);
       totalPasajeros = pasajeros.length;
-      alumnosVerificados =
-          pasajeros.where((passenger) => passenger.passengerverificate).length;
+      alumnosVerificados = pasajeros.where((p) => p.passengerverificate).length;
 
-      // Mapea los pasajeros a la lista de alumnos
-      alumnos = pasajeros.map((passenger) {
+      alumnos = pasajeros.map((p) {
         return {
-          "nombre": passenger.passengerName,
-          "verificado": passenger.passengerverificate
+          "id": p.passengerId.toString(),
+          "nombre": p.passengerName,
+          "verificado": p.passengerverificate,
         };
       }).toList();
 
-      setState(() {}); // Actualiza el estado para reconstruir la interfaz
+      setState(() {});
     } catch (error) {
       print("Error al cargar los itinerarios: $error");
     }
@@ -90,21 +91,18 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
 
   void _scanQRCode() async {
     final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => QRViewExample(),
-      ),
+      MaterialPageRoute(builder: (_) => QRViewExample()),
     );
 
-    if (result != null) {
-      setState(() {
-        for (var alumno in alumnos) {
-          if (!alumno["verificado"]) {
-            alumno["verificado"] = true;
-            alumnosVerificados++;
-            break; // Salir del bucle después de verificar el primer alumno no verificado
-          }
-        }
-      });
+    if (!mounted) return;
+
+    if (result is String && result.trim().isNotEmpty) {
+      final scannedId = result.trim();
+      _marcarAlumnoPorId(scannedId);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se obtuvo un ID válido desde el QR.')),
+      );
     }
   }
 
@@ -115,6 +113,40 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
         alumno["verificado"] = false;
       }
     });
+  }
+
+  void _marcarAlumnoPorId(String idEscaneado) {
+    // Busca por tourPassengerId si existe en tu map; si no, por id normal
+    final index = alumnos.indexWhere((a) {
+      final hasTourPassengerId =
+          a.containsKey('tourPassengerId') && a['tourPassengerId'] != null;
+      return hasTourPassengerId
+          ? a['tourPassengerId'].toString() == idEscaneado
+          : a['id'].toString() == idEscaneado;
+    });
+
+    if (index == -1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('El QR no corresponde a ningún alumno de la lista.')),
+      );
+      return;
+    }
+
+    if (!alumnos[index]["verificado"]) {
+      setState(() {
+        alumnos[index]["verificado"] = true;
+        alumnosVerificados++;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Marcado: ${alumnos[index]["nombre"]}')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('${alumnos[index]["nombre"]} ya estaba verificado.')),
+      );
+    }
   }
 
   @override
@@ -499,9 +531,12 @@ class QRViewExample extends StatefulWidget {
 class _QRViewExampleState extends State<QRViewExample> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   QRViewController? controller;
+  StreamSubscription<Barcode>? _sub;
+  bool _handled = false;
 
   @override
   void dispose() {
+    _sub?.cancel();
     controller?.dispose();
     super.dispose();
   }
@@ -518,9 +553,39 @@ class _QRViewExampleState extends State<QRViewExample> {
 
   void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
-    controller.scannedDataStream.listen((scanData) {
-      controller.pauseCamera(); // Detener la cámara después de escanear
-      Navigator.of(context).pop(scanData.code); // Devuelve el código escaneado
+
+    _sub = controller.scannedDataStream.listen((scanData) async {
+      if (_handled) return;
+      _handled = true;
+
+      try {
+        await controller.pauseCamera();
+      } catch (_) {}
+      await _sub?.cancel();
+      _sub = null;
+      final raw = scanData.code ?? '';
+      final idStr = extractTourPassenger(raw);
+      Future.microtask(() async {
+        if (!mounted) return;
+        await Navigator.of(context).maybePop(idStr);
+      });
     });
   }
+}
+
+String? extractTourPassenger(String raw) {
+  try {
+    final parsed = json.decode(raw);
+    if (parsed is Map && parsed['url'] is String) {
+      final uri = Uri.parse(parsed['url'] as String);
+      return uri.queryParameters['tourPassenger'];
+    }
+  } catch (_) {}
+  try {
+    final uri = Uri.parse(raw);
+    final qp = uri.queryParameters['tourPassenger'];
+    if (qp != null) return qp;
+  } catch (_) {}
+  final m = RegExp(r'tourPassenger=([^&\s]+)').firstMatch(raw);
+  return m?.group(1);
 }

@@ -23,6 +23,7 @@ class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
   LatLng? _currentPosition;
   LatLng? _coordinatorPosition;
+  LatLng? _newPosition;
   Timer? _updateTimer;
   final usuarioProvider = new CoordinatorProviders();
 
@@ -113,8 +114,7 @@ class _MapScreenState extends State<MapScreen> {
         children: [
           TileLayer(
             urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            subdomains: ['a', 'b', 'c'],
-            userAgentPackageName: 'com.example.app',
+            userAgentPackageName: 'com.papigirasApp',
           ),
           if (_currentPosition != null)
             LocationMarkerLayer(
