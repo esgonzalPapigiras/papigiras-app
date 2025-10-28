@@ -9,6 +9,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/binnacle.dart';
 import 'dart:async';
+import 'package:device_info_plus/device_info_plus.dart';
 
 import 'package:papigiras_app/dto/requestHito.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
@@ -142,6 +143,7 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
     }
   }
 
+/*
   // Permiso para acceder a la galería
   Future<void> requestPermissions() async {
     PermissionStatus status = await Permission.photos.status;
@@ -180,6 +182,57 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
       print("Imagen seleccionada: ${image.path}");
     } else {
       print("No se seleccionó ninguna imagen");
+    }
+  }
+  */
+
+  // Permiso para acceder a la galería y seleccionar fotos
+  Future<void> requestPermissions() async {
+    // Detectar versión de Android
+    if (Platform.isAndroid) {
+      final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      final AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      int sdkInt = androidInfo.version.sdkInt ?? 0;
+
+      if (sdkInt < 33) {
+        // Android <13 necesita permiso de almacenamiento
+        PermissionStatus status = await Permission.storage.status;
+
+        if (status.isDenied || status.isLimited) {
+          PermissionStatus newStatus = await Permission.storage.request();
+          if (!newStatus.isGranted) {
+            if (newStatus.isPermanentlyDenied) {
+              print(
+                  "Permiso permanentemente denegado, solicita al usuario ir a configuración");
+              openAppSettings();
+            }
+            return;
+          }
+        }
+      }
+      // Android 13+ no necesita permiso para Photo Picker
+    }
+
+    // Abrir galería y seleccionar imagen
+    await pickImage();
+  }
+
+// Seleccionar imagen de la galería
+  Future<void> pickImage() async {
+    try {
+      final XFile? pickedFile =
+          await _picker.pickImage(source: ImageSource.gallery);
+
+      if (pickedFile != null) {
+        setState(() {
+          _imageFiles.add(pickedFile);
+        });
+        print("Imagen seleccionada: ${pickedFile.path}");
+      } else {
+        print("No se seleccionó ninguna imagen");
+      }
+    } catch (e) {
+      print("Error al seleccionar imagen: $e");
     }
   }
 
