@@ -351,8 +351,8 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFilterOptions(),
-          SizedBox(height: 20),
+          //_buildFilterOptions(),
+          //SizedBox(height: 20),
           Expanded(
             child: ListView(
               children: _buildBinnacleEntries(),
@@ -390,26 +390,53 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
 
   List<Widget> _buildBinnacleEntries() {
     return itineraries.map((binnacle) {
+      // Format date to show only day/month (e.g. "25/10")
+      String formattedDate = binnacle.binnacleFecha;
+      if (formattedDate.contains('/')) {
+        List<String> parts = formattedDate.split('/');
+        if (parts.length == 3) {
+          formattedDate = "${parts[0]}/${parts[1]}";
+        }
+      }
+
       return Card(
         margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: ListTile(
-            leading: Icon(Icons.access_time, color: Colors.teal),
+            leading: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  formattedDate,
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  binnacle.binnacleHora,
+                  style: TextStyle(fontSize: 10, color: Colors.grey[700]),
+                ),
+              ],
+            ),
             title: Text(
-              binnacle.binnacleTitulo, // Usa los campos adecuados
+              binnacle.binnacleTitulo,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             subtitle: Text(
-              binnacle.binnacleUbicacion, // Usa los campos adecuados
+              binnacle.binnacleUbicacion,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             trailing: TextButton(
               onPressed: () {
                 Navigator.of(context).push(_createRoute(
-                    DetalleBitacoraFatherScreen(
-                        idHito: binnacle.binnacleDetailId.toString(),
-                        login: widget.login)));
+                  DetalleBitacoraFatherScreen(
+                    idHito: binnacle.binnacleDetailId.toString(),
+                    login: widget.login,
+                  ),
+                ));
               },
               child: Text('Ver más', style: TextStyle(color: Colors.teal)),
             ),

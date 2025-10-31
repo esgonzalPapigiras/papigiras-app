@@ -16,7 +16,7 @@ class LocationService extends ChangeNotifier {
     _isTracking = true;
     notifyListeners();
 
-    _locationTimer = Timer.periodic(Duration(seconds: 10), (_) async {
+    _locationTimer = Timer.periodic(Duration(seconds: 60), (_) async {
       Position pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -33,6 +33,11 @@ class LocationService extends ChangeNotifier {
   Future<void> _saveLocation(Position position) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
+    String? userRole = prefs.getString('userRole');
+    if (userRole == null || userRole.toLowerCase() != 'coordinator') {
+      print('Skipped saving location: user is not a coordinator');
+      return;
+    }
     String? tourSales = prefs.getString('loginData');
     final body = json.decode(tourSales!);
 

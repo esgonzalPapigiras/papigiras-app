@@ -65,6 +65,23 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
   final TextEditingController _enfermedadesController = TextEditingController();
   final TextEditingController _medicamentosController = TextEditingController();
 
+
+  final _telefonoEmergenciaKey = GlobalKey();
+  final _emailEmergenciaKey = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
+  GlobalKey? _firstInvalidFieldKey;
+  Future<void> _scrollToFirstInvalidField(BuildContext context) async {
+    await Future.delayed(Duration(milliseconds: 100));
+    final invalidField = _firstInvalidFieldKey?.currentContext;
+    if (invalidField != null) {
+      await Scrollable.ensureVisible(
+        invalidField,
+        duration: Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
   Future<void> _pickImage() async {
     final ImagePicker _picker = ImagePicker();
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -382,6 +399,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
               ),
               Expanded(
                 child: SingleChildScrollView(
+                  controller: _scrollController,
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -519,11 +537,29 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                               _buildTextField('Relación con el Alumno(a)',
                                   _relacionEmergenciaController, null),
                               _buildTextFieldCelular(
-                                  'Teléfono Celular',
-                                  _telefonoEmergenciaController,
-                                  _validateTelefono),
-                              _buildTextField('Correo Electrónico',
-                                  _emailEmergenciaController, _validateEmail),
+                                'Teléfono Celular',
+                                _telefonoEmergenciaController,
+                                (v) {
+                                  final res = _validateTelefono(v);
+                                  if (res != null)
+                                    _firstInvalidFieldKey ??=
+                                        _telefonoEmergenciaKey;
+                                  return res;
+                                },
+                                fieldKey: _telefonoEmergenciaKey,
+                              ),
+                              _buildTextField(
+                                'Correo Electrónico',
+                                _emailEmergenciaController,
+                                (v) {
+                                  final res = _validateEmail(v);
+                                  if (res != null)
+                                    _firstInvalidFieldKey ??=
+                                        _emailEmergenciaKey;
+                                  return res;
+                                },
+                                fieldKey: _emailEmergenciaKey,
+                              ),
                               Divider(),
                               SizedBox(height: 10),
 
@@ -612,6 +648,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                                 child: ElevatedButton(
                                   onPressed: () {
                                     if (_formKey.currentState!.validate()) {
+                                      _firstInvalidFieldKey = null;
                                       // Construir el objeto para enviar
                                       RequestPassengerMedical medical =
                                           RequestPassengerMedical(
@@ -961,21 +998,26 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
     );
   }
 
-  Widget _buildTextFieldCelular(String label, TextEditingController controller,
-      String? Function(String?)? validator,
-      {TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextFieldCelular(
+    String label, 
+    TextEditingController controller,
+    String? Function(String?)? validator, {
+    TextInputType keyboardType = TextInputType.text,
+    Key? fieldKey, 
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 5),
         TextFormField(
+          key: fieldKey, 
           controller: controller,
           validator: validator,
           keyboardType: keyboardType,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
-            hintText: '923223212 ejemplo',
+            hintText: '995930960',
           ),
         ),
         SizedBox(height: 15),
@@ -984,14 +1026,17 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
   }
 
   Widget _buildTextField(String label, TextEditingController controller,
-      String? Function(String?)? validator,
-      {TextInputType keyboardType = TextInputType.text}) {
+      String? Function(String?)? validator, {
+      TextInputType keyboardType = TextInputType.text,
+      Key? fieldKey, 
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 5),
         TextFormField(
+          key: fieldKey, 
           controller: controller,
           validator: validator,
           keyboardType: keyboardType,

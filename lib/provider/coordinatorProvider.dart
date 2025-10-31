@@ -654,26 +654,39 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<void> downloadDocumentMedicalRecord(
       String idTour, String idPassenger, String identificacion) async {
-    // Solicitar permisos de almacenamiento
     await requestStoragePermission();
     String? token = await _loadToken();
     String fileName = "fichamedica" + "-" + identificacion + ".pdf";
-
+    
     final url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
         '/app/services/get/pdf/view/medical-records', {
-      'idTour': idTour,
-      'folder': idPassenger,
+      'tourId': idTour,
+      'idPassenger': idPassenger,
       'identificacion': identificacion
     });
-
-    final response = await http.post(url, headers: {
+    /*
+    final url = Uri.http(
+        'localhost:8084', '/app/services/get/pdf/view/medical-records', {
+      'tourId': idTour,
+      'idPassenger': idPassenger,
+      'identificacion': identificacion
+    });
+    */
+    print('→ Sending request to: $url');
+    print('Using headers: Authorization=${token ?? 'none'}');
+    final response = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization': token ?? ''
       // Si es necesario, puedes agregar aquí el token
       // 'Authorization': 'Bearer your_token_here',
     });
-
-    print('Content-Type: ${response.headers['content-type']}');
+    print('← Status code: ${response.statusCode}');
+    print('← Headers: ${response.headers}');
+    print('← Content-Type: ${response.headers['content-type']}');
+    print('← Body length: ${response.bodyBytes.length} bytes');
+    if (response.statusCode != 200) {
+      print('← Response body (text): ${response.body}');
+    }
 
     String downloadPath = await getDownloadDirectory();
     final filePath = path.join(downloadPath, fileName);
@@ -691,7 +704,6 @@ class CoordinatorProviders with ChangeNotifier {
           'ms-papigiras-app-ezkbu.ondigitalocean.app',
           '/app/services/get/pdf/medical-records',
           {'tourId': idTour, 'idPassenger': idPassenger});
-
       String fileName = "fichamedica" + "-" + identificacion;
 
       final resp = await http.post(url, headers: {
@@ -699,7 +711,6 @@ class CoordinatorProviders with ChangeNotifier {
         'Authorization':
             token ?? '' // Agregar el token en la cabecera de la solicitud
       });
-
       if (resp.statusCode == 200) {
         final Uint8List documentBytes = resp.bodyBytes;
 

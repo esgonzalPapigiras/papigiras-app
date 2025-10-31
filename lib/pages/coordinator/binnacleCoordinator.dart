@@ -247,8 +247,8 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFilterOptions(),
-          SizedBox(height: 20),
+          //_buildFilterOptions(),
+          //SizedBox(height: 20),
           Expanded(
             child: ListView(
               children: _buildBinnacleEntries(),
@@ -291,13 +291,27 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: ListTile(
-            leading: Icon(Icons.access_time, color: Colors.teal),
+            // Replace icon with date and time
+            leading: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  binnacle.binnacleFecha.split('/').sublist(0, 2).join('/'),
+                  style: TextStyle(fontSize: 10, color: Colors.teal),
+                ),
+                Text(
+                  binnacle.binnacleHora,
+                  style: TextStyle(fontSize: 10, color: Colors.teal),
+                ),
+              ],
+            ),
             title: Text(
-              binnacle.binnacleTitulo, // Usa los campos adecuados
+              binnacle.binnacleTitulo,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             subtitle: Text(
-              binnacle.binnacleUbicacion, // Usa los campos adecuados
+              binnacle.binnacleUbicacion,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             trailing: TextButton(

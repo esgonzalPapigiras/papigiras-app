@@ -259,11 +259,11 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+              Wrap(
+                spacing: 8, // space between buttons horizontally
+                runSpacing: 8, // space between lines
                 children:
-                    List.generate(3, (index) => _buildAddPhotoButton(index))
-                        .toList(),
+                    List.generate(10, (index) => _buildAddPhotoButton(index)),
               ),
               SizedBox(height: 15),
               Text(
