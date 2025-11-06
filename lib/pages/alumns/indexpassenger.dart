@@ -40,8 +40,7 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
 
   final usuarioProvider = new CoordinatorProviders();
   String baseUrl =
-      //"https://ms-papigiras-app-ezkbu.ondigitalocean.app/app/services/get/information/passenger?tourPassenger=";
-      "http://localhost:8084/app/services/get/information/passenger?tourPassenger=";
+      "https://stingray-app-9tqd9.ondigitalocean.app/app/services/get/information/passenger?tourPassenger=";
 
   String formatDate(String date) {
     // Parsear la fecha en el formato original (yyyy-MM-dd)

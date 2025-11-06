@@ -520,18 +520,25 @@ class _BusCrewFatherScreenState extends State<BusCrewFatherScreen> {
                             itemCount: _tripulations.length,
                             itemBuilder: (context, index) {
                               final tripulation = _tripulations[index];
-                              String role =
+                              final role =
                                   tripulation.tourTripulationTypeId == 32
                                       ? 'Coordinador'
                                       : 'Conductor';
-                              String imagePath =
-                                  tripulation.tourTripulationTypeId == 32
+                              final imagePath = role == 'Coordinador'
+                                  ? 'assets/profile.jpg'
+                                  : index == 0
                                       ? 'assets/conductor_one.jpg'
-                                      : 'assets/conductor_two.jpg';
+                                      : index == 1
+                                          ? 'assets/conductor_two.jpg'
+                                          : 'assets/conductor_three.jpg';
+                              // Coordinators don’t need to show "Licencia Clase A"
+                              final position = role == 'Coordinador'
+                                  ? 'Coordinador'
+                                  : 'Licencia Clase A';
                               return _buildCrewMember(
                                 role: role,
                                 name: tripulation.tourTripulationNameId,
-                                position: 'Licencia Clase A',
+                                position: position,
                                 id: tripulation.tourTripulationIdentificationId,
                                 imagePath: imagePath,
                               );

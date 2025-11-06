@@ -36,6 +36,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class CoordinatorProviders with ChangeNotifier {
   String? _token;
+  //var urlDynamic = 'ms-papigiras-app-ezkbu.ondigitalocean.app';
+  var urlDynamic = 'stingray-app-9tqd9.ondigitalocean.app';
+  //var urlDynamic = '192.168.1.85:8084';
+  //var urlDynamic = 'localhost:8084';
 
   String? get token => _token;
 
@@ -79,15 +83,10 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<TourSales?> validateLoginUser(String tourCode) async {
     // Cargar el token y verificar su validez
+
     String? token = await _loadToken();
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/coordinator',
-        {'tourCode': tourCode});
-    */
-    var url = Uri.http('192.168.1.85:8084', '/app/services/coordinator',
-        {'tourCode': tourCode});
+    var url = Uri.https(
+        urlDynamic, '/app/services/coordinator', {'tourCode': tourCode});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
     });
@@ -108,14 +107,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<TourTripulation>> getTripulation(String tourCode) async {
     String? token = await _loadToken();
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/tripulations',
-        {'tourId': tourCode});
-    */
-    var url = Uri.http(
-        '192.168.1.85:8084', '/app/services/tripulations', {'tourId': tourCode});
+    var url = Uri.https(
+        urlDynamic, '/app/services/tripulations', {'tourId': tourCode});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -133,14 +126,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<Itinerary>> getItineray(String tourCode) async {
     String? token = await _loadToken();
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/binnacle',
-        {'tourId': tourCode});
-    */
-    var url = Uri.http(
-        '192.168.1.85:8084', '/app/services/binnacle', {'tourId': tourCode});
+    var url =
+        Uri.https(urlDynamic, '/app/services/binnacle', {'tourId': tourCode});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -156,14 +143,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<ActivitiesList>> getItinerayGuardados(String tourCode) async {
     String? token = await _loadToken();
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/get/create-activities',
+    var url = Uri.https(urlDynamic, '/app/services/get/create-activities',
         {'tourId': tourCode});
-        */
-    var url = Uri.http('192.168.1.85:8084',
-        '/app/services/get/create-activities', {'tourId': tourCode});
     final resp = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -181,15 +162,7 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<void> activitiesCreate(RequestActivities tourCode) async {
     String? token = await _loadToken();
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/create-activities');
-        */
-    var url = Uri.http(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '192.168.1.85:8084',
-        '/app/services/create-activities');
+    var url = Uri.https(urlDynamic, '/app/services/create-activities');
     final resp =
         await http.post(url, body: jsonEncode(tourCode.toJson()), headers: {
       'Content-Type': 'application/json',
@@ -205,12 +178,7 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<ConsolidatedTourSalesDTO> addHito(RequestHito tourCode) async {
     String? token = await _loadToken();
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/create-hito');
-        */
-    var url = Uri.http('192.168.1.85:8084', '/app/services/create-hito');
+    var url = Uri.https(urlDynamic, '/app/services/create-hito');
     final resp =
         await http.post(url, body: jsonEncode(tourCode.toJson()), headers: {
       'Content-Type': 'application/json',
@@ -235,14 +203,8 @@ class CoordinatorProviders with ChangeNotifier {
     List<XFile> imageFiles,
   ) async {
     final token = await _loadToken();
-    /*final uri = Uri.https(
-      //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-      'localhost:8084',
-      '/app/services/create-hito/fotos',
-    );
-    */
-    final uri = Uri.http(
-      '192.168.1.85:8084',
+    final uri = Uri.https(
+      urlDynamic,
       '/app/services/create-hito/fotos',
     );
     final request = http.MultipartRequest('POST', uri)
@@ -304,13 +266,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<void> deleteHito(String idHito, String idTour) async {
     final token = await _loadToken();
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/delete-hito');
-        */
-    final uri = Uri.http(
-      '192.168.1.85:8084',
+    var url = Uri.https(
+      urlDynamic,
       '/app/services/delete-hito',
       {
         'idHito': idHito,
@@ -319,7 +276,7 @@ class CoordinatorProviders with ChangeNotifier {
     );
     try {
       final resp = await http.post(
-        uri,
+        url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': token ?? '',
@@ -339,15 +296,7 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<DetailHitoList> getHitoComplete(String hito, String tourId) async {
     String? token = await _loadToken();
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/get/detail/create-hito',
-        {'idTour': tourId, 'idHito': hito.toString()});
-        */
-    var url = Uri.http(
-        '192.168.1.85:8084',
-        '/app/services/get/detail/create-hito',
+    var url = Uri.https(urlDynamic, '/app/services/get/detail/create-hito',
         {'idTour': tourId, 'idHito': hito.toString()});
     final resp = await http.get(url, headers: {
       'Content-Type': 'application/json',
@@ -368,14 +317,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<ConsolidatedTourSalesDTO>> getBinnacle(String tourCode) async {
     String? token = await _loadToken();
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/get/create-hito',
-        {'tourId': tourCode});
-        */
-    var url = Uri.http('192.168.1.85:8084', '/app/services/get/create-hito',
-        {'tourId': tourCode});
+    var url = Uri.https(
+        urlDynamic, '/app/services/get/create-hito', {'tourId': tourCode});
     final resp = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -393,14 +336,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<Document>> getDocument(String tourCode) async {
     String? token = await _loadToken();
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/document-records',
-        {'tourId': tourCode});
-        */
-    var url = Uri.http('192.168.1.5:8084', '/app/services/document-records',
-        {'tourId': tourCode});
+    var url = Uri.https(
+        urlDynamic, '/app/services/document-records', {'tourId': tourCode});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -416,14 +353,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<PassengerList>> getListPassenger(String tourCode) async {
     String? token = await _loadToken();
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/passengers/list',
-        {'tourId': tourCode});
-        */
-    var url = Uri.http('192.168.1.5:8084', '/app/services/passengers/list',
-        {'tourId': tourCode});
+    var url = Uri.https(
+        urlDynamic, '/app/services/passengers/list', {'tourId': tourCode});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -444,22 +375,16 @@ class CoordinatorProviders with ChangeNotifier {
     // Solicitar permisos de almacenamiento
     await requestStoragePermission();
     String? token = await _loadToken();
-    final url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/download',
-        {
-          'folderName': folderName,
-          'fileName': fileName,
-          'idTour': idTour,
-          'folder': folder
-        });
+    final url = Uri.https(urlDynamic, '/app/services/download', {
+      'folderName': folderName,
+      'fileName': fileName,
+      'idTour': idTour,
+      'folder': folder
+    });
 
     final response = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization': token ?? ''
-      // Si es necesario, puedes agregar aquí el token
-      // 'Authorization': 'Bearer your_token_here',
     });
 
     if (fileName == "Nomina alumnos") {
@@ -480,16 +405,12 @@ class CoordinatorProviders with ChangeNotifier {
       BuildContext context, String folder) async {
     String? token = await _loadToken();
     try {
-      final url = Uri.https(
-          //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-          'localhost:8084',
-          '/app/services/view',
-          {
-            'folderName': folderName,
-            'fileName': fileName,
-            'idTour': idTour,
-            'folder': folder
-          });
+      final url = Uri.https(urlDynamic, '/app/services/view', {
+        'folderName': folderName,
+        'fileName': fileName,
+        'idTour': idTour,
+        'folder': folder
+      });
 
       final resp = await http.get(url, headers: {
         'Content-Type': 'application/json',
@@ -556,7 +477,6 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<void> requestStoragePermission() async {
     PermissionStatus status = await Permission.storage.request();
-
     if (status.isGranted) {
       print("Permiso de almacenamiento concedido");
     } else {
@@ -567,37 +487,27 @@ class CoordinatorProviders with ChangeNotifier {
   Future<String> getDownloadDirectory() async {
     try {
       if (Platform.isAndroid) {
-        // Intentar obtener el directorio de descargas predeterminado en Android
         Directory? downloadsDirectory =
             Directory('/storage/emulated/0/Download');
         if (await downloadsDirectory.exists()) {
           return downloadsDirectory.path;
         } else {
-          // Usar el almacenamiento externo de la aplicación como fallback
           Directory? appDocDir = await getExternalStorageDirectory();
           return appDocDir?.path ?? '';
         }
       } else if (Platform.isIOS) {
-        // Obtener el directorio de documentos en iOS
         Directory appSupportDir = await getApplicationDocumentsDirectory();
-
-        // Crear una subcarpeta de descargas
         String sharedPath = '${appSupportDir.path}/Downloads';
-
-        // Validar o crear el directorio
         await _ensureDirectoryExists(sharedPath);
-
         return sharedPath;
       }
     } catch (e) {
-      // Registrar el error y retornar un directorio seguro
       print('Error al obtener el directorio de descargas: $e');
       return '';
     }
     return '';
   }
 
-  /// Método auxiliar para asegurar que un directorio exista
   Future<void> _ensureDirectoryExists(String path) async {
     Directory dir = Directory(path);
     if (!await dir.exists()) {
@@ -610,70 +520,38 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<ResponseAttorney?> validateLoginUserFather(
       String rut, String password) async {
-    // Cargar el token y verificar su validez
     String? token = await _loadToken();
-
-    // URL del endpoint para la solicitud
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/attorney/login',
+    var url = Uri.https(urlDynamic, '/app/services/attorney/login',
         {'user': rut, 'password': password});
-*/
-    var url = Uri.http('192.168.1.5:8084', '/app/services/attorney/login',
-        {'user': rut, 'password': password});
-    // Realizar la solicitud HTTP
     final resp = await http.post(url, headers: {
       'Content-Type':
           'application/json', // Agregar el token en la cabecera de la solicitud
     });
-
-    // Verificar si la respuesta es exitosa
     if (resp.statusCode == 200) {
-      // Si la respuesta es correcta, decodificamos el JSON
       LinkedHashMap<String, dynamic> decorespoCreate =
           json.decode(utf8.decode(resp.bodyBytes));
-
-      // Crear el objeto `ResponseAttorney` a partir del JSON
       ResponseAttorney login = ResponseAttorney.fromJson(decorespoCreate);
-
       return login; // Devolver el objeto de respuesta
     } else {
-      // Si la respuesta no es exitosa, devolver null
       return null;
     }
   }
 
   Future<ResponseAttorney?> validateLoginUserPassenger(
       String rut, String password) async {
-    // Cargar el token y verificar su validez
     String? token = await _loadToken();
-
-    // URL del endpoint para la solicitud
-    var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/passenger/login',
+    var url = Uri.https(urlDynamic, '/app/services/passenger/login',
         {'user': rut, 'password': password});
-
-    // Realizar la solicitud HTTP
     final resp = await http.post(url, headers: {
       'Content-Type':
           'application/json', // Agregar el token en la cabecera de la solicitud
     });
-
-    // Verificar si la respuesta es exitosa
     if (resp.statusCode == 200) {
-      // Si la respuesta es correcta, decodificamos el JSON
       LinkedHashMap<String, dynamic> decorespoCreate =
           json.decode(utf8.decode(resp.bodyBytes));
-
-      // Crear el objeto `ResponseAttorney` a partir del JSON
       ResponseAttorney login = ResponseAttorney.fromJson(decorespoCreate);
-
       return login; // Devolver el objeto de respuesta
     } else {
-      // Si la respuesta no es exitosa, devolver null
       return null;
     }
   }
@@ -681,10 +559,7 @@ class CoordinatorProviders with ChangeNotifier {
   Future<bool> validateMedicalRecord(String rut) async {
     String? token = await _loadToken();
     var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/validate/medical-records',
-        {'user': rut});
+        urlDynamic, '/app/services/validate/medical-records', {'user': rut});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -700,10 +575,7 @@ class CoordinatorProviders with ChangeNotifier {
   Future<bool> createMedicalRecord(
       RequestPassengerMedical medicalRecord) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/medical-records');
+    var url = Uri.https(urlDynamic, '/app/services/medical-records');
     print(medicalRecord.toJson());
     final resp = await http
         .post(url, body: jsonEncode(medicalRecord.toJson()), headers: {
@@ -711,7 +583,6 @@ class CoordinatorProviders with ChangeNotifier {
       'Authorization':
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
-
     if (resp.statusCode == 200) {
       return true;
     } else {
@@ -722,17 +593,13 @@ class CoordinatorProviders with ChangeNotifier {
   Future<PassengersMedicalRecordDTO> getMedicalRecord(
       String idTour, String idPassenger) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/get/medical-records',
+    var url = Uri.https(urlDynamic, '/app/services/get/medical-records',
         {'tourId': idTour, 'idPassenger': idPassenger});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
-
     if (resp.statusCode == 200) {
       LinkedHashMap<String, dynamic> decorespoCreate =
           json.decode(utf8.decode(resp.bodyBytes));
@@ -747,16 +614,12 @@ class CoordinatorProviders with ChangeNotifier {
   Future<ProgramViewDto> getviewProgram(String idTour) async {
     String? token = await _loadToken();
     var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/get/program-view',
-        {'tourId': idTour});
+        urlDynamic, '/app/services/get/program-view', {'tourId': idTour});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
-
     if (resp.statusCode == 200) {
       LinkedHashMap<String, dynamic> decorespoCreate =
           json.decode(utf8.decode(resp.bodyBytes));
@@ -772,16 +635,8 @@ class CoordinatorProviders with ChangeNotifier {
     await requestStoragePermission();
     String? token = await _loadToken();
     String fileName = "fichamedica" + "-" + identificacion + ".pdf";
-    /*
-    final url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/get/pdf/view/medical-records', {
-      'tourId': idTour,
-      'idPassenger': idPassenger,
-      'identificacion': identificacion
-    });
-    */
-    final url = Uri.http(
-        'localhost:8084', '/app/services/get/pdf/view/medical-records', {
+    final url = Uri.https(
+        urlDynamic, '/app/services/get/pdf/view/medical-records', {
       'tourId': idTour,
       'idPassenger': idPassenger,
       'identificacion': identificacion
@@ -789,8 +644,6 @@ class CoordinatorProviders with ChangeNotifier {
     final response = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization': token ?? ''
-      // Si es necesario, puedes agregar aquí el token
-      // 'Authorization': 'Bearer your_token_here',
     });
     String downloadPath = await getDownloadDirectory();
     final filePath = path.join(downloadPath, fileName);
@@ -802,30 +655,19 @@ class CoordinatorProviders with ChangeNotifier {
       BuildContext context, String identificacion) async {
     String? token = await _loadToken();
     try {
-      final url = Uri.https(
-          //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-          'localhost:8084',
-          '/app/services/get/pdf/medical-records',
+      final url = Uri.https(urlDynamic, '/app/services/get/pdf/medical-records',
           {'tourId': idTour, 'idPassenger': idPassenger});
       String fileName = "fichamedica" + "-" + identificacion;
-
       final resp = await http.post(url, headers: {
         'Content-Type': 'application/json',
-        'Authorization':
-            token ?? '' // Agregar el token en la cabecera de la solicitud
+        'Authorization': token ?? ''
       });
       if (resp.statusCode == 200) {
         final Uint8List documentBytes = resp.bodyBytes;
-
-        // Guardar el documento temporalmente en el dispositivo
         final Directory appDocDir = await getApplicationDocumentsDirectory();
         final String filePath = '${appDocDir.path}/$fileName';
-
-        // Escribir el archivo en el dispositivo
         final File file = File(filePath);
         await file.writeAsBytes(documentBytes);
-
-        // Mostrar el PDF en un diálogo
         _showPdfDialog(filePath, context);
       } else {
         throw Exception('Error al obtener el documento: ${resp.statusCode}');
@@ -841,10 +683,7 @@ class CoordinatorProviders with ChangeNotifier {
   Future<List<PositionMap>> positionMap(String tourCode) async {
     String? token = await _loadToken();
     var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/get/binnacle-map',
-        {'tourId': tourCode});
+        urlDynamic, '/app/services/get/binnacle-map', {'tourId': tourCode});
     final resp = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -862,11 +701,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<void> desactivateAccount(String rut) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/desactivate/login',
-        {'rut': rut});
+    var url =
+        Uri.https(urlDynamic, '/app/services/desactivate/login', {'rut': rut});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -882,36 +718,24 @@ class CoordinatorProviders with ChangeNotifier {
   Future<void> addHitoFotoPassenger(
       String hito, String tourId, XFile imageFiles) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/add/fotos/passenger');
-
-    // Crea un objeto MultipartRequest para enviar datos multipart
+    var url = Uri.https(urlDynamic, '/app/services/add/fotos/passenger');
     var request = http.MultipartRequest('POST', url);
-
-    // Añadir parámetros adicionales
     request.fields['passengerId'] =
         hito.toString(); // El hitoId debe ser parte del objeto hito
     request.fields['tourId'] = tourId.toString();
     if (token != null && token.isNotEmpty) {
       request.headers['Authorization'] = token;
-    } // El tourId debe ser parte del objeto hito
-
+    }
     var file = await http.MultipartFile.fromPath(
       'image', // Este es el nombre del campo en tu API
       imageFiles.path,
       filename: imageFiles.name,
     );
     request.files.add(file);
-
-    // Realiza la solicitud
     try {
       var response = await request.send();
-
       if (response.statusCode == 200) {
         print('Hito fotos agregadas con éxito');
-        // Aquí puedes manejar la respuesta si es necesario
       } else {
         print('Error al enviar las fotos: ${response.statusCode}');
       }
@@ -923,10 +747,7 @@ class CoordinatorProviders with ChangeNotifier {
   Future<Responseimagepassenger> getPicturePassenger(
       String passenger, String tourId) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/get/fotos/passenger',
+    var url = Uri.https(urlDynamic, '/app/services/get/fotos/passenger',
         {'tourId': tourId, 'passengerId': passenger.toString()});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
@@ -950,10 +771,7 @@ class CoordinatorProviders with ChangeNotifier {
   Future<PositionCoordinator> uniqueID(String gps) async {
     String? token = await _loadToken();
     var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/gps/data',
-        {'idTour': gps.toString()});
+        urlDynamic, '/app/services/gps/data', {'idTour': gps.toString()});
     final resp = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -971,11 +789,7 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<bool> sendMedicalDataEdit(RequestPassengerMedicalEdit medical) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/medical-records/edit');
-
+    var url = Uri.https(urlDynamic, '/app/services/medical-records/edit');
     print(token);
     final resp =
         await http.post(url, body: jsonEncode(medical.toJson()), headers: {
@@ -983,7 +797,6 @@ class CoordinatorProviders with ChangeNotifier {
       'Authorization':
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
-
     if (resp.statusCode == 200) {
       return true;
     } else {

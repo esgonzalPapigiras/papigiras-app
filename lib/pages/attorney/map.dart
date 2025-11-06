@@ -103,64 +103,78 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          initialCenter: _currentPosition ?? LatLng(0, 0), // Default position
-          initialZoom: 13.0,
-          maxZoom: 40.0,
-          minZoom: 5.0,
+      appBar: AppBar(
+        backgroundColor: Colors.teal,
+        title: const Text(
+          'Ubicación en tiempo real',
+          style: TextStyle(color: Colors.white),
         ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
+      body: Column(
         children: [
-          TileLayer(
-            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.papigirasApp',
-          ),
-          if (_currentPosition != null)
-            LocationMarkerLayer(
-              position: LocationMarkerPosition(
-                latitude: _currentPosition!.latitude,
-                longitude: _currentPosition!.longitude,
-                accuracy: 50.0,
+          Expanded(
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: _currentPosition ?? LatLng(0, 0),
+                initialZoom: 13.0,
+                maxZoom: 40.0,
+                minZoom: 5.0,
               ),
-              style: LocationMarkerStyle(
-                marker: DefaultLocationMarker(
-                  color: Colors.blue,
-                  child: Icon(
-                    Icons.my_location,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.papigiras',
                 ),
-                accuracyCircleColor: Colors.blue.withOpacity(0.1),
-              ),
-            ),
-          if (_coordinatorPosition != null)
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: _coordinatorPosition!,
-                  width: 100,
-                  height: 100,
-                  child: Column(
-                    children: [
-                      Text(
-                        'Coordinador',
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            backgroundColor: Colors.white),
+                if (_currentPosition != null)
+                  LocationMarkerLayer(
+                    position: LocationMarkerPosition(
+                      latitude: _currentPosition!.latitude,
+                      longitude: _currentPosition!.longitude,
+                      accuracy: 50.0,
+                    ),
+                    style: LocationMarkerStyle(
+                      marker: DefaultLocationMarker(
+                        color: Colors.blue,
+                        child: Icon(Icons.my_location,
+                            color: Colors.white, size: 20),
                       ),
-                      Icon(
-                        Icons.location_on,
-                        color: Colors.red,
-                        size: 30,
+                      accuracyCircleColor: Colors.blue.withOpacity(0.1),
+                    ),
+                  ),
+                if (_coordinatorPosition != null)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _coordinatorPosition!,
+                        width: 100,
+                        height: 100,
+                        child: Column(
+                          children: [
+                            Text(
+                              'Coordinador',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                backgroundColor: Colors.white,
+                              ),
+                            ),
+                            Icon(Icons.location_on,
+                                color: Colors.red, size: 30),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
               ],
             ),
+          ),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/DetailHitoList.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
+import 'package:papigiras_app/pages/coordinator/FullscreenImage.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
@@ -356,16 +357,23 @@ class _DetalleBitacoraCoordScreenState
                 children: [
                   // Aquí mapeamos las imágenes de la lista 'images' de la entrada
                   for (var imageBase64 in entry['images'])
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Center(
-                        child: Image.memory(
-                          base64Decode(imageBase64.split(',').last),
-                          fit: BoxFit
-                              .cover, // Ajusta la forma en que se escala la imagen
-                          height: 200, // Altura específica de la imagen
-                          width: 200, // Ancho específico de la imagen
-                        ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => FullscreenImagePage(
+                              imageBytes:
+                                  base64Decode(imageBase64.split(',').last),
+                            ),
+                          ),
+                        );
+                      },
+                      child: Image.memory(
+                        base64Decode(imageBase64.split(',').last),
+                        height: 200,
+                        width: 200,
+                        fit: BoxFit.cover,
                       ),
                     ),
                 ],

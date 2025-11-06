@@ -9,6 +9,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LocationService extends ChangeNotifier {
   Timer? _locationTimer;
   bool _isTracking = false;
+  //var urlDynamic = 'ms-papigiras-app-ezkbu.ondigitalocean.app';
+  var urlDynamic = 'stingray-app-9tqd9.ondigitalocean.app';
+  //var urlDynamic = '192.168.1.85:8084';
+  //var urlDynamic = 'localhost:8084';
 
   bool get isTracking => _isTracking;
 
@@ -40,18 +44,7 @@ class LocationService extends ChangeNotifier {
     }
     String? tourSales = prefs.getString('loginData');
     final body = json.decode(tourSales!);
-
-    /*var url = Uri.https(
-        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
-        'localhost:8084',
-        '/app/services/add-position-coordinator',
-        {
-          'latitud': position.latitude.toString(),
-          'longitud': position.longitude.toString(),
-          'idCoordinator': body['tourSalesId'].toString()
-        });*/
-    var url =
-        Uri.http('192.168.1.85:8084', '/app/services/add-position-coordinator', {
+    var url = Uri.http(urlDynamic, '/app/services/add-position-coordinator', {
       'latitud': position.latitude.toString(),
       'longitud': position.longitude.toString(),
       'idCoordinator': body['tourSalesId'].toString()
