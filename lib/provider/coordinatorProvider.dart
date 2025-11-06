@@ -80,17 +80,17 @@ class CoordinatorProviders with ChangeNotifier {
   Future<TourSales?> validateLoginUser(String tourCode) async {
     // Cargar el token y verificar su validez
     String? token = await _loadToken();
-
-    // URL del endpoint para la solicitud
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/coordinator', {'tourCode': tourCode});
-
-    // Realizar la solicitud HTTP
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/coordinator',
+        {'tourCode': tourCode});
+    */
+    var url = Uri.http('192.168.1.85:8084', '/app/services/coordinator',
+        {'tourCode': tourCode});
     final resp = await http.post(url, headers: {
-      'Content-Type':
-          'application/json', // Agregar el token en la cabecera de la solicitud
+      'Content-Type': 'application/json',
     });
-
     // Verificar si la respuesta es exitosa
     if (resp.statusCode == 200) {
       // Si la respuesta es correcta, decodificamos el JSON
@@ -99,7 +99,6 @@ class CoordinatorProviders with ChangeNotifier {
 
       // Crear el objeto `TourSales` a partir del JSON
       TourSales login = TourSales.fromJson(decorespoCreate);
-
       return login; // Devolver el objeto de respuesta
     } else {
       // Si la respuesta no es exitosa, devolver null
@@ -109,8 +108,14 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<TourTripulation>> getTripulation(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/tripulations', {'tourId': tourCode});
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/tripulations',
+        {'tourId': tourCode});
+    */
+    var url = Uri.http(
+        '192.168.1.85:8084', '/app/services/tripulations', {'tourId': tourCode});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -128,8 +133,14 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<Itinerary>> getItineray(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/binnacle', {'tourId': tourCode});
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/binnacle',
+        {'tourId': tourCode});
+    */
+    var url = Uri.http(
+        '192.168.1.85:8084', '/app/services/binnacle', {'tourId': tourCode});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -145,7 +156,13 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<ActivitiesList>> getItinerayGuardados(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/get/create-activities',
+        {'tourId': tourCode});
+        */
+    var url = Uri.http('192.168.1.85:8084',
         '/app/services/get/create-activities', {'tourId': tourCode});
     final resp = await http.get(url, headers: {
       'Content-Type': 'application/json',
@@ -164,7 +181,14 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<void> activitiesCreate(RequestActivities tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/create-activities');
+        */
+    var url = Uri.http(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        '192.168.1.85:8084',
         '/app/services/create-activities');
     final resp =
         await http.post(url, body: jsonEncode(tourCode.toJson()), headers: {
@@ -181,8 +205,12 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<ConsolidatedTourSalesDTO> addHito(RequestHito tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
         '/app/services/create-hito');
+        */
+    var url = Uri.http('192.168.1.85:8084', '/app/services/create-hito');
     final resp =
         await http.post(url, body: jsonEncode(tourCode.toJson()), headers: {
       'Content-Type': 'application/json',
@@ -207,11 +235,16 @@ class CoordinatorProviders with ChangeNotifier {
     List<XFile> imageFiles,
   ) async {
     final token = await _loadToken();
-    final uri = Uri.https(
-      'ms-papigiras-app-ezkbu.ondigitalocean.app',
+    /*final uri = Uri.https(
+      //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+      'localhost:8084',
       '/app/services/create-hito/fotos',
     );
-
+    */
+    final uri = Uri.http(
+      '192.168.1.85:8084',
+      '/app/services/create-hito/fotos',
+    );
     final request = http.MultipartRequest('POST', uri)
       ..fields['hitoId'] = hito.toString()
       ..fields['tourId'] = tourId;
@@ -269,10 +302,51 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
+  Future<void> deleteHito(String idHito, String idTour) async {
+    final token = await _loadToken();
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/delete-hito');
+        */
+    final uri = Uri.http(
+      '192.168.1.85:8084',
+      '/app/services/delete-hito',
+      {
+        'idHito': idHito,
+        'idTour': idTour,
+      },
+    );
+    try {
+      final resp = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ?? '',
+        },
+      );
+      if (resp.statusCode == 200) {
+        print('Hito eliminado correctamente (ID: $idHito)');
+      } else if (resp.statusCode == 403) {
+        print('Error 403: no autorizado. Verifica el token o permisos.');
+      } else {
+        print('Error ${resp.statusCode}: ${resp.body}');
+      }
+    } catch (e) {
+      print('Error al eliminar la foto: $e');
+    }
+  }
+
   Future<DetailHitoList> getHitoComplete(String hito, String tourId) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        'ms-papigiras-app-ezkbu.ondigitalocean.app',
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/get/detail/create-hito',
+        {'idTour': tourId, 'idHito': hito.toString()});
+        */
+    var url = Uri.http(
+        '192.168.1.85:8084',
         '/app/services/get/detail/create-hito',
         {'idTour': tourId, 'idHito': hito.toString()});
     final resp = await http.get(url, headers: {
@@ -294,8 +368,14 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<ConsolidatedTourSalesDTO>> getBinnacle(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/get/create-hito', {'tourId': tourCode});
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/get/create-hito',
+        {'tourId': tourCode});
+        */
+    var url = Uri.http('192.168.1.85:8084', '/app/services/get/create-hito',
+        {'tourId': tourCode});
     final resp = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -313,8 +393,14 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<Document>> getDocument(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/document-records', {'tourId': tourCode});
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/document-records',
+        {'tourId': tourCode});
+        */
+    var url = Uri.http('192.168.1.5:8084', '/app/services/document-records',
+        {'tourId': tourCode});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -330,8 +416,14 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<PassengerList>> getListPassenger(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/passengers/list', {'tourId': tourCode});
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/passengers/list',
+        {'tourId': tourCode});
+        */
+    var url = Uri.http('192.168.1.5:8084', '/app/services/passengers/list',
+        {'tourId': tourCode});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -353,12 +445,15 @@ class CoordinatorProviders with ChangeNotifier {
     await requestStoragePermission();
     String? token = await _loadToken();
     final url = Uri.https(
-        'ms-papigiras-app-ezkbu.ondigitalocean.app', '/app/services/download', {
-      'folderName': folderName,
-      'fileName': fileName,
-      'idTour': idTour,
-      'folder': folder
-    });
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/download',
+        {
+          'folderName': folderName,
+          'fileName': fileName,
+          'idTour': idTour,
+          'folder': folder
+        });
 
     final response = await http.get(url, headers: {
       'Content-Type': 'application/json',
@@ -386,12 +481,15 @@ class CoordinatorProviders with ChangeNotifier {
     String? token = await _loadToken();
     try {
       final url = Uri.https(
-          'ms-papigiras-app-ezkbu.ondigitalocean.app', '/app/services/view', {
-        'folderName': folderName,
-        'fileName': fileName,
-        'idTour': idTour,
-        'folder': folder
-      });
+          //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+          'localhost:8084',
+          '/app/services/view',
+          {
+            'folderName': folderName,
+            'fileName': fileName,
+            'idTour': idTour,
+            'folder': folder
+          });
 
       final resp = await http.get(url, headers: {
         'Content-Type': 'application/json',
@@ -516,9 +614,14 @@ class CoordinatorProviders with ChangeNotifier {
     String? token = await _loadToken();
 
     // URL del endpoint para la solicitud
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/attorney/login', {'user': rut, 'password': password});
-
+    /*var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/attorney/login',
+        {'user': rut, 'password': password});
+*/
+    var url = Uri.http('192.168.1.5:8084', '/app/services/attorney/login',
+        {'user': rut, 'password': password});
     // Realizar la solicitud HTTP
     final resp = await http.post(url, headers: {
       'Content-Type':
@@ -547,8 +650,11 @@ class CoordinatorProviders with ChangeNotifier {
     String? token = await _loadToken();
 
     // URL del endpoint para la solicitud
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/passenger/login', {'user': rut, 'password': password});
+    var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/passenger/login',
+        {'user': rut, 'password': password});
 
     // Realizar la solicitud HTTP
     final resp = await http.post(url, headers: {
@@ -574,8 +680,11 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<bool> validateMedicalRecord(String rut) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/validate/medical-records', {'user': rut});
+    var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/validate/medical-records',
+        {'user': rut});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -591,7 +700,9 @@ class CoordinatorProviders with ChangeNotifier {
   Future<bool> createMedicalRecord(
       RequestPassengerMedical medicalRecord) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+    var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
         '/app/services/medical-records');
     print(medicalRecord.toJson());
     final resp = await http
@@ -612,7 +723,8 @@ class CoordinatorProviders with ChangeNotifier {
       String idTour, String idPassenger) async {
     String? token = await _loadToken();
     var url = Uri.https(
-        'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
         '/app/services/get/medical-records',
         {'tourId': idTour, 'idPassenger': idPassenger});
     final resp = await http.post(url, headers: {
@@ -634,8 +746,11 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<ProgramViewDto> getviewProgram(String idTour) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/get/program-view', {'tourId': idTour});
+    var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/get/program-view',
+        {'tourId': idTour});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -657,43 +772,30 @@ class CoordinatorProviders with ChangeNotifier {
     await requestStoragePermission();
     String? token = await _loadToken();
     String fileName = "fichamedica" + "-" + identificacion + ".pdf";
-    
+    /*
     final url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
         '/app/services/get/pdf/view/medical-records', {
       'tourId': idTour,
       'idPassenger': idPassenger,
       'identificacion': identificacion
     });
-    /*
+    */
     final url = Uri.http(
         'localhost:8084', '/app/services/get/pdf/view/medical-records', {
       'tourId': idTour,
       'idPassenger': idPassenger,
       'identificacion': identificacion
     });
-    */
-    print('→ Sending request to: $url');
-    print('Using headers: Authorization=${token ?? 'none'}');
     final response = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization': token ?? ''
       // Si es necesario, puedes agregar aquí el token
       // 'Authorization': 'Bearer your_token_here',
     });
-    print('← Status code: ${response.statusCode}');
-    print('← Headers: ${response.headers}');
-    print('← Content-Type: ${response.headers['content-type']}');
-    print('← Body length: ${response.bodyBytes.length} bytes');
-    if (response.statusCode != 200) {
-      print('← Response body (text): ${response.body}');
-    }
-
     String downloadPath = await getDownloadDirectory();
     final filePath = path.join(downloadPath, fileName);
     final file = File(filePath);
     await file.writeAsBytes(response.bodyBytes);
-
-    print('Archivo descargado en: $filePath');
   }
 
   Future<void> viewDocumentMedicalRecord(String idTour, String idPassenger,
@@ -701,7 +803,8 @@ class CoordinatorProviders with ChangeNotifier {
     String? token = await _loadToken();
     try {
       final url = Uri.https(
-          'ms-papigiras-app-ezkbu.ondigitalocean.app',
+          //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+          'localhost:8084',
           '/app/services/get/pdf/medical-records',
           {'tourId': idTour, 'idPassenger': idPassenger});
       String fileName = "fichamedica" + "-" + identificacion;
@@ -737,8 +840,11 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<PositionMap>> positionMap(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/get/binnacle-map', {'tourId': tourCode});
+    var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/get/binnacle-map',
+        {'tourId': tourCode});
     final resp = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -756,8 +862,11 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<void> desactivateAccount(String rut) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/desactivate/login', {'rut': rut});
+    var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/desactivate/login',
+        {'rut': rut});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -773,7 +882,9 @@ class CoordinatorProviders with ChangeNotifier {
   Future<void> addHitoFotoPassenger(
       String hito, String tourId, XFile imageFiles) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+    var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
         '/app/services/add/fotos/passenger');
 
     // Crea un objeto MultipartRequest para enviar datos multipart
@@ -813,7 +924,8 @@ class CoordinatorProviders with ChangeNotifier {
       String passenger, String tourId) async {
     String? token = await _loadToken();
     var url = Uri.https(
-        'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
         '/app/services/get/fotos/passenger',
         {'tourId': tourId, 'passengerId': passenger.toString()});
     final resp = await http.post(url, headers: {
@@ -837,8 +949,11 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<PositionCoordinator> uniqueID(String gps) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
-        '/app/services/gps/data', {'idTour': gps.toString()});
+    var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
+        '/app/services/gps/data',
+        {'idTour': gps.toString()});
     final resp = await http.get(url, headers: {
       'Content-Type': 'application/json',
       'Authorization':
@@ -856,7 +971,9 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<bool> sendMedicalDataEdit(RequestPassengerMedicalEdit medical) async {
     String? token = await _loadToken();
-    var url = Uri.https('ms-papigiras-app-ezkbu.ondigitalocean.app',
+    var url = Uri.https(
+        //'ms-papigiras-app-ezkbu.ondigitalocean.app',
+        'localhost:8084',
         '/app/services/medical-records/edit');
 
     print(token);

@@ -32,7 +32,7 @@ class ConsolidatedTourSalesDTO {
       binnacleLatitud: json['binnacleLatitud'],
       binnacleLongitud: json['binnacleLongitud'],
       binnacleHora: json['binnacleHora'],
-      binnacleFecha: json['binnacleFecha'],
+      binnacleFecha: json['binnacleFecha'] ?? json['binnaclefecha'] ?? '',
     );
   }
 

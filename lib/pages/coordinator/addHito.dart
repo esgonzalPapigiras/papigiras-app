@@ -299,8 +299,9 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
 
                           // Validaciones de los campos
                           if (tituloController.text.isEmpty ||
-                              descripcionController.text.isEmpty ||
-                              notaCierreController.text.isEmpty) {
+                              descripcionController.text.isEmpty 
+                              || notaCierreController.text.isEmpty
+                              ) {
                             Navigator.of(context).pop(); // Cierra el QuickAlert
                             QuickAlert.show(
                               context: context,

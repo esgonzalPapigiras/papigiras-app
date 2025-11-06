@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/DetailHitoList.dart';
@@ -7,6 +6,7 @@ import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
@@ -249,6 +249,52 @@ class _DetalleBitacoraCoordScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SizedBox(height: 20),
+          // Delete button with confirmation
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: () {
+                QuickAlert.show(
+                  context: context,
+                  type: QuickAlertType.confirm,
+                  title: 'Confirmación',
+                  text:
+                      '¿Está seguro que quiere borrar el hito? Se perderá para siempre.',
+                  confirmBtnText: 'Sí',
+                  cancelBtnText: 'No',
+                  onConfirmBtnTap: () async {
+                    Navigator.of(context)
+                        .pop(); // Close the confirmation dialog
+
+                    // Delete the hito
+                    await usuarioProvider.deleteHito(
+                      widget.idHito.toString(),
+                      widget.login.tourSalesId.toString(),
+                    );
+
+                    // Navigate to dashboard
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TravelCoordinatorDashboard(
+                          login: widget.login,
+                        ),
+                      ),
+                    );
+                  },
+                  onCancelBtnTap: () {
+                    Navigator.of(context).pop(); // Just close the dialog
+                  },
+                );
+              },
+              icon: Icon(Icons.delete, color: Colors.white),
+              label:
+                  Text('Eliminar Hito', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+            ),
+          ),
           SizedBox(height: 20),
           Expanded(
             child: ListView(
