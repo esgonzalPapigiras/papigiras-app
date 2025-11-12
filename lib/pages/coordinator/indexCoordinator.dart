@@ -291,6 +291,7 @@ class _TravelCoordinatorDashboardState
                                   ),
                                 ),
                                 SizedBox(height: 10),
+                                /*
                                 Row(
                                   // Centrar horizontalmente
                                   children: [
@@ -327,6 +328,7 @@ class _TravelCoordinatorDashboardState
                                     ),
                                   ],
                                 ), // Espacio entre el texto y el botón
+                                */
                               ],
                             ),
                           ),

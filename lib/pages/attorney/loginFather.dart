@@ -10,6 +10,7 @@ import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginFather extends StatefulWidget {
   @override
@@ -40,12 +41,9 @@ class _LoginFatherState extends State<LoginFather> {
 
   void _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    // Recupera los datos guardados del usuario
     String? storedRut = prefs.getString('userRut');
     String? storedPassword = prefs.getString('userPassword');
 
-    // Si los datos existen, colócalos en los controladores de los campos
     setState(() {
       if (storedRut != null) {
         _userController.text = storedRut;
@@ -59,18 +57,13 @@ class _LoginFatherState extends State<LoginFather> {
   Future<void> _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    String? token = await _loadToken(); // _loadToken ya maneja la expiración
-
+    String? token = await _loadToken();
     if (isLoggedIn && token != null) {
       String? loginJson = prefs.getString('loginData');
       if (loginJson != null) {
-        String role = prefs.getString('userRole') ??
-            ''; // Usar un valor por defecto o manejar error si es nulo
+        String role = prefs.getString('userRole') ?? '';
         var loginMap = jsonDecode(loginJson);
-
-        if (!mounted)
-          return; // Comprobar si el widget sigue montado antes de navegar
-
+        if (!mounted) return;
         try {
           // Envolver en try-catch por si el JSON no coincide con los DTOs
           if (role == 'coordinator') {
@@ -109,6 +102,36 @@ class _LoginFatherState extends State<LoginFather> {
         await _clearSession(prefs);
       }
     }
+  }
+
+  /// Request permissions and get FCM token
+  Future<String?> _registerFcmToken() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    // Request permission (required on iOS)
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.denied) {
+      print("Notification permission denied");
+      return null;
+    }
+
+    // Get FCM token
+    String? token = await messaging.getToken();
+    print("FCM Token: $token");
+
+    // Send token to your backend
+    if (token != null) {
+      final passengerRut = _userController.text; 
+      await usuarioProvider
+          .registerFcmToken(passengerRut, token); // implement in your provider
+    }
+
+    return token;
   }
 
   Future<void> _clearSession(SharedPreferences prefs) async {
@@ -337,6 +360,9 @@ class _LoginFatherState extends State<LoginFather> {
                               // Serializar el objeto login y guardarlo como una cadena JSON
                               String loginJson = jsonEncode(login.toJson());
                               await prefs.setString('loginData', loginJson);
+
+                              // 🔹 Register FCM token
+                              await _registerFcmToken();
 
                               // Mostrar QuickAlert de éxito y navegar a la siguiente pantalla
                               QuickAlert.show(

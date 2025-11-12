@@ -11,7 +11,7 @@ class LocationService extends ChangeNotifier {
   bool _isTracking = false;
   //var urlDynamic = 'ms-papigiras-app-ezkbu.ondigitalocean.app';
   var urlDynamic = 'stingray-app-9tqd9.ondigitalocean.app';
-  //var urlDynamic = '192.168.1.85:8084';
+  //var urlDynamic = '192.168.1.5:8084';
   //var urlDynamic = 'localhost:8084';
 
   bool get isTracking => _isTracking;
@@ -44,7 +44,7 @@ class LocationService extends ChangeNotifier {
     }
     String? tourSales = prefs.getString('loginData');
     final body = json.decode(tourSales!);
-    var url = Uri.http(urlDynamic, '/app/services/add-position-coordinator', {
+    var url = Uri.https(urlDynamic, '/app/services/add-position-coordinator', {
       'latitud': position.latitude.toString(),
       'longitud': position.longitude.toString(),
       'idCoordinator': body['tourSalesId'].toString()

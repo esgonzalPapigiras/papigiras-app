@@ -400,46 +400,69 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
       }
 
       return Card(
-        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 2,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: ListTile(
-            leading: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  formattedDate,
-                  style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.teal),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  binnacle.binnacleHora,
-                  style: TextStyle(fontSize: 10, color: Colors.grey[700]),
-                ),
-              ],
-            ),
-            title: Text(
-              binnacle.binnacleTitulo,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text(
-              binnacle.binnacleUbicacion,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            trailing: TextButton(
-              onPressed: () {
-                Navigator.of(context).push(_createRoute(
-                  DetalleBitacoraFatherScreen(
-                    idHito: binnacle.binnacleDetailId.toString(),
-                    login: widget.login,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Date and time at the top
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6.0),
+                child: Text(
+                  '$formattedDate • ${binnacle.binnacleHora}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.teal,
                   ),
-                ));
-              },
-              child: Text('Ver más', style: TextStyle(color: Colors.teal)),
-            ),
+                ),
+              ),
+
+              // Title (larger)
+              Text(
+                binnacle.binnacleTitulo,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              // Location (smaller, muted)
+              Text(
+                binnacle.binnacleUbicacion,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black54,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              // Button at the bottom-right
+              Align(
+                alignment: Alignment.bottomRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(_createRoute(
+                      DetalleBitacoraFatherScreen(
+                        idHito: binnacle.binnacleDetailId.toString(),
+                        login: widget.login,
+                      ),
+                    ));
+                  },
+                  child: const Text(
+                    'Ver más',
+                    style: TextStyle(color: Colors.teal),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );

@@ -6,6 +6,8 @@ import 'package:photo_view/photo_view.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:typed_data';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 class FullscreenImagePage extends StatefulWidget {
   final Uint8List imageBytes;
@@ -91,6 +93,21 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
     }
   }
 
+  Future<void> _shareImage() async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final file = await File('${tempDir.path}/shared_image.jpg')
+          .writeAsBytes(widget.imageBytes);
+      await Share.shareXFiles(
+        [XFile(file.path)],
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al compartir: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -110,6 +127,14 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
             child: IconButton(
               icon: const Icon(Icons.close, color: Colors.white, size: 30),
               onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          Positioned(
+            top: 40,
+            right: 70,
+            child: IconButton(
+              icon: const Icon(Icons.share, color: Colors.white, size: 30),
+              onPressed: _shareImage,
             ),
           ),
           // Download button

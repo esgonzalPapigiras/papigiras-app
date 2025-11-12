@@ -34,11 +34,13 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:share_plus/share_plus.dart';
+
 class CoordinatorProviders with ChangeNotifier {
   String? _token;
   //var urlDynamic = 'ms-papigiras-app-ezkbu.ondigitalocean.app';
   var urlDynamic = 'stingray-app-9tqd9.ondigitalocean.app';
-  //var urlDynamic = '192.168.1.85:8084';
+  //var urlDynamic = '192.168.1.5:8084';
   //var urlDynamic = 'localhost:8084';
 
   String? get token => _token;
@@ -130,8 +132,7 @@ class CoordinatorProviders with ChangeNotifier {
         Uri.https(urlDynamic, '/app/services/binnacle', {'tourId': tourCode});
     final resp = await http.post(url, headers: {
       'Content-Type': 'application/json',
-      'Authorization':
-          token ?? '' // Agregar el token en la cabecera de la solicitud
+      'Authorization': token ?? ''
     });
     if (resp.statusCode == 200) {
       List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
@@ -651,6 +652,38 @@ class CoordinatorProviders with ChangeNotifier {
     await file.writeAsBytes(response.bodyBytes);
   }
 
+  Future<void> shareDocumentMedicalRecord(
+      String idTour, String idPassenger, String identificacion) async {
+    await requestStoragePermission();
+    String? token = await _loadToken();
+    String fileName = "fichamedica" + "-" + identificacion + ".pdf";
+
+    final url = Uri.https(
+      urlDynamic,
+      '/app/services/get/pdf/view/medical-records',
+      {
+        'tourId': idTour,
+        'idPassenger': idPassenger,
+        'identificacion': identificacion,
+      },
+    );
+
+    // Make the request
+    final response = await http.get(url, headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token ?? '',
+    });
+
+    // Save PDF locally
+    String downloadPath = await getDownloadDirectory();
+    final filePath = path.join(downloadPath, fileName);
+    final file = File(filePath);
+    await file.writeAsBytes(response.bodyBytes);
+
+    // Share it
+    await Share.shareXFiles([XFile(filePath)], text: 'Ficha médica adjunta');
+  }
+
   Future<void> viewDocumentMedicalRecord(String idTour, String idPassenger,
       BuildContext context, String identificacion) async {
     String? token = await _loadToken();
@@ -801,6 +834,32 @@ class CoordinatorProviders with ChangeNotifier {
       return true;
     } else {
       return false;
+    }
+  }
+
+  /// Sends the FCM token to the backend
+  Future<void> registerFcmToken(String passengerRut, String fcmToken) async {
+    try {
+      String? authToken = await _loadToken();
+      final response = await http.post(
+        Uri.parse("https://$urlDynamic/fcm/register-token"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authToken ?? ''
+        },
+        body: jsonEncode({
+          'passengerRut': passengerRut,
+          'fcmToken': fcmToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print("FCM token registered successfully");
+      } else {
+        print("Failed to register FCM token: ${response.body}");
+      }
+    } catch (e) {
+      print("Error registering FCM token: $e");
     }
   }
 }

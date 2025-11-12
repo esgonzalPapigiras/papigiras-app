@@ -475,6 +475,16 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
                           );
                         },
                       ),
+                      IconButton(
+                        icon: Icon(Icons.share, color: Colors.teal),
+                        onPressed: () {
+                          usuarioProvider.shareDocumentMedicalRecord(
+                            widget.login.tourSalesId.toString(),
+                            document['idPassenger'].toString(),
+                            document['id'].toString(),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),

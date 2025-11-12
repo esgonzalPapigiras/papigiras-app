@@ -471,7 +471,7 @@ class _MedicalRecordScreenEditState
                               SizedBox(height: 10),
 
                               // 2. CONTACTOS DE EMERGENCIA
-                              Text('2. Contactos de Emergencia',
+                              Text('Contactos de Emergencia',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold)),
@@ -489,7 +489,7 @@ class _MedicalRecordScreenEditState
                               SizedBox(height: 10),
                               SizedBox(height: 10),
                               // 4. ANTECEDENTES MÉDICOS
-                              Text('4. Antecedentes Médicos',
+                              Text('Enfermedades',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold)),
@@ -501,7 +501,7 @@ class _MedicalRecordScreenEditState
                               SizedBox(height: 10),
 
                               // 5. MEDICAMENTOS
-                              Text('5. Medicamentos',
+                              Text('Medicamentos',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold)),
@@ -513,7 +513,7 @@ class _MedicalRecordScreenEditState
                               SizedBox(height: 10),
 
                               // 5. MEDICAMENTOS
-                              Text('5. Medicamentos a Evitar',
+                              Text('Medicamentos a Evitar',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold)),

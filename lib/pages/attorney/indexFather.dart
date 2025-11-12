@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
+import 'package:papigiras_app/pages/attorney/TraceMapFullScreen.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
 import 'package:papigiras_app/pages/attorney/loginFather.dart';
@@ -412,6 +413,7 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                         ),
                       ),
                       SizedBox(height: 8),
+                      /*
                       TextButton.icon(
                         onPressed: () {
                           Navigator.push(
@@ -431,6 +433,7 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                           ),
                         ),
                       ),
+                      */
                       SizedBox(height: 10),
                       Divider(),
                       Padding(
@@ -489,9 +492,8 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => MapScreen(
-                                login: widget.login,
-                                locations: [],
+                              builder: (context) => TraceMapFullScreen(
+                                tourCode: widget.login.tourId!,
                               ),
                             ),
                           );
@@ -507,7 +509,7 @@ class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
                           ),
                         ),
                         child: Text(
-                          'Ver Ubicación en tiempo Real',
+                          'Ampliar Mapa',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
