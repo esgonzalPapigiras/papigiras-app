@@ -362,7 +362,7 @@ class _LoginFatherState extends State<LoginFather> {
                               await prefs.setString('loginData', loginJson);
 
                               // 🔹 Register FCM token
-                              await _registerFcmToken();
+                              //await _registerFcmToken();
 
                               // Mostrar QuickAlert de éxito y navegar a la siguiente pantalla
                               QuickAlert.show(
