@@ -14,25 +14,28 @@ class PassengersMedicalRecordDTO {
   final String? authorizationDate; // fechaAutorizacion
   final int? passengerId; // Solo el ID del pasajero
   final int? tourSalesId;
+  final bool requiresSpecialCare; // requiereCuidadosEspeciales
+  final String? specialCareDetails; // cuidadosEspeciales
 
   // Constructor
-  PassengersMedicalRecordDTO({
-    required this.idPassengersMedicalRecord,
-    required this.bloodType,
-    required this.emergencyContactName,
-    required this.emergencyContactRelation,
-    required this.emergencyContactPhone,
-    required this.emergencyContactEmail,
-    required this.hasFonasa,
-    required this.hasIsapre,
-    this.isapre,
-    required this.diseases,
-    required this.medications,
-    required this.avoidMedications,
-    required this.authorizationDate,
-    required this.passengerId,
-    required this.tourSalesId,
-  });
+  PassengersMedicalRecordDTO(
+      {required this.idPassengersMedicalRecord,
+      required this.bloodType,
+      required this.emergencyContactName,
+      required this.emergencyContactRelation,
+      required this.emergencyContactPhone,
+      required this.emergencyContactEmail,
+      required this.hasFonasa,
+      required this.hasIsapre,
+      this.isapre,
+      required this.diseases,
+      required this.medications,
+      required this.avoidMedications,
+      required this.authorizationDate,
+      required this.passengerId,
+      required this.tourSalesId,
+      required this.requiresSpecialCare,
+      required this.specialCareDetails});
 
   // Método para convertir de JSON a objeto Dart
   factory PassengersMedicalRecordDTO.fromJson(Map<String, dynamic> json) {
@@ -52,6 +55,8 @@ class PassengersMedicalRecordDTO {
       authorizationDate: json['fechaAutorizacion'],
       passengerId: json['passengerId'],
       tourSalesId: json['tourSalesId'],
+      requiresSpecialCare: json['requiereCuidadosEspeciales'] ?? false,
+      specialCareDetails: json['cuidadosEspeciales'],
     );
   }
 
@@ -73,6 +78,8 @@ class PassengersMedicalRecordDTO {
       'authorizationDate': authorizationDate,
       'passengerId': passengerId,
       'tourSalesId': tourSalesId,
+      'requiereCuidadosEspeciales': requiresSpecialCare,
+      'cuidadosEspeciales': specialCareDetails,
     };
   }
 }

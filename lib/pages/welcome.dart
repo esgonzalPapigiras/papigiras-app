@@ -20,6 +20,100 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _checkLoginStatus();
+    });
+  }
+
+  void _debugPrintPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    print("===== PREFS DUMP IN WELCOME=====");
+    print("isLoggedIn: ${prefs.getBool('isLoggedIn')}");
+    print("userRole: ${prefs.getString('userRole')}");
+    print("token: ${prefs.getString('token')}");
+    print("tokenExpiry: ${prefs.getString('tokenExpiry')}");
+    print("loginData: ${prefs.getString('loginData')}");
+    print("=======================");
+  }
+
+  Future<void> _checkLoginStatus() async {
+    _debugPrintPrefs();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    String? token = await _loadToken(); // _loadToken ya maneja la expiración
+    if (isLoggedIn && token != null) {
+      String? loginJson = prefs.getString('loginData');
+      if (loginJson != null) {
+        String role = prefs.getString('userRole') ?? '';
+        var loginMap = jsonDecode(loginJson);
+        if (!mounted) return;
+        try {
+          if (role == 'coordinator') {
+            TourSales login = TourSales.fromJson(loginMap);
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      TravelCoordinatorDashboard(login: login)),
+              (route) => false,
+            );
+          } else if (role == 'passenger') {
+            ResponseAttorney login = ResponseAttorney.fromJson(loginMap);
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => TravelPassengerDashboard(login: login)),
+              (route) => false,
+            );
+          } else if (role == 'father') {
+            ResponseAttorney login = ResponseAttorney.fromJson(loginMap);
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => TravelFatherDashboard(login: login)),
+              (route) => false,
+            );
+          } else {
+            await _clearSession(prefs);
+          }
+        } catch (e) {
+          print("Error deserializando loginData: $e");
+          await _clearSession(prefs);
+        }
+      } else {
+        await _clearSession(prefs);
+      }
+    }
+  }
+
+  Future<void> _clearSession(SharedPreferences prefs) async {
+    await prefs.remove('token');
+    await prefs.remove('tokenExpiry');
+    await prefs.setBool('isLoggedIn', false);
+    await prefs.remove('loginData');
+    await prefs.remove('userRole');
+  }
+
+  Future<String?> _loadToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+    String? tokenExpiryStr = prefs.getString('tokenExpiry');
+
+    if (token != null && tokenExpiryStr != null) {
+      DateTime tokenExpiry = DateTime.parse(tokenExpiryStr);
+      final now = DateTime.now();
+
+      // Si el token ha expirado, eliminarlo y devolver null
+      if (tokenExpiry.isBefore(now)) {
+        await prefs.remove('token');
+        await prefs.remove('tokenExpiry');
+        return null; // El token ha expirado
+      } else {
+        return token; // El token es válido
+      }
+    } else {
+      return null; // No hay token guardado
+    }
   }
 
   @override

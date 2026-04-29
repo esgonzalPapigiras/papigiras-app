@@ -93,9 +93,11 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
 
   void _sortDocuments() {
     setState(() {
-      documents.sort((a, b) => _isAscending
-          ? a['name'].compareTo(b['name'])
-          : b['name'].compareTo(a['name']));
+      documents.sort((a, b) {
+        final idA = (a['passengerApellidos'] ?? '').toString();
+        final idB = (b['passengerApellidos'] ?? '').toString();
+        return _isAscending ? idA.compareTo(idB) : idB.compareTo(idA);
+      });
       _isAscending = !_isAscending;
     });
   }
@@ -123,7 +125,7 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
               child: Row(
                 children: [
                   Text(
-                    'De la A a la Z',
+                    'Ordenar por Apellido',
                     style: TextStyle(
                       fontSize: 8,
                       color: Colors.teal,
@@ -223,7 +225,7 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildCustomBottomNavigationBar(),
+      //bottomNavigationBar: _buildCustomBottomNavigationBar(),
     );
   }
 

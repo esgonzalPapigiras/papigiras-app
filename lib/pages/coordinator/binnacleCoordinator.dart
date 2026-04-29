@@ -111,7 +111,7 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildCustomBottomNavigationBar(),
+      //bottomNavigationBar: _buildCustomBottomNavigationBar(),
     );
   }
 

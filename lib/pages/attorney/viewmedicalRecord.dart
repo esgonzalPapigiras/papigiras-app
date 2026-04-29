@@ -34,6 +34,8 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
   final TextEditingController _alergiasController = TextEditingController();
   final TextEditingController _enfermedadesController = TextEditingController();
   final TextEditingController _medicamentosController = TextEditingController();
+  final TextEditingController _cuidadosEspecialesController =
+      TextEditingController();
   Future<PassengersMedicalRecordDTO>? _hitoDetailFuture;
   XFile? _image;
   String? _imageUrl;
@@ -328,7 +330,6 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   } else if (snapshot.hasData) {
                     final medicalRecord = snapshot.data;
-
                     return SingleChildScrollView(
                       child: Container(
                         decoration: BoxDecoration(
@@ -435,6 +436,10 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
                                 medicalRecord?.avoidMedications ??
                                     "No hay medicamentos registrados"),
                             SizedBox(height: 10),
+                            buildInfoSectionMedicamentos(
+                                'Cuidados Especiales',
+                                medicalRecord?.specialCareDetails ??
+                                    "No hay cuidados especiales"),
                             Align(
                               alignment: Alignment.center,
                               child: ElevatedButton.icon(

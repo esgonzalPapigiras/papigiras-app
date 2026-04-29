@@ -10,7 +10,7 @@ class LocationService extends ChangeNotifier {
   Timer? _locationTimer;
   bool _isTracking = false;
   //var urlDynamic = 'ms-papigiras-app-ezkbu.ondigitalocean.app';
-  var urlDynamic = 'stingray-app-9tqd9.ondigitalocean.app';
+  var urlDynamic = 'stingray-app-9tqd9-djh6d.ondigitalocean.app';
   //var urlDynamic = '192.168.1.5:8084';
   //var urlDynamic = 'localhost:8084';
 
@@ -39,7 +39,7 @@ class LocationService extends ChangeNotifier {
     String? token = prefs.getString('token');
     String? userRole = prefs.getString('userRole');
     if (userRole == null || userRole.toLowerCase() != 'coordinator') {
-      print('Skipped saving location: user is not a coordinator');
+      //print('Skipped saving location: user is not a coordinator');
       return;
     }
     String? tourSales = prefs.getString('loginData');

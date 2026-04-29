@@ -64,7 +64,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
   final TextEditingController _alergiasController = TextEditingController();
   final TextEditingController _enfermedadesController = TextEditingController();
   final TextEditingController _medicamentosController = TextEditingController();
-
+  bool _showValidationError = false;
 
   final _telefonoEmergenciaKey = GlobalKey();
   final _emailEmergenciaKey = GlobalKey();
@@ -167,8 +167,9 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
 
   String? _validateTelefono(String? value) {
     if (value == null || value.isEmpty) return 'El teléfono es obligatorio';
+    final normalized = value.trim().replaceAll(RegExp(r'\s+'), '');
     final phoneRegex = RegExp(r'^[0-9]{9,12}$');
-    if (!phoneRegex.hasMatch(value)) return 'Ingresa un teléfono válido';
+    if (!phoneRegex.hasMatch(normalized)) return 'Ingresa un teléfono válido';
     return null;
   }
 
@@ -526,7 +527,6 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                               ),
                               Divider(),
                               SizedBox(height: 10),
-
                               // 2. CONTACTOS DE EMERGENCIA
                               Text('2. Contactos de Emergencia',
                                   style: TextStyle(
@@ -562,7 +562,6 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                               ),
                               Divider(),
                               SizedBox(height: 10),
-
                               // 3. COBERTURA MÉDICA
                               Text('3. Cobertura Médica',
                                   style: TextStyle(
@@ -589,7 +588,6 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                                     _isapreController, null),
                               Divider(),
                               SizedBox(height: 10),
-
                               // 4. ANTECEDENTES MÉDICOS
                               Text('4. Antecedentes Médicos',
                                   style: TextStyle(
@@ -607,7 +605,6 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                                     _especificarEnfermedadesController, null),
                               Divider(),
                               SizedBox(height: 10),
-
                               // 5. MEDICAMENTOS
                               Text('5. Medicamentos',
                                   style: TextStyle(
@@ -642,94 +639,96 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
                                     _medicamentosEvitarController, null),
                               Divider(),
                               SizedBox(height: 10),
-
                               // Botón Guardar
+                              if (_showValidationError)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Text(
+                                    'Corregir datos en rojo',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
                               Center(
                                 child: ElevatedButton(
                                   onPressed: () {
                                     if (_formKey.currentState!.validate()) {
-                                      _firstInvalidFieldKey = null;
-                                      // Construir el objeto para enviar
+                                      setState(() {
+                                        _showValidationError = false;
+                                        _firstInvalidFieldKey = null;
+                                      });
+
                                       RequestPassengerMedical medical =
                                           RequestPassengerMedical(
-                                              nombres: _nombreController.text,
-                                              apellidos:
-                                                  _apellidoController.text,
-                                              curso: _cursoController.text,
-                                              colegio: _colegioController.text,
-                                              comuna: _comunaController.text,
-                                              rut: _rutController.text,
-                                              grupoSanguineo:
-                                                  _grupoSanguineo ?? '',
-                                              contactoEmergenciaNombre:
-                                                  _nombreEmergenciaController
-                                                      .text,
-                                              contactoEmergenciaRelacion:
-                                                  _relacionEmergenciaController
-                                                      .text,
-                                              contactoEmergenciaTelefono:
-                                                  _telefonoEmergenciaController
-                                                      .text,
-                                              contactoEmergenciaEmail:
-                                                  _emailEmergenciaController
-                                                      .text,
-                                              tieneFonasa: _tieneFonasa,
-                                              tieneIsapre: _tieneIsapre,
-                                              isapre: _isapreController.text,
-                                              tieneEnfermedades:
-                                                  _tieneEnfermedades,
-                                              enfermedades: _tieneEnfermedades
-                                                  ? _especificarEnfermedadesController
-                                                      .text
-                                                  : null,
-                                              tomaMedicamentos:
-                                                  _tomaMedicamentos,
-                                              medicamentos: _tomaMedicamentos
-                                                  ? [
-                                                      {
-                                                        'nombre':
-                                                            _medicamento1Controller
-                                                                .text,
-                                                        'dosis':
-                                                            _dosis1Controller
-                                                                .text,
-                                                      },
-                                                      {
-                                                        'nombre':
-                                                            _medicamento2Controller
-                                                                .text,
-                                                        'dosis':
-                                                            _dosis2Controller
-                                                                .text,
-                                                      }
-                                                    ]
-                                                  : [],
-                                              evitarMedicamentos:
-                                                  _evitarMedicamentos,
-                                              medicamentosEvitar:
-                                                  _evitarMedicamentos
-                                                      ? _medicamentosEvitarController
-                                                          .text
-                                                      : null,
-                                              requiereCuidadosEspeciales:
-                                                  _requiereCuidadosEspeciales,
-                                              cuidadosEspeciales:
-                                                  _requiereCuidadosEspeciales
-                                                      ? _cuidadosEspecialesController
-                                                          .text
-                                                      : null,
-                                              fechaNacimiento:
-                                                  _fechaNacimiento ??
-                                                      DateTime.now(),
-                                              fechaAutorizacion:
-                                                  _fechaAutorizacion ??
-                                                      DateTime.now(),
-                                              idPassenger:
-                                                  widget.login.passengerId!,
-                                              idTour: widget.login.tourId!);
+                                        nombres: _nombreController.text,
+                                        apellidos: _apellidoController.text,
+                                        curso: _cursoController.text,
+                                        colegio: _colegioController.text,
+                                        comuna: _comunaController.text,
+                                        rut: _rutController.text,
+                                        grupoSanguineo: _grupoSanguineo ?? '',
+                                        contactoEmergenciaNombre:
+                                            _nombreEmergenciaController.text,
+                                        contactoEmergenciaRelacion:
+                                            _relacionEmergenciaController.text,
+                                        contactoEmergenciaTelefono:
+                                            _telefonoEmergenciaController.text,
+                                        contactoEmergenciaEmail:
+                                            _emailEmergenciaController.text,
+                                        tieneFonasa: _tieneFonasa,
+                                        tieneIsapre: _tieneIsapre,
+                                        isapre: _isapreController.text,
+                                        tieneEnfermedades: _tieneEnfermedades,
+                                        enfermedades: _tieneEnfermedades
+                                            ? _especificarEnfermedadesController
+                                                .text
+                                            : null,
+                                        tomaMedicamentos: _tomaMedicamentos,
+                                        medicamentos: _tomaMedicamentos
+                                            ? [
+                                                {
+                                                  'nombre':
+                                                      _medicamento1Controller
+                                                          .text,
+                                                  'dosis':
+                                                      _dosis1Controller.text,
+                                                },
+                                                {
+                                                  'nombre':
+                                                      _medicamento2Controller
+                                                          .text,
+                                                  'dosis':
+                                                      _dosis2Controller.text,
+                                                }
+                                              ]
+                                            : [],
+                                        evitarMedicamentos: _evitarMedicamentos,
+                                        medicamentosEvitar: _evitarMedicamentos
+                                            ? _medicamentosEvitarController.text
+                                            : null,
+                                        requiereCuidadosEspeciales:
+                                            _requiereCuidadosEspeciales,
+                                        cuidadosEspeciales:
+                                            _requiereCuidadosEspeciales
+                                                ? _cuidadosEspecialesController
+                                                    .text
+                                                : null,
+                                        fechaNacimiento:
+                                            _fechaNacimiento ?? DateTime.now(),
+                                        fechaAutorizacion: _fechaAutorizacion ??
+                                            DateTime.now(),
+                                        idPassenger: widget.login.passengerId!,
+                                        idTour: widget.login.tourId!,
+                                      );
 
                                       showMedicalAuthorization(
                                           context, medical);
+                                    } else {
+                                      setState(() {
+                                        _showValidationError = true;
+                                      });
                                     }
                                   },
                                   child: Text('Guardar Ficha Médica'),
@@ -799,12 +798,13 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
             confirmBtnText: 'Continuar',
             onConfirmBtnTap: () {
               Navigator.of(context).pop();
-              Navigator.push(
+              Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(
                   builder: (context) =>
                       TravelFatherDashboard(login: widget.login),
                 ),
+                (route) => false,
               ); // Cierra el QuickAlert
             },
           );
@@ -944,12 +944,13 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
         print('$label presionado');
 
         if (label == 'Bitácora del Viaje') {
-          Navigator.push(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
                 builder: (context) => BitacoraFatherScreen(
                       login: widget.login,
                     )),
+            (route) => false,
           );
         }
       },
@@ -999,11 +1000,11 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
   }
 
   Widget _buildTextFieldCelular(
-    String label, 
+    String label,
     TextEditingController controller,
     String? Function(String?)? validator, {
     TextInputType keyboardType = TextInputType.text,
-    Key? fieldKey, 
+    Key? fieldKey,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1011,7 +1012,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
         Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 5),
         TextFormField(
-          key: fieldKey, 
+          key: fieldKey,
           controller: controller,
           validator: validator,
           keyboardType: keyboardType,
@@ -1025,10 +1026,12 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      String? Function(String?)? validator, {
-      TextInputType keyboardType = TextInputType.text,
-      Key? fieldKey, 
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    String? Function(String?)? validator, {
+    TextInputType keyboardType = TextInputType.text,
+    Key? fieldKey,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1036,7 +1039,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
         Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 5),
         TextFormField(
-          key: fieldKey, 
+          key: fieldKey,
           controller: controller,
           validator: validator,
           keyboardType: keyboardType,

@@ -32,18 +32,20 @@ class MedicalRecordScreenEdit extends StatefulWidget {
 
 class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   final usuarioProvider = new CoordinatorProviders();
-
   final _formKey = GlobalKey<FormState>();
   XFile? _image;
   String? _imageUrl;
-
   List<String> enfermedades = [];
   List<String> medicamentos = [];
   List<String> medicamentosEvitar = [];
-
-  // Controladores de texto
+  List<String> cuidados = [];
+  bool _tieneFonasa = false;
+  bool _tieneIsapre = false;
+  final TextEditingController _isapreController = TextEditingController();
+  bool _requiereCuidadosEspeciales = false;
+  final TextEditingController _cuidadosEspecialesController =
+      TextEditingController();
   final TextEditingController _especificarEnfermedadesController =
       TextEditingController();
   final TextEditingController _medicamentosController = TextEditingController();
@@ -55,16 +57,12 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
   TextEditingController _emailEmergenciaController = TextEditingController();
   TextEditingController _alergiasController = TextEditingController();
   TextEditingController _GrupoSanguineoController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
     _loadImage();
-
-    // Aquí asignamos el valor de record.nombreEmergencia a _nombreEmergenciaController
     _nombreEmergenciaController =
         TextEditingController(text: widget.record.emergencyContactName);
-
     _relacionEmergenciaController =
         TextEditingController(text: widget.record.emergencyContactRelation);
     _telefonoEmergenciaController =
@@ -73,8 +71,14 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
         TextEditingController(text: widget.record.emergencyContactEmail);
     _GrupoSanguineoController =
         TextEditingController(text: widget.record.bloodType);
-    _especificarEnfermedadesController.text = widget.record.medications ?? '';
-    _medicamentosController.text = widget.record.diseases ?? '';
+    _tieneFonasa = widget.record?.hasFonasa ?? false;
+    _tieneIsapre = widget.record?.hasIsapre ?? false;
+    _isapreController.text = widget.record?.isapre ?? '';
+    _requiereCuidadosEspeciales = widget.record?.requiresSpecialCare ?? false;
+    _cuidadosEspecialesController.text =
+        widget.record?.specialCareDetails ?? '';
+    _especificarEnfermedadesController.text = widget.record.diseases ?? '';
+    _medicamentosController.text = widget.record.medications ?? '';
     _medicamentosEvitarController.text = widget.record.avoidMedications ?? '';
   }
 
@@ -421,7 +425,7 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                               SizedBox(height: 10),
 
                               // 2. CONTACTOS DE EMERGENCIA
-                              Text('2. Contactos de Emergencia',
+                              Text('Contactos de Emergencias',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold)),
@@ -437,9 +441,40 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                                   _emailEmergenciaController, _validateEmail),
                               Divider(),
                               SizedBox(height: 10),
+
+                              Text('Cobertura',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
+                              SizedBox(height: 10),
+                              SwitchListTile(
+                                title: Text('FONASA'),
+                                value: _tieneFonasa,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _tieneFonasa = value;
+                                    if (value)
+                                      _tieneIsapre = false; // no overlap
+                                  });
+                                },
+                              ),
+                              SwitchListTile(
+                                title: Text('ISAPRE'),
+                                value: _tieneIsapre,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _tieneIsapre = value;
+                                    if (value) _tieneFonasa = false;
+                                  });
+                                },
+                              ),
+                              if (_tieneIsapre)
+                                _buildTextField('Nombre de la Isapre',
+                                    _isapreController, null),
+                              Divider(),
                               SizedBox(height: 10),
                               // 4. ANTECEDENTES MÉDICOS
-                              Text('4. Antecedentes Médicos',
+                              Text('Enfermedades',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold)),
@@ -451,7 +486,7 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                               SizedBox(height: 10),
 
                               // 5. MEDICAMENTOS
-                              Text('5. Medicamentos',
+                              Text('Medicamentos',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold)),
@@ -463,7 +498,7 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                               SizedBox(height: 10),
 
                               // 5. MEDICAMENTOS
-                              Text('5. Medicamentos a Evitar',
+                              Text('Medicamentos a Evitar',
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold)),
@@ -471,6 +506,20 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                                   '',
                                   widget.record?.avoidMedications ??
                                       "No hay medicamentos registradas"),
+                              Divider(),
+                              SizedBox(height: 10),
+
+                              // 5. MEDICAMENTOS
+                              Text('Cuidados especiales',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
+                              buildInfoSectionCuidados(
+                                  '',
+                                  widget.record?.specialCareDetails ??
+                                      "No hay cuidados especiales"),
+                              Divider(),
+                              SizedBox(height: 10),
 
                               // Botón Guardar
                               Center(
@@ -481,30 +530,39 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                                     handleMedicamentosEvitar();
                                     RequestPassengerMedicalEdit medical =
                                         RequestPassengerMedicalEdit(
-                                            grupoSanguineo:
-                                                _GrupoSanguineoController.text,
-                                            contactoEmergenciaNombre:
-                                                _nombreEmergenciaController
-                                                    .text,
-                                            contactoEmergenciaRelacion:
-                                                _relacionEmergenciaController
-                                                    .text,
-                                            contactoEmergenciaTelefono:
-                                                _telefonoEmergenciaController
-                                                    .text,
-                                            contactoEmergenciaEmail:
-                                                _emailEmergenciaController.text,
-                                            enfermedades: enfermedades,
-                                            idPassenger:
-                                                widget.login.passengerId!,
-                                            idTour: widget.login.tourId!,
-                                            medicamentos: medicamentos,
-                                            medicamentosEvitar:
-                                                medicamentosEvitar);
+                                      grupoSanguineo:
+                                          _GrupoSanguineoController.text,
+                                      contactoEmergenciaNombre:
+                                          _nombreEmergenciaController.text,
+                                      contactoEmergenciaRelacion:
+                                          _relacionEmergenciaController.text,
+                                      contactoEmergenciaTelefono:
+                                          _telefonoEmergenciaController.text,
+                                      contactoEmergenciaEmail:
+                                          _emailEmergenciaController.text,
+                                      enfermedades: enfermedades,
+                                      idPassenger: widget.login.passengerId!,
+                                      idTour: widget.login.tourId!,
+                                      medicamentos: medicamentos,
+                                      medicamentosEvitar: medicamentosEvitar,
+                                      requiereCuidadosEspeciales:
+                                          _requiereCuidadosEspeciales,
+                                      cuidadosEspeciales:
+                                          _requiereCuidadosEspeciales
+                                              ? _cuidadosEspecialesController
+                                                  .text
+                                              : null,
+                                      tieneFonasa: _tieneFonasa,
+                                      tieneIsapre: _tieneIsapre,
+                                      nombreIsapre: _tieneIsapre
+                                          ? _isapreController.text
+                                          : null,
+                                    );
 
                                     usuarioProvider
                                         .sendMedicalDataEdit(medical)
                                         .then((response) {
+                                          print(response);
                                       QuickAlert.show(
                                         context: context,
                                         type: QuickAlertType.success,
@@ -737,6 +795,60 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
               setState(() {
                 // Dividimos el contenido editado en un arreglo basado en los saltos de línea
                 medicamentos = newValue
+                    .split('\n')
+                    .where((element) => element.isNotEmpty)
+                    .toList();
+                // Aquí puedes usar el arreglo `medicamentos` como desees
+                // Imprime el arreglo para ver cómo se ve
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildInfoSectionCuidados(String title, String content) {
+    // Reemplazar los guiones con saltos de línea para mostrar correctamente
+    String formattedContent = content.replaceAll('-', '\n');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$title',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: 5),
+        Container(
+          constraints: BoxConstraints(
+            maxHeight: 150, // Ajusta la altura máxima según el contenido
+          ),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: EdgeInsets.all(10),
+          child: TextField(
+            controller:
+                _cuidadosEspecialesController, // Usamos el controlador persistente
+            maxLines: null, // Permite múltiples líneas
+            expands:
+                true, // Expande el campo para ocupar todo el espacio disponible
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              hintText: 'Escribe aquí...', // Texto de ejemplo
+              hintStyle: TextStyle(color: Colors.grey[600]),
+            ),
+            style: TextStyle(color: Colors.grey[800]),
+            onChanged: (newValue) {
+              setState(() {
+                // Dividimos el contenido editado en un arreglo basado en los saltos de línea
+                cuidados = newValue
                     .split('\n')
                     .where((element) => element.isNotEmpty)
                     .toList();

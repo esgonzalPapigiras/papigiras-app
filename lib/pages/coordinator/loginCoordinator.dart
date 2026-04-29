@@ -59,19 +59,13 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
     String? token = await _loadToken(); // _loadToken ya maneja la expiración
-
     if (isLoggedIn && token != null) {
       String? loginJson = prefs.getString('loginData');
       if (loginJson != null) {
-        String role = prefs.getString('userRole') ??
-            ''; // Usar un valor por defecto o manejar error si es nulo
+        String role = prefs.getString('userRole') ?? '';
         var loginMap = jsonDecode(loginJson);
-
-        if (!mounted)
-          return; // Comprobar si el widget sigue montado antes de navegar
-
+        if (!mounted) return;
         try {
-          // Envolver en try-catch por si el JSON no coincide con los DTOs
           if (role == 'coordinator') {
             TourSales login = TourSales.fromJson(loginMap);
             Navigator.pushReplacement(
@@ -95,16 +89,13 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                   builder: (context) => TravelFatherDashboard(login: login)),
             );
           } else {
-            // Rol desconocido o inválido, limpiar sesión para re-login
             await _clearSession(prefs);
           }
         } catch (e) {
-          // Error al deserializar, limpiar sesión
           print("Error deserializando loginData: $e");
           await _clearSession(prefs);
         }
       } else {
-        // Estado inconsistente: isLoggedIn es true pero no hay loginData. Limpiar sesión.
         await _clearSession(prefs);
       }
     }
@@ -180,9 +171,8 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    // Reemplazo de texto principal por imagen
                     Image.asset(
-                      'assets/logo-letras-papigiras.png', // Asegúrate de que la imagen esté en la carpeta correcta
+                      'assets/logo-letras-papigiras.png',
                       height: 60.0,
                     ),
                     SizedBox(height: 10.0),
@@ -220,7 +210,7 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                       ),
                       onChanged: (value) {
                         setState(() {
-                          _showError = false; // Oculta el error al escribir
+                          _showError = false;
                         });
                       },
                     ),
@@ -239,14 +229,10 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                           setState(() {
                             _showError = false;
                           });
-
-                          // Realizar la solicitud de login
                           final login = await usuarioProvider.validateLoginUser(
                             _codigoGiraController.text,
                           );
-
                           if (login != null) {
-                            // Si login tiene datos, muestra QuickAlert de éxito y navega a la siguiente pantalla
                             QuickAlert.show(
                               context: context,
                               type: QuickAlertType.success,
@@ -256,37 +242,22 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                               onConfirmBtnTap: () async {
                                 SharedPreferences prefs =
                                     await SharedPreferences.getInstance();
-
-                                // Guardar el token
                                 await prefs.setString('token', login.tokenKey);
-
-                                // Establecer la fecha de expiración a 3 días a partir de ahora
                                 final now = DateTime.now();
-                                final expiryDate = now.add(Duration(
-                                    days: 3)); // Fecha de expiración: 3 días
+                                final expiryDate = now.add(Duration(days: 3));
                                 await prefs.setString('tokenExpiry',
                                     expiryDate.toIso8601String());
-
-                                // Guardar el rol como 'coordinator'
                                 await prefs.setString(
                                     'userRole', 'coordinator');
-
-                                // Marcar como logueado
                                 await prefs.setBool('isLoggedIn', true);
-
-                                // Serializar el objeto login y guardarlo como una cadena JSON
                                 String loginJson = jsonEncode(login.toJson());
                                 await prefs.setString('loginData', loginJson);
-
-                                // Cerrar el QuickAlert
                                 Navigator.of(context).pop();
-
                                 LocationPermission permission =
                                     await Geolocator.requestPermission();
                                 if (permission == LocationPermission.denied ||
                                     permission ==
                                         LocationPermission.deniedForever) {
-                                  // Si no concede permiso, muestras un error y sales.
                                   QuickAlert.show(
                                     context: context,
                                     type: QuickAlertType.error,
@@ -299,15 +270,11 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                                   );
                                   return;
                                 }
-
-                                // 2) Si el permiso está OK, arrancas el tracking
                                 final locationService =
                                     Provider.of<LocationService>(context,
                                         listen: false);
                                 locationService.startTracking();
-
-                                // Navegar a la pantalla del coordinador
-                                Navigator.push(
+                                Navigator.pushAndRemoveUntil(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
@@ -315,11 +282,11 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                                       login: login,
                                     ),
                                   ),
+                                  (route) => false,
                                 );
                               },
                             );
                           } else {
-                            // Si login es null, muestra QuickAlert de error y no navega
                             QuickAlert.show(
                               context: context,
                               type: QuickAlertType.error,
@@ -327,15 +294,13 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                               text: 'Gira no encontrada',
                               confirmBtnText: 'Aceptar',
                               onConfirmBtnTap: () {
-                                Navigator.of(context)
-                                    .pop(); // Cierra el QuickAlert
+                                Navigator.of(context).pop();
                               },
                             );
                           }
                         } else {
                           setState(() {
-                            _showError =
-                                true; // Muestra el error si el campo está vacío
+                            _showError = true;
                           });
                         }
                       },
@@ -345,7 +310,7 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20.0),
                         ),
-                        backgroundColor: Colors.teal, // Color del botón
+                        backgroundColor: Colors.teal,
                       ),
                       child: Text(
                         'Ingresar',

@@ -38,9 +38,8 @@ import 'package:share_plus/share_plus.dart';
 
 class CoordinatorProviders with ChangeNotifier {
   String? _token;
-  //var urlDynamic = 'ms-papigiras-app-ezkbu.ondigitalocean.app';
-  var urlDynamic = 'stingray-app-9tqd9.ondigitalocean.app';
-  //var urlDynamic = '192.168.1.5:8084';
+  var urlDynamic = 'stingray-app-9tqd9-djh6d.ondigitalocean.app';
+  //var urlDynamic = '192.168.1.6:8084';
   //var urlDynamic = 'localhost:8084';
 
   String? get token => _token;
@@ -221,7 +220,7 @@ class CoordinatorProviders with ChangeNotifier {
 
     for (final image in imageFiles) {
       // 1) Comprime la imagen a maxWidth 800px, calidad 80%
-      final compressedPath = '${tmpDir.path}/${image.name}';
+      final compressedPath = '${tmpDir.path}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
       final result = await FlutterImageCompress.compressAndGetFile(
         image.path,
         compressedPath,
@@ -344,6 +343,7 @@ class CoordinatorProviders with ChangeNotifier {
       'Authorization':
           token ?? '' // Agregar el token en la cabecera de la solicitud
     });
+    print(resp.body);
     if (resp.statusCode == 200) {
       List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
       return decorespoCreate.map((job) => new Document.fromJson(job)).toList();
@@ -834,32 +834,6 @@ class CoordinatorProviders with ChangeNotifier {
       return true;
     } else {
       return false;
-    }
-  }
-
-  /// Sends the FCM token to the backend
-  Future<void> registerFcmToken(String passengerRut, String fcmToken) async {
-    try {
-      String? authToken = await _loadToken();
-      final response = await http.post(
-        Uri.parse("https://$urlDynamic/fcm/register-token"),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': authToken ?? ''
-        },
-        body: jsonEncode({
-          'passengerRut': passengerRut,
-          'fcmToken': fcmToken,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        print("FCM token registered successfully");
-      } else {
-        print("Failed to register FCM token: ${response.body}");
-      }
-    } catch (e) {
-      print("Error registering FCM token: $e");
     }
   }
 }

@@ -158,20 +158,22 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
                           onPressed: () async {
                             if (await usuarioProvider.validateMedicalRecord(
                                 widget.login.passengerId.toString())) {
-                              Navigator.push(
+                              Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => TravelFatherDashboard(
                                       login: widget.login),
                                 ),
+                                (route) => false,
                               );
                             } else {
-                              Navigator.push(
+                              Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) =>
                                       MedicalRecordScreen(login: widget.login),
                                 ),
+                                (route) => false,
                               );
                             }
                           },

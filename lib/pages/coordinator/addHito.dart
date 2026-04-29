@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -217,6 +218,20 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
     await pickImage();
   }
 
+  Future<void> requestCameraPermission() async {
+    PermissionStatus status = await Permission.camera.status;
+
+    if (!status.isGranted) {
+      final newStatus = await Permission.camera.request();
+      if (!newStatus.isGranted) {
+        print("Permiso de cámara no otorgado");
+        return;
+      }
+    }
+
+    pickCameraPhoto();
+  }
+
 // Seleccionar imagen de la galería
   Future<void> pickImage() async {
     try {
@@ -233,6 +248,39 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
       }
     } catch (e) {
       print("Error al seleccionar imagen: $e");
+    }
+  }
+
+  Future<void> pickMultipleImages() async {
+    try {
+      final picker = ImagePicker();
+      final images = await picker.pickMultiImage();
+      if (images.isNotEmpty) {
+        setState(() {
+          _imageFiles.addAll(images);
+        });
+        print("Imagenes seleccionadas: ${images.map((e) => e.path)}");
+      } else {
+        print("No se seleccionaron imágenes");
+      }
+    } catch (e) {
+      print("Error al seleccionar múltiples imágenes: $e");
+    }
+  }
+
+  Future<void> pickCameraPhoto() async {
+    try {
+      final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+      if (photo != null) {
+        setState(() {
+          _imageFiles.add(photo);
+        });
+        print("Foto tomada: ${photo.path}");
+      } else {
+        print("No se tomó ninguna foto");
+      }
+    } catch (e) {
+      print("Error al tomar foto: $e");
     }
   }
 
@@ -262,8 +310,11 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
               Wrap(
                 spacing: 8, // space between buttons horizontally
                 runSpacing: 8, // space between lines
-                children:
-                    List.generate(10, (index) => _buildAddPhotoButton(index)),
+                children: [
+                  _buildCameraButton(), // ← NUEVO
+                  _buildMultiSelectButton(),
+                  ...List.generate(10, (index) => _buildAddPhotoButton(index)),
+                ],
               ),
               SizedBox(height: 15),
               Text(
@@ -299,9 +350,7 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
 
                           // Validaciones de los campos
                           if (tituloController.text.isEmpty ||
-                              descripcionController.text.isEmpty 
-                              || notaCierreController.text.isEmpty
-                              ) {
+                              descripcionController.text.isEmpty) {
                             Navigator.of(context).pop(); // Cierra el QuickAlert
                             QuickAlert.show(
                               context: context,
@@ -330,7 +379,9 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                               titulo: tituloController.text,
                               descripcion: descripcionController.text,
                               ubicacion: _location,
-                              notaCierre: notaCierreController.text,
+                              notaCierre: notaCierreController.text.isEmpty
+                                  ? "."
+                                  : notaCierreController.text,
                               latitud: position.latitude.toString(),
                               longitud: position.longitude.toString(),
                               hora: _formattedTime,
@@ -472,6 +523,36 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                   color: Colors.grey[500],
                 ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMultiSelectButton() {
+    return GestureDetector(
+      onTap: pickMultipleImages,
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.green),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(Icons.collections, color: Colors.green),
+      ),
+    );
+  }
+
+  Widget _buildCameraButton() {
+    return GestureDetector(
+      onTap: requestCameraPermission,
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.blue),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(Icons.camera_alt, color: Colors.blue),
       ),
     );
   }

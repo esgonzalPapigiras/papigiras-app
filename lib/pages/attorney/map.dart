@@ -19,6 +19,7 @@ class MapScreen extends StatefulWidget {
   _MapScreenState createState() => _MapScreenState();
 }
 
+
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
   LatLng? _currentPosition;
@@ -129,7 +130,7 @@ class _MapScreenState extends State<MapScreen> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?api_key=14a3454b-2487-40e7-b692-e4a001b9abbd',
                   userAgentPackageName: 'com.papigiras',
                 ),
                 if (_currentPosition != null)

@@ -83,7 +83,7 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildCustomBottomNavigationBar(),
+      //bottomNavigationBar: _buildCustomBottomNavigationBar(),
     );
   }
 

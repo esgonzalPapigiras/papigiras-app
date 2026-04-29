@@ -167,7 +167,7 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildCustomBottomNavigationBar(),
+      //bottomNavigationBar: _buildCustomBottomNavigationBar(),
     );
   }
 

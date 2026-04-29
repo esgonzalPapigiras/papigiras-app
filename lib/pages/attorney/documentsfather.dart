@@ -144,7 +144,7 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildCustomBottomNavigationBar(),
+      //bottomNavigationBar: _buildCustomBottomNavigationBar(),
     );
   }
 
@@ -369,8 +369,15 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
   Future<List<Document>> fetchDocuments(String tourCode) async {
     try {
       List<Document> documents = await usuarioProvider.getDocument(tourCode);
-      documents
-          .removeWhere((document) => document.documentType == 'Nomina alumnos');
+      // Business rule #1: parents never see this
+      documents.removeWhere(
+        (document) => document.documentType == 'Nomina alumnos',
+      );
+      // Business rule #2: parents only see visible documents
+      
+      documents.removeWhere(
+        (document) => document.visibleToAll == false,
+      );
       return documents; // Devuelve la lista de documentos
     } catch (e) {
       print('Error: $e');
@@ -466,8 +473,10 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
         return Icons.description;
       case 'Nomina alumnos':
         return Icons.people;
+      case 'extra':
+        return Icons.attach_file;
       default:
-        return Icons.description; // Icono por defecto si no coincide
+        return Icons.description;
     }
   }
 
