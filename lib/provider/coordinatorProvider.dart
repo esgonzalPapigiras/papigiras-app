@@ -220,7 +220,8 @@ class CoordinatorProviders with ChangeNotifier {
 
     for (final image in imageFiles) {
       // 1) Comprime la imagen a maxWidth 800px, calidad 80%
-      final compressedPath = '${tmpDir.path}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
+      final compressedPath =
+          '${tmpDir.path}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
       final result = await FlutterImageCompress.compressAndGetFile(
         image.path,
         compressedPath,
@@ -833,6 +834,33 @@ class CoordinatorProviders with ChangeNotifier {
     if (resp.statusCode == 200) {
       return true;
     } else {
+      return false;
+    }
+  }
+
+  Future<bool> updateFcmToken(String apoderadoId, String fcmToken) async {
+    String? token = await _loadToken();
+    var url = Uri.https(
+      urlDynamic,
+      '/app/services/notifications/update-fcm-token',
+    );
+    final resp = await http.post(
+      url,
+      body: jsonEncode({
+        'passengerRut': apoderadoId,
+        'fcmToken': fcmToken,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ?? '',
+      },
+    );
+    if (resp.statusCode == 200) {
+      return true;
+    } else {
+      debugPrint(
+        'updateFcmToken failed: ${resp.statusCode} ${resp.body}',
+      );
       return false;
     }
   }

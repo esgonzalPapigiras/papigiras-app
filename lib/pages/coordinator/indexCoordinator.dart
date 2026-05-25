@@ -99,6 +99,7 @@ class _TravelCoordinatorDashboardState
     final countFemale = passengerCounts['F'] ?? 0;
     final countMaleCompanion = passengerCounts['AM'] ?? 0;
     final countFemaleCompanion = passengerCounts['AF'] ?? 0;
+    final locationService = Provider.of<LocationService>(context);
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Color(0xFF3AC5C9),
@@ -178,6 +179,25 @@ class _TravelCoordinatorDashboardState
                     phone: "+56932157564",
                     message:
                         "Hola! Necesito ayuda"); // Acción para reportar un problema
+              },
+            ),
+            SwitchListTile(
+              secondary: Icon(Icons.location_on, color: Colors.teal),
+              title: Text(
+                'Ubicación en segundo plano',
+                style: TextStyle(color: Colors.grey[800]),
+              ),
+              subtitle: Text(
+                'Permite compartir tu ubicación aunque la app esté minimizada',
+                style: TextStyle(fontSize: 12),
+              ),
+              value: locationService.isTracking,
+              onChanged: (value) async {
+                if (value) {
+                  await locationService.startTracking();
+                } else {
+                  await locationService.stopTracking();
+                }
               },
             ),
             ListTile(

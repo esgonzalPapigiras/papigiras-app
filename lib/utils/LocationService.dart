@@ -1,69 +1,55 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
-import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:background_locator_2/background_locator.dart';
+import 'package:background_locator_2/settings/locator_settings.dart';
+import 'package:papigiras_app/utils/location_callback.dart';
+import 'package:background_locator_2/settings/android_settings.dart';
+import 'package:background_locator_2/settings/ios_settings.dart';
 
 class LocationService extends ChangeNotifier {
-  Timer? _locationTimer;
-  bool _isTracking = false;
-  //var urlDynamic = 'ms-papigiras-app-ezkbu.ondigitalocean.app';
+  bool _isTracking = true;
   var urlDynamic = 'stingray-app-9tqd9-djh6d.ondigitalocean.app';
   //var urlDynamic = '192.168.1.5:8084';
   //var urlDynamic = 'localhost:8084';
-
   bool get isTracking => _isTracking;
-
-  void startTracking() {
+  Future<void> startTracking() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('backgroundTrackingEnabled', true);
     _isTracking = true;
     notifyListeners();
-
-    _locationTimer = Timer.periodic(Duration(seconds: 60), (_) async {
-      Position pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      _saveLocation(pos);
-    });
+    await BackgroundLocator.registerLocationUpdate(
+      locationCallback,
+      iosSettings: IOSSettings(
+        accuracy: LocationAccuracy.NAVIGATION,
+        distanceFilter: 100,
+      ),
+      androidSettings: AndroidSettings(
+        accuracy: LocationAccuracy.NAVIGATION,
+        interval: 60,
+        distanceFilter: 100,
+        androidNotificationSettings: AndroidNotificationSettings(
+          notificationChannelName: 'Location tracking',
+          notificationTitle: 'Papigiras tracking activo',
+          notificationMsg: 'Compartiendo ubicación en tiempo real',
+          notificationBigMsg:
+              'La app está enviando tu ubicación para el coordinador.',
+          notificationIcon: '',
+        ),
+      ),
+    );
   }
 
-  void stopTracking() {
+  Future<void> stopTracking() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('backgroundTrackingEnabled', false);
     _isTracking = false;
-    _locationTimer?.cancel();
     notifyListeners();
-  }
-
-  Future<void> _saveLocation(Position position) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
-    String? userRole = prefs.getString('userRole');
-    if (userRole == null || userRole.toLowerCase() != 'coordinator') {
-      //print('Skipped saving location: user is not a coordinator');
-      return;
-    }
-    String? tourSales = prefs.getString('loginData');
-    final body = json.decode(tourSales!);
-    var url = Uri.https(urlDynamic, '/app/services/add-position-coordinator', {
-      'latitud': position.latitude.toString(),
-      'longitud': position.longitude.toString(),
-      'idCoordinator': body['tourSalesId'].toString()
-    });
-    final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization':
-          token ?? '' // Agregar el token en la cabecera de la solicitud
-    });
-    if (resp.statusCode == 200) {
-      print('Ubicación guardada correctamente');
-    } else {
-      print('Error al guardar la ubicación');
-    }
+    await BackgroundLocator.unRegisterLocationUpdate();
   }
 
   @override
   void dispose() {
-    _locationTimer?.cancel();
     super.dispose();
   }
 }

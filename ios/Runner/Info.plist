@@ -37,6 +37,8 @@
 	<string>Necesitamos acceso a la cámara para tomar una foto.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Necesitamos acceso a tu ubicación para mostrar la dirección en tiempo real.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>La aplicación utiliza tu ubicación para compartir la posición del coordinador durante la gira, incluso cuando la app está en segundo plano.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Necesitamos acceso a tu ubicación para mostrar la dirección en tiempo real.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

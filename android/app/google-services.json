@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "400279075700",
-    "project_id": "papigiras-14bdc",
-    "storage_bucket": "papigiras-14bdc.firebasestorage.app"
+    "project_number": "447407831353",
+    "project_id": "papigiras-app",
+    "storage_bucket": "papigiras-app.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:400279075700:android:eda592bace8871dfa58a21",
+        "mobilesdk_app_id": "1:447407831353:android:697f76358cafc5ff3e10e8",
         "android_client_info": {
           "package_name": "com.papigiras"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDlpjQiujhNAR4RY6z02IhI7KTWvDwgVx4"
+          "current_key": "AIzaSyAuMojVfJETX32u6YCnEMoiUmoL1WSoj34"
         }
       ],
       "services": {

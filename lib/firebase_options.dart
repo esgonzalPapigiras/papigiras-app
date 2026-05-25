@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDlpjQiujhNAR4RY6z02IhI7KTWvDwgVx4',
-    appId: '1:400279075700:android:eda592bace8871dfa58a21',
-    messagingSenderId: '400279075700',
-    projectId: 'papigiras-14bdc',
-    storageBucket: 'papigiras-14bdc.firebasestorage.app',
+    apiKey: 'AIzaSyAuMojVfJETX32u6YCnEMoiUmoL1WSoj34',
+    appId: '1:447407831353:android:697f76358cafc5ff3e10e8',
+    messagingSenderId: '447407831353',
+    projectId: 'papigiras-app',
+    storageBucket: 'papigiras-app.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCnJ8ul5RN8ZpRS99QpeGBrLaj2H2dpSpc',
-    appId: '1:400279075700:ios:ef5e004cd1205e67a58a21',
-    messagingSenderId: '400279075700',
-    projectId: 'papigiras-14bdc',
-    storageBucket: 'papigiras-14bdc.firebasestorage.app',
+    apiKey: 'AIzaSyBl57uGze7v_c7UmpIU9MqvOuMaLhpdhgY',
+    appId: '1:447407831353:ios:fa92bb99c962c7633e10e8',
+    messagingSenderId: '447407831353',
+    projectId: 'papigiras-app',
+    storageBucket: 'papigiras-app.firebasestorage.app',
     iosBundleId: 'com.papigiras',
   );
 }

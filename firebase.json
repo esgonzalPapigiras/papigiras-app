@@ -3,17 +3,17 @@
         "platforms": {
             "android": {
                 "default": {
-                    "projectId": "papigiras-14bdc",
-                    "appId": "1:400279075700:android:eda592bace8871dfa58a21",
+                    "projectId": "papigiras-app",
+                    "appId": "1:447407831353:android:697f76358cafc5ff3e10e8",
                     "fileOutput": "android/app/google-services.json"
                 }
             },
             "dart": {
                 "lib/firebase_options.dart": {
-                    "projectId": "papigiras-14bdc",
+                    "projectId": "papigiras-app",
                     "configurations": {
-                        "android": "1:400279075700:android:eda592bace8871dfa58a21",
-                        "ios": "1:400279075700:ios:ef5e004cd1205e67a58a21"
+                        "android": "1:447407831353:android:697f76358cafc5ff3e10e8",
+                        "ios": "1:447407831353:ios:fa92bb99c962c7633e10e8"
                     }
                 }
             }

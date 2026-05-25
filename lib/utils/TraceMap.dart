@@ -103,8 +103,9 @@ class _TraceMapState extends State<TraceMap> {
           children: [
             // ─── Mosaico base ──────────────────────
             TileLayer(
-              urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-              subdomains: ['a', 'b', 'c'],
+              urlTemplate:
+                  'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?api_key=14a3454b-2487-40e7-b692-e4a001b9abbd',
+              userAgentPackageName: 'com.papigiras',
             ),
 
             // ─── Traza azul ────────────────────────
