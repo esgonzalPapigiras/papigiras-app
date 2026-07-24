@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:papigiras_app/dto/PositionCoordinator.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
@@ -18,7 +16,6 @@ class MapScreen extends StatefulWidget {
   @override
   _MapScreenState createState() => _MapScreenState();
 }
-
 
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
@@ -37,7 +34,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
-    _updateTimer?.cancel(); // Cancela el timer al cerrar la pantalla
+    _updateTimer?.cancel();
     super.dispose();
   }
 
@@ -53,18 +50,11 @@ class _MapScreenState extends State<MapScreen> {
         );
         return;
       }
-
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
       });
-
-      // Centra el mapa en la posición actual
-      _mapController.move(
-        _currentPosition!,
-        15.0,
-      );
+      _mapController.move(_currentPosition!, 15.0);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al obtener ubicación: $e')),
@@ -80,25 +70,15 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _updateCoordinatorPosition() async {
     try {
-      PositionCoordinator result =
-          await usuarioProvider.uniqueID(widget.login.tourId.toString());
-      LatLng newPosition = LatLng(result.positionCoordinatorLatitud,
-          result.positionCoordinatorLongitud);
-
+      PositionCoordinator result = await usuarioProvider.uniqueID(widget.login.tourId.toString());
+      LatLng newPosition = LatLng(result.positionCoordinatorLatitud, result.positionCoordinatorLongitud);
       setState(() {
         _coordinatorPosition = newPosition;
       });
-
-      // Centra el mapa en la nueva posición del coordinador
       _mapController.move(newPosition, 15.0);
     } catch (e) {
       print('Error updating coordinator position: $e');
     }
-  }
-
-  Future<String?> _loadToken() async {
-    // Simulación de carga de token. Reemplazar con la lógica real.
-    return 'your-token-here';
   }
 
   @override
@@ -106,10 +86,7 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.teal,
-        title: const Text(
-          'Ubicación en tiempo real',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Ubicación en tiempo real', style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
@@ -122,12 +99,7 @@ class _MapScreenState extends State<MapScreen> {
           Expanded(
             child: FlutterMap(
               mapController: _mapController,
-              options: MapOptions(
-                initialCenter: _currentPosition ?? LatLng(0, 0),
-                initialZoom: 13.0,
-                maxZoom: 40.0,
-                minZoom: 5.0,
-              ),
+              options: MapOptions(initialCenter: _currentPosition ?? LatLng(0, 0), initialZoom: 13.0, maxZoom: 40.0, minZoom: 5.0),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?api_key=14a3454b-2487-40e7-b692-e4a001b9abbd',
@@ -135,17 +107,9 @@ class _MapScreenState extends State<MapScreen> {
                 ),
                 if (_currentPosition != null)
                   LocationMarkerLayer(
-                    position: LocationMarkerPosition(
-                      latitude: _currentPosition!.latitude,
-                      longitude: _currentPosition!.longitude,
-                      accuracy: 50.0,
-                    ),
+                    position: LocationMarkerPosition(latitude: _currentPosition!.latitude, longitude: _currentPosition!.longitude, accuracy: 50.0),
                     style: LocationMarkerStyle(
-                      marker: DefaultLocationMarker(
-                        color: Colors.blue,
-                        child: Icon(Icons.my_location,
-                            color: Colors.white, size: 20),
-                      ),
+                      marker: DefaultLocationMarker(color: Colors.blue, child: Icon(Icons.my_location, color: Colors.white, size: 20)),
                       accuracyCircleColor: Colors.blue.withOpacity(0.1),
                     ),
                   ),
@@ -158,16 +122,8 @@ class _MapScreenState extends State<MapScreen> {
                         height: 100,
                         child: Column(
                           children: [
-                            Text(
-                              'Coordinador',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                backgroundColor: Colors.white,
-                              ),
-                            ),
-                            Icon(Icons.location_on,
-                                color: Colors.red, size: 30),
+                            Text('Coordinador', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, backgroundColor: Colors.white)),
+                            Icon(Icons.location_on, color: Colors.red, size: 30)
                           ],
                         ),
                       ),

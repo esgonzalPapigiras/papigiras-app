@@ -9,19 +9,16 @@ class PDFViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Visualizando PDF'),
-      ),
+      appBar: AppBar(title: Text('Visualizando PDF')),
       body: PDFView(
-        filePath: filePath,
-        enableSwipe: true,
-        swipeHorizontal: false,
-        autoSpacing: false,
-        pageFling: false,
-        onPageChanged: (page, total) {
-          print('Page $page of $total');
-        },
-      ),
+          filePath: filePath,
+          enableSwipe: true,
+          swipeHorizontal: false,
+          autoSpacing: false,
+          pageFling: false,
+          onPageChanged: (page, total) {
+            print('Page $page of $total');
+          }),
     );
   }
 }

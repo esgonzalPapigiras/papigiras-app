@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:background_locator_2/background_locator.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
@@ -13,14 +15,60 @@ import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'firebase_options.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // Firebase must be initialized here so it is ready when the Apoderado
-  // login screen requests the FCM token. No token is fetched here — that
-  // happens only after a successful Apoderado login.
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  debugPrint('========== BACKGROUND FCM ==========');
+  debugPrint('Message ID: ${message.messageId}');
+  debugPrint('Data: ${message.data}');
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const DarwinInitializationSettings iosInit = DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false);
+  const InitializationSettings initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
+  await flutterLocalNotificationsPlugin.initialize(initSettings);
+  const AndroidNotificationChannel channel = AndroidNotificationChannel('hito_channel', 'Hitos', description: 'Notificaciones de nuevos hitos', importance: Importance.high);
+  await flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(channel);
+  final settings = await FirebaseMessaging.instance.requestPermission(alert: true, badge: true, sound: true);
+  debugPrint('========== FCM PERMISSION ==========');
+  print(settings.authorizationStatus);
+  if (settings.authorizationStatus == AuthorizationStatus.authorized || settings.authorizationStatus == AuthorizationStatus.provisional) {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      debugPrint('========== FCM TOKEN ==========');
+      debugPrint(token);
+    } catch (e) {
+      debugPrint('Failed to obtain FCM token: $e');
+    }
+  }
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    debugPrint('========== FOREGROUND FCM ==========');
+    debugPrint('Title: ${message.notification?.title}');
+    debugPrint('Body: ${message.notification?.body}');
+    debugPrint('Data: ${message.data}');
+    final notification = message.notification;
+    if (notification != null) {
+      flutterLocalNotificationsPlugin.show(
+          0,
+          notification.title,
+          notification.body,
+          const NotificationDetails(
+              android: AndroidNotificationDetails('hito_channel', 'Hitos', importance: Importance.max, priority: Priority.high),
+              iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true)));
+    }
+  });
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    debugPrint('========== NOTIFICATION OPENED ==========');
+    print(message.data);
+  });
   await BackgroundLocator.initialize();
   Widget startScreen = await _determineStartScreen();
   runApp(
@@ -45,7 +93,7 @@ Future<Widget> _determineStartScreen() async {
       await _clearPrefsSession(prefs);
       return WelcomeScreen();
     }
-  } catch (e) {
+  } catch (_) {
     await _clearPrefsSession(prefs);
     return WelcomeScreen();
   }
@@ -57,8 +105,7 @@ Future<Widget> _determineStartScreen() async {
     if (role == 'coordinator') {
       return TravelCoordinatorDashboard(login: TourSales.fromJson(loginMap));
     } else if (role == 'passenger') {
-      return TravelPassengerDashboard(
-          login: ResponseAttorney.fromJson(loginMap));
+      return TravelPassengerDashboard(login: ResponseAttorney.fromJson(loginMap));
     } else if (role == 'father') {
       return TravelFatherDashboard(login: ResponseAttorney.fromJson(loginMap));
     } else {
@@ -81,16 +128,9 @@ Future<void> _clearPrefsSession(SharedPreferences prefs) async {
 
 class MyApp extends StatelessWidget {
   final Widget startScreen;
-  MyApp({required this.startScreen});
+  const MyApp({super.key, required this.startScreen});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Papigiras',
-      debugShowCheckedModeBanner: false,
-      home: startScreen,
-      routes: {
-        'welcome': (BuildContext context) => WelcomeScreen(),
-      },
-    );
+    return MaterialApp(debugShowCheckedModeBanner: false, home: startScreen, routes: {'welcome': (context) => WelcomeScreen()});
   }
 }

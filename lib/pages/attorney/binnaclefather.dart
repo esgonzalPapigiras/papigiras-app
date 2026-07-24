@@ -1,31 +1,18 @@
 import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:papigiras_app/dto/Itinerary.dart';
 import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
-import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/binnacle.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnacledetailFather.dart';
 import 'package:papigiras_app/pages/attorney/documentsfather.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
-import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
-import 'package:papigiras_app/pages/coordinator/activities.dart';
-import 'package:papigiras_app/pages/coordinator/addHito.dart';
-import 'package:papigiras_app/pages/coordinator/contador.dart';
-import 'package:papigiras_app/pages/coordinator/detailbinnacleCoodinator.dart';
-import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
-import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:papigiras_app/utils/app_drawer_father.dart';
 
 class BitacoraFatherScreen extends StatefulWidget {
   @override
@@ -40,23 +27,6 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
   final usuarioProvider = new CoordinatorProviders();
   XFile? _image;
   String? _imageUrl;
-
-  Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-
-    if (image != null) {
-      setState(() {
-        _image = image;
-      });
-      // Luego de seleccionar la imagen, se sube al servidor
-      await usuarioProvider.addHitoFotoPassenger(
-          widget.login.passengerId.toString(),
-          widget.login.tourId.toString(),
-          image); // 1 es un ejemplo de hitoId
-      _loadImage(); // Recargamos la imagen después de la subida
-    }
-  }
 
   Future<void> _loadImage() async {
     try {
@@ -79,17 +49,6 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
       setState(() {
         _imageUrl = null; // Si ocurre un error, usar la predeterminada
       });
-    }
-  }
-
-  bool _isBase64(String data) {
-    try {
-      base64Decode(data
-          .split(',')
-          .last); // Intenta decodificar eliminando un posible prefijo
-      return true;
-    } catch (e) {
-      return false; // Si falla, no es Base64
     }
   }
 
@@ -141,7 +100,11 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Color(0xFF3AC5C9), // Fondo turquesa
-      endDrawer: _buildDrawer(),
+      endDrawer: AppDrawerFather(
+        login: widget.login,
+        imageFile: _image, // remove if the screen has no image picker
+        imageUrl: _imageUrl, // remove if the screen has no image URL
+      ),
       body: Stack(
         children: [
           _buildBackground(),
@@ -169,121 +132,6 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
       MaterialPageRoute(builder: (context) => WelcomeScreen()),
       (route) =>
           false, // Esto elimina todas las rutas anteriores de la pila de navegación
-    );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          _buildDrawerHeader(),
-          ListTile(
-            leading: Icon(Icons.phone, color: Colors.teal),
-            title: Text('Contactar Agencia'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.phone, color: Colors.teal),
-                SizedBox(width: 10),
-                Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
-              ],
-            ),
-            onTap: () {
-              sendMessage(
-                  phone: "+56932157564", message: "Hola! Necesito ayuda");
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.report_problem, color: Colors.teal),
-            title: Text('Reportar un Problema'),
-            onTap: () {
-              sendMessage(
-                  phone: "+56932157564", message: "Hola! Necesito ayuda");
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.desktop_access_disabled_outlined,
-                color: Colors.teal),
-            title: Text(
-              'Desactivar Cuenta',
-              style: TextStyle(color: Colors.grey[800]),
-            ),
-            onTap: () {
-              QuickAlert.show(
-                context: context,
-                type:
-                    QuickAlertType.error, // Cambiar a 'error' para la cruz roja
-                title: 'Eliminar Cuenta',
-                text: 'Desactivar tu cuenta no te permitirá ingresar más',
-                confirmBtnText: 'Continuar',
-                onConfirmBtnTap: () {
-                  usuarioProvider.desactivateAccount(
-                      widget.login.passengerIdentificacion.toString());
-
-                  logoutUser(context); // Cierra el QuickAlert
-                },
-              );
-              // Acción para cerrar sesión
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.logout, color: Colors.teal),
-            title: Text('Cerrar Sesión'),
-            onTap: () {
-              logoutUser(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawerHeader() {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 35,
-            backgroundImage: _image != null
-                ? FileImage(File(_image!.path)) as ImageProvider<
-                    Object> // Imagen seleccionada desde el dispositivo
-                : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                    ? (_isBase64(
-                            _imageUrl!) // Verifica si la URL es una imagen en Base64
-                        ? MemoryImage(base64Decode(_imageUrl!.split(',').last))
-                            as ImageProvider<
-                                Object> // Decodifica y muestra imagen Base64
-                        : NetworkImage(_imageUrl!) as ImageProvider<
-                            Object>) // Carga imagen desde el servidor
-                    : AssetImage('assets/profile.jpg')
-                        as ImageProvider<Object>, // Imagen predeterminada
-          ),
-          SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                widget.login.passengerIdentificacion!,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -363,31 +211,6 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
     );
   }
 
-  Widget _buildFilterOptions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Ver:',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-        ),
-        ElevatedButton(
-          onPressed: () {},
-          child: Text('Todos'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            shape: StadiumBorder(),
-          ),
-        ),
-        Text(
-          'Más recientes',
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-        ),
-        Icon(Icons.filter_list, color: Colors.teal),
-      ],
-    );
-  }
-
   List<Widget> _buildBinnacleEntries() {
     return itineraries.map((binnacle) {
       // Format date to show only day/month (e.g. "25/10")
@@ -398,7 +221,6 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
           formattedDate = "${parts[0]}/${parts[1]}";
         }
       }
-
       return Card(
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         shape: RoundedRectangleBorder(

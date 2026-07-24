@@ -1,12 +1,7 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
 import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
-import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/dto/updateMedicalRecord.dart';
 import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
@@ -14,6 +9,7 @@ import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:papigiras_app/utils/app_drawer_father.dart';
 
 class MedicalRecordScreenEdit extends StatefulWidget {
   final ResponseAttorney login;
@@ -90,23 +86,6 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-
-    if (image != null) {
-      setState(() {
-        _image = image;
-      });
-      // Luego de seleccionar la imagen, se sube al servidor
-      await usuarioProvider.addHitoFotoPassenger(
-          widget.login.passengerId.toString(),
-          widget.login.tourId.toString(),
-          image); // 1 es un ejemplo de hitoId
-      _loadImage(); // Recargamos la imagen después de la subida
-    }
-  }
-
   // Variables para seleccionar opciones
   String? _grupoSanguineo;
 
@@ -142,17 +121,6 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
     }
   }
 
-  bool _isBase64(String data) {
-    try {
-      base64Decode(data
-          .split(',')
-          .last); // Intenta decodificar eliminando un posible prefijo
-      return true;
-    } catch (e) {
-      return false; // Si falla, no es Base64
-    }
-  }
-
   String? _validateTelefono(String? value) {
     if (value == null || value.isEmpty) return 'El teléfono es obligatorio';
     final phoneRegex = RegExp(r'^[0-9]{9,12}$');
@@ -184,28 +152,6 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
     }
   }
 
-  String? _formatRut(String? text) {
-    if (text == null || text.isEmpty)
-      return null; // Manejo de entrada nula o vacía
-
-    // Eliminar cualquier carácter que no sea un número o 'k'/'K'
-    text = text.replaceAll(RegExp(r'[^0-9kK]'), '');
-
-    final buffer = StringBuffer();
-    for (int i = 0; i < text.length; i++) {
-      if (i == text.length - 1) {
-        // Añade el guion antes del dígito verificador
-        buffer.write('-');
-      } else if ((text.length - i - 1) % 3 == 0 && i != text.length - 2) {
-        // Añade un punto cada tres dígitos antes del guion
-        buffer.write('.');
-      }
-      buffer.write(text[i]);
-    }
-
-    return buffer.toString();
-  }
-
   void logoutUser(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.clear(); // Borrar el estado de la sesión
@@ -225,133 +171,10 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
     return Scaffold(
         key: _scaffoldKey,
         backgroundColor: Color(0xFF3AC5C9),
-        endDrawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              // Encabezado personalizado
-              Container(
-                color: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(4), // Ancho del borde
-                      decoration: BoxDecoration(
-                        color: Colors.teal, // Color del borde
-                        shape: BoxShape.circle,
-                      ),
-                      child: CircleAvatar(
-                        radius: 35,
-                        backgroundImage: _image != null
-                            ? FileImage(File(_image!.path)) as ImageProvider<
-                                Object> // Imagen seleccionada desde el dispositivo
-                            : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                                ? (_isBase64(
-                                        _imageUrl!) // Verifica si la URL es una imagen en Base64
-                                    ? MemoryImage(base64Decode(
-                                        _imageUrl!
-                                            .split(',')
-                                            .last)) as ImageProvider<
-                                        Object> // Decodifica y muestra imagen Base64
-                                    : NetworkImage(_imageUrl!) as ImageProvider<
-                                        Object>) // Carga imagen desde el servidor
-                                : AssetImage('assets/profile.jpg')
-                                    as ImageProvider<
-                                        Object>, // Imagen predeterminada
-                      ),
-                    ),
-                    SizedBox(width: 16), // Espacio entre la imagen y el texto
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          widget.login.passengerIdentificacion!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              ListTile(
-                leading: Icon(Icons.phone, color: Colors.teal),
-                title: Text(
-                  'Contactar Agencia',
-                  style: TextStyle(color: Colors.grey[800]),
-                ),
-                onTap: () {
-                  sendMessage(
-                      phone: "+56932157564", message: "Hola! Necesito ayuda");
-                },
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.phone, color: Colors.teal),
-                    SizedBox(width: 10),
-                    Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
-                  ],
-                ),
-              ),
-              ListTile(
-                leading: Icon(Icons.report_problem, color: Colors.teal),
-                title: Text(
-                  'Reportar un Problema',
-                  style: TextStyle(color: Colors.grey[800]),
-                ),
-                onTap: () {
-                  sendMessage(
-                      phone: "+56932157564", message: "Hola! Necesito ayuda");
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.desktop_access_disabled_outlined,
-                    color: Colors.teal),
-                title: Text(
-                  'Desactivar Cuenta',
-                  style: TextStyle(color: Colors.grey[800]),
-                ),
-                onTap: () {
-                  QuickAlert.show(
-                    context: context,
-                    type: QuickAlertType
-                        .error, // Cambiar a 'error' para la cruz roja
-                    title: 'Eliminar Cuenta',
-                    text: 'Desactivar tu cuenta no te permitirá ingresar más',
-                    confirmBtnText: 'Continuar',
-                    onConfirmBtnTap: () {
-                      usuarioProvider.desactivateAccount(
-                          widget.login.passengerIdentificacion.toString());
-
-                      logoutUser(context); // Cierra el QuickAlert
-                    },
-                  );
-                  // Acción para cerrar sesión
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.logout, color: Colors.teal),
-                title: Text(
-                  'Cerrar Sesión',
-                  style: TextStyle(color: Colors.grey[800]),
-                ),
-                onTap: () {
-                  logoutUser(context);
-                },
-              ),
-            ],
-          ),
+        endDrawer: AppDrawerFather(
+          login: widget.login,
+          imageFile: _image, // remove if the screen has no image picker
+          imageUrl: _imageUrl, // remove if the screen has no image URL
         ),
         body: Container(
           decoration: BoxDecoration(
@@ -562,7 +385,7 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                                     usuarioProvider
                                         .sendMedicalDataEdit(medical)
                                         .then((response) {
-                                          print(response);
+                                      print(response);
                                       QuickAlert.show(
                                         context: context,
                                         type: QuickAlertType.success,
@@ -673,7 +496,6 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
     );
   }
 
-  @override
   Widget buildInfoSectionEnfermedades(String title, String content) {
     // Reemplazar los guiones con saltos de línea para mostrar correctamente
     String formattedContent = content.replaceAll('-', '\n');
@@ -753,7 +575,6 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
     } else {}
   }
 
-  @override
   Widget buildInfoSectionMedicamentos(String title, String content) {
     // Reemplazar los guiones con saltos de línea para mostrar correctamente
     String formattedContent = content.replaceAll('-', '\n');

@@ -7,17 +7,8 @@ class ProgramViewDto {
   int? seasonClient;
   List<String>? activities;
 
-  ProgramViewDto({
-    this.tourInit,
-    this.tourEnd,
-    this.countPassenger,
-    this.nameClient,
-    this.courseClient,
-    this.seasonClient,
-    this.activities,
-  });
+  ProgramViewDto({this.tourInit, this.tourEnd, this.countPassenger, this.nameClient, this.courseClient, this.seasonClient, this.activities});
 
-  // Método para convertir un JSON a un objeto ProgramViewDto
   factory ProgramViewDto.fromJson(Map<String, dynamic> json) {
     return ProgramViewDto(
       tourInit: json['tourInit'],
@@ -30,7 +21,6 @@ class ProgramViewDto {
     );
   }
 
-  // Método para convertir un objeto ProgramViewDto a un JSON
   Map<String, dynamic> toJson() {
     return {
       'tourInit': tourInit,
@@ -39,7 +29,7 @@ class ProgramViewDto {
       'nameClient': nameClient,
       'courseClient': courseClient,
       'seasonClient': seasonClient,
-      'activities': activities,
+      'activities': activities
     };
   }
 }

@@ -28,8 +28,7 @@ class TourTripulation {
   factory TourTripulation.fromJson(Map<String, dynamic> json) {
     return TourTripulation(
         tourSalesId: json['tourSalesId'],
-        tourTripulationIdentificationId:
-            json['tourTripulationIdentificationId'],
+        tourTripulationIdentificationId: json['tourTripulationIdentificationId'],
         tourTripulationNameId: json['tourTripulationNameId'],
         tourTripulationPhoneId: json['tourTripulationPhoneId'],
         tourTripulationDateId: json['tourTripulationDateId'] ?? '',

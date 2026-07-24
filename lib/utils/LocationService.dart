@@ -7,23 +7,49 @@ import 'package:papigiras_app/utils/location_callback.dart';
 import 'package:background_locator_2/settings/android_settings.dart';
 import 'package:background_locator_2/settings/ios_settings.dart';
 
-class LocationService extends ChangeNotifier {
+class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   bool _isTracking = true;
+  bool _backgroundTrackingEnabled = true;
   var urlDynamic = 'stingray-app-9tqd9-djh6d.ondigitalocean.app';
   //var urlDynamic = '192.168.1.5:8084';
-  //var urlDynamic = 'localhost:8084';
   bool get isTracking => _isTracking;
+  bool get backgroundTrackingEnabled => _backgroundTrackingEnabled;
+
+  LocationService() {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
   Future<void> startTracking() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('backgroundTrackingEnabled', true);
     _isTracking = true;
+    _backgroundTrackingEnabled = true;
     notifyListeners();
+    await _registerLocator();
+  }
+
+  Future<void> stopTracking() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('backgroundTrackingEnabled', false);
+    _isTracking = false;
+    _backgroundTrackingEnabled = false;
+    notifyListeners();
+    await BackgroundLocator.unRegisterLocationUpdate();
+  }
+
+  Future<void> enableForegroundOnlyTracking() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('backgroundTrackingEnabled', false);
+    _isTracking = true;
+    _backgroundTrackingEnabled = false;
+    notifyListeners();
+    await _registerLocator();
+  }
+
+  Future<void> _registerLocator() async {
     await BackgroundLocator.registerLocationUpdate(
       locationCallback,
-      iosSettings: IOSSettings(
-        accuracy: LocationAccuracy.NAVIGATION,
-        distanceFilter: 100,
-      ),
+      iosSettings: IOSSettings(accuracy: LocationAccuracy.NAVIGATION, distanceFilter: 100),
       androidSettings: AndroidSettings(
         accuracy: LocationAccuracy.NAVIGATION,
         interval: 60,
@@ -32,24 +58,28 @@ class LocationService extends ChangeNotifier {
           notificationChannelName: 'Location tracking',
           notificationTitle: 'Papigiras tracking activo',
           notificationMsg: 'Compartiendo ubicación en tiempo real',
-          notificationBigMsg:
-              'La app está enviando tu ubicación para el coordinador.',
+          notificationBigMsg: 'La app está enviando tu ubicación para el coordinador.',
           notificationIcon: '',
         ),
       ),
     );
   }
 
-  Future<void> stopTracking() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('backgroundTrackingEnabled', false);
-    _isTracking = false;
-    notifyListeners();
-    await BackgroundLocator.unRegisterLocationUpdate();
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (!_isTracking) return;
+    if (_backgroundTrackingEnabled) return;
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached || state == AppLifecycleState.inactive) {
+      await BackgroundLocator.unRegisterLocationUpdate();
+    }
+    if (state == AppLifecycleState.resumed) {
+      await _registerLocator();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 }

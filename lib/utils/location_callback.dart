@@ -17,18 +17,11 @@ void locationCallback(LocationDto locationDto) async {
   var url = Uri.https(
     'stingray-app-9tqd9-djh6d.ondigitalocean.app',
     '/app/services/add-position-coordinator',
-    {
-      'latitud': locationDto.latitude.toString(),
-      'longitud': locationDto.longitude.toString(),
-      'idCoordinator': body['tourSalesId'].toString()
-    },
+    {'latitud': locationDto.latitude.toString(), 'longitud': locationDto.longitude.toString(), 'idCoordinator': body['tourSalesId'].toString()},
   );
   print("🔥 CALLBACK TRIGGERED: ${locationDto.latitude}, ${locationDto.longitude}");
   try {
-    final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       print('Ubicación guardada (background)');
     } else {

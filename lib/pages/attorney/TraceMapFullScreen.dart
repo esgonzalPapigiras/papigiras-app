@@ -36,77 +36,50 @@ class _TraceMapFullScreenState extends State<TraceMapFullScreen> {
       });
     } catch (e) {
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error cargando puntos: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error cargando puntos: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-
-    final points = _binnacleData
-        .map((e) => LatLng(
-              double.parse(e.binnacleLatitud),
-              double.parse(e.binnacleLongitud),
-            ))
-        .toList();
-
+    final points = _binnacleData.map((e) => LatLng(double.parse(e.binnacleLatitud), double.parse(e.binnacleLongitud))).toList();
     final markers = _binnacleData.asMap().entries.map((entry) {
       final idx = entry.key;
       final dto = entry.value;
       final pt = points[idx];
-
-      return Marker(
-        point: pt,
-        width: 30.0,
-        height: 30.0,
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.blue,
-            shape: BoxShape.circle,
-          ),
-        ),
-      );
+      return Marker(point: pt, width: 30.0, height: 30.0, child: Container(decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle)));
     }).toList();
-
     final center = points.isNotEmpty ? points.first : LatLng(-33.45, -70.66);
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.teal,
-        title: const Text(
-          'Mapa del Recorrido',
-          style: TextStyle(color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: const Text('Mapa del Recorrido', style: TextStyle(color: Colors.white)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
       ),
       body: FlutterMap(
-        options: MapOptions(
-          initialCenter: center,
-          initialZoom: 13.0,
-          onTap: (_, __) => _popupController.hideAllPopups(),
-        ),
+        options: MapOptions(initialCenter: center, initialZoom: 13.0, onTap: (_, __) => _popupController.hideAllPopups()),
         children: [
           TileLayer(
-                  urlTemplate: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?api_key=14a3454b-2487-40e7-b692-e4a001b9abbd',
-                  userAgentPackageName: 'com.papigiras',
-                ),
+            urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Navigation_Charts/MapServer/tile/{z}/{y}/{x}',
+            userAgentPackageName: 'com.papigiras',
+            errorTileCallback: (tile, error, stackTrace) {
+              debugPrint('Tile load error: $error');
+            },
+          ),
+          TileLayer(
+            urlTemplate: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
+            userAgentPackageName: 'com.papigiras',
+            errorTileCallback: (tile, error, stackTrace) {
+              debugPrint('Tile load error: $error');
+            },
+          ),
           if (points.length > 1)
             PolylineLayer(
               polylines: [
-                Polyline(
-                  points: points,
-                  strokeWidth: 4.0,
-                  color: Colors.blue,
-                ),
+                Polyline(points: points, strokeWidth: 4.0, color: Colors.blue),
               ],
             ),
           MarkerLayer(markers: markers),
@@ -127,9 +100,7 @@ class _TraceMapFullScreenState extends State<TraceMapFullScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(dto.binnacleTitulo,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold)),
+                          Text(dto.binnacleTitulo, style: const TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
                           Text(dto.binnacleDescripcion),
                           Text(dto.binnacleFecha),

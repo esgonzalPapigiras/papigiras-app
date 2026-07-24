@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
@@ -11,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 
 class FullscreenImagePage extends StatefulWidget {
   final Uint8List imageBytes;
-
   const FullscreenImagePage({
     Key? key,
     required this.imageBytes,
@@ -23,21 +21,17 @@ class FullscreenImagePage extends StatefulWidget {
 
 class _FullscreenImagePageState extends State<FullscreenImagePage> {
   bool _saving = false;
-
   Future<void> _saveImage() async {
     setState(() => _saving = true);
-
     try {
       // Detectar versión de Android
       if (Platform.isAndroid) {
         final deviceInfo = DeviceInfoPlugin();
         final androidInfo = await deviceInfo.androidInfo;
         int sdkInt = androidInfo.version.sdkInt ?? 0;
-
         if (sdkInt < 33) {
           // Android <13 necesita permiso de almacenamiento
           PermissionStatus status = await Permission.storage.status;
-
           if (status.isDenied || status.isLimited) {
             PermissionStatus newStatus = await Permission.storage.request();
             if (!newStatus.isGranted) {
@@ -73,7 +67,6 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
         quality: 100,
         name: 'hito_${DateTime.now().millisecondsSinceEpoch}',
       );
-
       setState(() => _saving = false);
 
       if (result['isSuccess'] == true) {

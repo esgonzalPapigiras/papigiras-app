@@ -20,7 +20,6 @@ class ResponseAttorney {
   final bool? isActive;
   final String? tokenKey;
 
-  // Constructor con parámetros
   ResponseAttorney(
       {this.passengerId,
       this.passengerName,
@@ -43,7 +42,6 @@ class ResponseAttorney {
       this.isActive,
       this.tokenKey});
 
-  // Método para convertir el objeto a un mapa (por ejemplo, para enviar en una solicitud HTTP)
   Map<String, dynamic> toMap() {
     return {
       'passengerId': passengerId,
@@ -69,7 +67,6 @@ class ResponseAttorney {
     };
   }
 
-  // Método para crear un objeto desde un mapa (por ejemplo, para recibir datos de una API)
   factory ResponseAttorney.fromMap(Map<String, dynamic> map) {
     return ResponseAttorney(
         passengerId: map['passengerId'],

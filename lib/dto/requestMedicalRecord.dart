@@ -16,7 +16,7 @@ class RequestPassengerMedical {
   bool tieneEnfermedades;
   String? enfermedades;
   bool tomaMedicamentos;
-  List<Map<String, String>> medicamentos; // Lista para medicamentos con dosis
+  List<Map<String, String>> medicamentos;
   bool evitarMedicamentos;
   String? medicamentosEvitar;
   bool requiereCuidadosEspeciales;

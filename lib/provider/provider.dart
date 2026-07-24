@@ -14,17 +14,14 @@ class Provider extends InheritedWidget {
   bool updateShouldNotify(InheritedWidget oldWidget) => true;
 
   static LoginBloc of(BuildContext context, {required bool listen}) {
-    return (context.dependOnInheritedWidgetOfExactType<Provider>() as Provider)
-        .loginbloc;
+    return (context.dependOnInheritedWidgetOfExactType<Provider>() as Provider).loginbloc;
   }
 
   static ValidateBloc2 o(BuildContext context) {
-    return (context.dependOnInheritedWidgetOfExactType<Provider>() as Provider)
-        .validatebloc;
+    return (context.dependOnInheritedWidgetOfExactType<Provider>() as Provider).validatebloc;
   }
 
   static AddUserBloc add(BuildContext context) {
-    return (context.dependOnInheritedWidgetOfExactType<Provider>() as Provider)
-        .registerbloc;
+    return (context.dependOnInheritedWidgetOfExactType<Provider>() as Provider).registerbloc;
   }
 }

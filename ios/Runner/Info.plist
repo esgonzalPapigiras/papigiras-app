@@ -45,6 +45,11 @@
 	<string>Esta aplicación necesita permiso para guardar imágenes y videos en tu biblioteca de fotos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Esta aplicación necesita acceso a la biblioteca de fotos para seleccionar imágenes y videos.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>

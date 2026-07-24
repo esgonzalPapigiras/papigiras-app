@@ -7,7 +7,6 @@ import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 
-/// Clears all session-related keys from SharedPreferences.
 Future<void> clearSession(SharedPreferences prefs) async {
   await prefs.remove('token');
   await prefs.remove('tokenExpiry');
@@ -16,8 +15,6 @@ Future<void> clearSession(SharedPreferences prefs) async {
   await prefs.setBool('isLoggedIn', false);
 }
 
-/// Returns the stored token if it exists and hasn't expired, otherwise null.
-/// Automatically removes the token from prefs if it is expired.
 Future<String?> loadValidToken() async {
   final prefs = await SharedPreferences.getInstance();
   final String? token = prefs.getString('token');
@@ -26,30 +23,19 @@ Future<String?> loadValidToken() async {
   try {
     final DateTime tokenExpiry = DateTime.parse(tokenExpiryStr);
     if (tokenExpiry.isBefore(DateTime.now())) {
-      // Expired — clean up and return null
       await prefs.remove('token');
       await prefs.remove('tokenExpiry');
       return null;
     }
     return token;
   } catch (_) {
-    // Malformed date — clean up
     await prefs.remove('token');
     await prefs.remove('tokenExpiry');
     return null;
   }
 }
 
-/// Checks SharedPreferences for an active session and pushes the correct
-/// dashboard if one is found. Should be called from initState via
-/// addPostFrameCallback so that [context] is safe to use.
-///
-/// Pass [replace] as true to use pushReplacement, false to use
-/// pushAndRemoveUntil (clears the back stack entirely).
-Future<void> checkLoginStatus(
-  BuildContext context, {
-  bool replace = false,
-}) async {
+Future<void> checkLoginStatus(BuildContext context, {bool replace = false}) async {
   final prefs = await SharedPreferences.getInstance();
   final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
   final String? token = await loadValidToken();
@@ -64,19 +50,12 @@ Future<void> checkLoginStatus(
   if (!context.mounted) return;
   try {
     Widget destination;
-
     if (role == 'coordinator') {
-      destination = TravelCoordinatorDashboard(
-        login: TourSales.fromJson(loginMap),
-      );
+      destination = TravelCoordinatorDashboard(login: TourSales.fromJson(loginMap));
     } else if (role == 'passenger') {
-      destination = TravelPassengerDashboard(
-        login: ResponseAttorney.fromJson(loginMap),
-      );
+      destination = TravelPassengerDashboard(login: ResponseAttorney.fromJson(loginMap));
     } else if (role == 'father') {
-      destination = TravelFatherDashboard(
-        login: ResponseAttorney.fromJson(loginMap),
-      );
+      destination = TravelFatherDashboard(login: ResponseAttorney.fromJson(loginMap));
     } else {
       await clearSession(prefs);
       return;

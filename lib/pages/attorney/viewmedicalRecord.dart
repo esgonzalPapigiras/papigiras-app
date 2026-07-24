@@ -18,6 +18,7 @@ import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:papigiras_app/utils/app_drawer_father.dart';
 
 class ViewMedicalRecordScreen extends StatefulWidget {
   final ResponseAttorney login;
@@ -144,133 +145,10 @@ class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Color(0xFF3AC5C9),
-      endDrawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            // Encabezado personalizado
-            Container(
-              color: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(4), // Ancho del borde
-                    decoration: BoxDecoration(
-                      color: Colors.teal, // Color del borde
-                      shape: BoxShape.circle,
-                    ),
-                    child: CircleAvatar(
-                      radius: 40,
-                      backgroundImage: _image != null
-                          ? FileImage(File(_image!.path)) as ImageProvider<
-                              Object> // Imagen seleccionada desde el dispositivo
-                          : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                              ? (_isBase64(
-                                      _imageUrl!) // Verifica si la URL es una imagen en Base64
-                                  ? MemoryImage(base64Decode(
-                                      _imageUrl!
-                                          .split(',')
-                                          .last)) as ImageProvider<
-                                      Object> // Decodifica y muestra imagen Base64
-                                  : NetworkImage(_imageUrl!) as ImageProvider<
-                                      Object>) // Carga imagen desde el servidor
-                              : AssetImage('assets/profile.jpg')
-                                  as ImageProvider<
-                                      Object>, // Imagen predeterminada
-                    ),
-                  ),
-                  SizedBox(width: 16), // Espacio entre la imagen y el texto
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        widget.login.passengerIdentificacion!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.phone, color: Colors.teal),
-              title: Text(
-                'Contactar Agencia',
-                style: TextStyle(color: Colors.grey[800]),
-              ),
-              onTap: () {
-                sendMessage(
-                    phone: "+56932157564", message: "Hola! Necesito ayuda");
-              },
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.phone, color: Colors.teal),
-                  SizedBox(width: 10),
-                  Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.report_problem, color: Colors.teal),
-              title: Text(
-                'Reportar un Problema',
-                style: TextStyle(color: Colors.grey[800]),
-              ),
-              onTap: () {
-                sendMessage(
-                    phone: "+56932157564", message: "Hola! Necesito ayuda");
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.desktop_access_disabled_outlined,
-                  color: Colors.teal),
-              title: Text(
-                'Desactivar Cuenta',
-                style: TextStyle(color: Colors.grey[800]),
-              ),
-              onTap: () {
-                QuickAlert.show(
-                  context: context,
-                  type: QuickAlertType
-                      .error, // Cambiar a 'error' para la cruz roja
-                  title: 'Eliminar Cuenta',
-                  text: 'Desactivar tu cuenta no te permitirá ingresar más',
-                  confirmBtnText: 'Continuar',
-                  onConfirmBtnTap: () {
-                    usuarioProvider.desactivateAccount(
-                        widget.login.passengerIdentificacion.toString());
-
-                    logoutUser(context); // Cierra el QuickAlert
-                  },
-                );
-                // Acción para cerrar sesión
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.logout, color: Colors.teal),
-              title: Text(
-                'Cerrar Sesión',
-                style: TextStyle(color: Colors.grey[800]),
-              ),
-              onTap: () {
-                logoutUser(context);
-              },
-            ),
-          ],
-        ),
+      endDrawer: AppDrawerFather(
+        login: widget.login,
+        imageFile: _image, // remove if the screen has no image picker
+        imageUrl: _imageUrl, // remove if the screen has no image URL
       ),
       body: Container(
         decoration: BoxDecoration(

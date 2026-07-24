@@ -9,19 +9,17 @@ class ConsolidatedTourSalesDTO {
   final String binnacleHora;
   final String binnacleFecha;
 
-  ConsolidatedTourSalesDTO({
-    required this.binnacleDetailId,
-    required this.binnacleTitulo,
-    required this.binnacleDescripcion,
-    required this.binnacleUbicacion,
-    required this.binnacleNotaCierre,
-    required this.binnacleLatitud,
-    required this.binnacleLongitud,
-    required this.binnacleHora,
-    required this.binnacleFecha
-  });
+  ConsolidatedTourSalesDTO(
+      {required this.binnacleDetailId,
+      required this.binnacleTitulo,
+      required this.binnacleDescripcion,
+      required this.binnacleUbicacion,
+      required this.binnacleNotaCierre,
+      required this.binnacleLatitud,
+      required this.binnacleLongitud,
+      required this.binnacleHora,
+      required this.binnacleFecha});
 
-  // Método para crear una instancia de ConsolidatedTourSalesDTO desde un JSON
   factory ConsolidatedTourSalesDTO.fromJson(Map<String, dynamic> json) {
     return ConsolidatedTourSalesDTO(
       binnacleDetailId: json['binnacleDetailId'],
@@ -36,7 +34,6 @@ class ConsolidatedTourSalesDTO {
     );
   }
 
-  // Método para convertir una instancia de ConsolidatedTourSalesDTO a JSON
   Map<String, dynamic> toJson() {
     return {
       'binnacleDetailId': binnacleDetailId,
@@ -47,7 +44,7 @@ class ConsolidatedTourSalesDTO {
       'binnacleLatitud': binnacleLatitud,
       'binnacleLongitud': binnacleLongitud,
       'binnacleHora': binnacleHora,
-      'binnacleFecha':binnacleFecha
+      'binnacleFecha': binnacleFecha
     };
   }
 }

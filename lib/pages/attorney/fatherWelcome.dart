@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
@@ -21,62 +20,38 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
   XFile? _image;
   String? _imageUrl;
 
-  Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-
-    if (image != null) {
-      setState(() {
-        _image = image;
-      });
-      // Luego de seleccionar la imagen, se sube al servidor
-      await usuarioProvider.addHitoFotoPassenger(
-          widget.login.passengerId.toString(),
-          widget.login.tourId.toString(),
-          image); // 1 es un ejemplo de hitoId
-      _loadImage(); // Recargamos la imagen después de la subida
-    }
-  }
-
   Future<void> _loadImage() async {
     try {
-      Responseimagepassenger imageUrl =
-          await usuarioProvider.getPicturePassenger(
-        widget.login.passengerIdentificacion.toString(),
-        widget.login.tourId.toString(),
-      );
-
+      Responseimagepassenger imageUrl = await usuarioProvider.getPicturePassenger(widget.login.passengerIdentificacion.toString(), widget.login.tourId.toString());
       if (imageUrl.image.isNotEmpty) {
         setState(() {
-          _imageUrl = imageUrl.image; // Si la imagen existe, la cargamos
+          _imageUrl = imageUrl.image;
         });
       } else {
         setState(() {
-          _imageUrl = null; // Si no hay imagen, usar la predeterminada
+          _imageUrl = null;
         });
       }
     } catch (e) {
       setState(() {
-        _imageUrl = null; // Si ocurre un error, usar la predeterminada
+        _imageUrl = null;
       });
     }
   }
 
   bool _isBase64(String data) {
     try {
-      base64Decode(data
-          .split(',')
-          .last); // Intenta decodificar eliminando un posible prefijo
+      base64Decode(data.split(',').last);
       return true;
     } catch (e) {
-      return false; // Si falla, no es Base64
+      return false;
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _loadImage(); // Cargar la imagen al inicio
+    _loadImage();
   }
 
   @override
@@ -84,112 +59,59 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // 1) Imagen de fondo ocupa toda la pantalla
-          Positioned.fill(
-            child: Image.asset(
-              'assets/background.png',
-              fit: BoxFit.cover,
-            ),
-          ),
-
-          // 2) Tu contenido con SafeArea + scroll
+          Positioned.fill(child: Image.asset('assets/background.png', fit: BoxFit.cover)),
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                        minWidth: constraints.maxWidth),
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight, minWidth: constraints.maxWidth),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         SizedBox(height: 20),
-                        Image.asset(
-                          'assets/logo-papigiras.png',
-                          height: 350,
-                        ),
+                        Image.asset('assets/logo-papigiras.png', height: 350),
                         SizedBox(height: 20),
-                        Text(
-                          'Bienvenidos a bordo junto a:',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
+                        Text('Bienvenidos a bordo junto a:', style: TextStyle(fontSize: 16, color: Colors.white)),
                         SizedBox(height: 10),
                         Text(
                           '${widget.login.passengerName} ${widget.login.passengerApellidos}',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                           textAlign: TextAlign.center,
                         ),
                         SizedBox(height: 20),
                         Container(
                           padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
+                          decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                           child: CircleAvatar(
                             radius: 40,
                             backgroundImage: _image != null
-                                ? FileImage(File(_image!.path))
-                                    as ImageProvider<Object>
+                                ? FileImage(File(_image!.path)) as ImageProvider<Object>
                                 : (_imageUrl != null && _imageUrl!.isNotEmpty)
                                     ? (_isBase64(_imageUrl!)
-                                        ? MemoryImage(base64Decode(
-                                                _imageUrl!.split(',').last))
-                                            as ImageProvider<Object>
-                                        : NetworkImage(_imageUrl!)
-                                            as ImageProvider<Object>)
-                                    : AssetImage('assets/profile.jpg')
-                                        as ImageProvider<Object>,
+                                        ? MemoryImage(base64Decode(_imageUrl!.split(',').last)) as ImageProvider<Object>
+                                        : NetworkImage(_imageUrl!) as ImageProvider<Object>)
+                                    : AssetImage('assets/profile.jpg') as ImageProvider<Object>,
                           ),
                         ),
                         SizedBox(height: 20),
-                        Text(
-                          '¡Emprenderemos este viaje inolvidable!',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
+                        Text('¡Emprenderemos este viaje inolvidable!', style: TextStyle(fontSize: 16, color: Colors.white)),
                         SizedBox(height: 40),
                         ElevatedButton(
                           onPressed: () async {
-                            if (await usuarioProvider.validateMedicalRecord(
-                                widget.login.passengerId.toString())) {
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => TravelFatherDashboard(
-                                      login: widget.login),
-                                ),
-                                (route) => false,
-                              );
+                            if (await usuarioProvider.validateMedicalRecord(widget.login.passengerId.toString())) {
+                              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => TravelFatherDashboard(login: widget.login)), (route) => false);
                             } else {
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      MedicalRecordScreen(login: widget.login),
-                                ),
-                                (route) => false,
-                              );
+                              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => MedicalRecordScreen(login: widget.login)), (route) => false);
                             }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.teal,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20.0),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 15),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+                            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                           ),
-                          child: Text(
-                            'Continuar',
-                            style:
-                                TextStyle(fontSize: 18.0, color: Colors.white),
-                          ),
+                          child: Text('Continuar', style: TextStyle(fontSize: 18.0, color: Colors.white)),
                         ),
                         SizedBox(height: 20),
                       ],

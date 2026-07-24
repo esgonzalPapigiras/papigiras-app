@@ -19,7 +19,6 @@ class PassengerList {
     required this.statusMedicalRecord,
   });
 
-  // Método para crear una instancia de PassengerList desde un JSON
   factory PassengerList.fromJson(Map<String, dynamic> json) {
     return PassengerList(
         passengerName: json['passengerName'],
@@ -32,7 +31,6 @@ class PassengerList {
         statusMedicalRecord: json['statusMedicalRecord']);
   }
 
-  // Método para convertir una instancia de PassengerList a JSON
   Map<String, dynamic> toJson() {
     return {
       'passengerName': passengerName,

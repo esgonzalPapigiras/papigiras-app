@@ -13,20 +13,16 @@ class PositionCoordinator {
     required this.coordinatorId,
   });
 
-  /// Crea una instancia a partir de un Map (por ejemplo, JSON)
   factory PositionCoordinator.fromJson(Map<String, dynamic> json) {
     return PositionCoordinator(
       positionCoordinatorId: json['position_coordinator_id'] as int,
-      positionCoordinatorLatitud:
-          (json['position_coordinator_latitud'] as num).toDouble(),
-      positionCoordinatorLongitud:
-          (json['position_coordinator_longitud'] as num).toDouble(),
+      positionCoordinatorLatitud: (json['position_coordinator_latitud'] as num).toDouble(),
+      positionCoordinatorLongitud: (json['position_coordinator_longitud'] as num).toDouble(),
       tourSalesId: json['tour_sales_id'] as int,
       coordinatorId: json['coordinator_id'] as int,
     );
   }
 
-  /// Convierte la instancia a Map (útil para enviar JSON)
   Map<String, dynamic> toJson() {
     return {
       'position_coordinator_id': positionCoordinatorId,

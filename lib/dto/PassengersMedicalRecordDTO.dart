@@ -1,23 +1,22 @@
 class PassengersMedicalRecordDTO {
   final int? idPassengersMedicalRecord;
-  final String? bloodType; // grupoSanguineo
-  final String? emergencyContactName; // contactoEmergenciaNombre
-  final String? emergencyContactRelation; // contactoEmergenciaRelacion
-  final String? emergencyContactPhone; // contactoEmergenciaTelefono
-  final String? emergencyContactEmail; // contactoEmergenciaEmail
-  final bool hasFonasa; // tieneFonasa
-  final bool hasIsapre; // tieneIsapre
-  final String? isapre; // isapre
-  final String? diseases; // enfermedades
-  final String medications; // medicamentos
-  final String? avoidMedications; // medicamentosEvitar
-  final String? authorizationDate; // fechaAutorizacion
-  final int? passengerId; // Solo el ID del pasajero
+  final String? bloodType;
+  final String? emergencyContactName;
+  final String? emergencyContactRelation;
+  final String? emergencyContactPhone;
+  final String? emergencyContactEmail;
+  final bool hasFonasa;
+  final bool hasIsapre;
+  final String? isapre;
+  final String? diseases;
+  final String medications;
+  final String? avoidMedications;
+  final String? authorizationDate;
+  final int? passengerId;
   final int? tourSalesId;
-  final bool requiresSpecialCare; // requiereCuidadosEspeciales
-  final String? specialCareDetails; // cuidadosEspeciales
+  final bool requiresSpecialCare;
+  final String? specialCareDetails;
 
-  // Constructor
   PassengersMedicalRecordDTO(
       {required this.idPassengersMedicalRecord,
       required this.bloodType,
@@ -37,7 +36,6 @@ class PassengersMedicalRecordDTO {
       required this.requiresSpecialCare,
       required this.specialCareDetails});
 
-  // Método para convertir de JSON a objeto Dart
   factory PassengersMedicalRecordDTO.fromJson(Map<String, dynamic> json) {
     return PassengersMedicalRecordDTO(
       idPassengersMedicalRecord: json['idPassengersMedicalRecord'],
@@ -60,7 +58,6 @@ class PassengersMedicalRecordDTO {
     );
   }
 
-  // Método para convertir de objeto Dart a JSON
   Map<String, dynamic> toJson() {
     return {
       'idPassengersMedicalRecord': idPassengersMedicalRecord,

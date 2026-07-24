@@ -5,19 +5,10 @@ class DetailHitoList {
   String? notaCierre;
   String? hora;
   List<String>? images;
-  String? fecha; // List<byte[]> en Java se convierte en List<List<int>> en Dart
+  String? fecha;
 
-  // Constructor
-  DetailHitoList(
-      {this.titulo,
-      this.descripcion,
-      this.ubicacion,
-      this.notaCierre,
-      this.hora,
-      this.images,
-      this.fecha});
+  DetailHitoList({this.titulo, this.descripcion, this.ubicacion, this.notaCierre, this.hora, this.images, this.fecha});
 
-  // Método para convertir de JSON a objeto Dart
   factory DetailHitoList.fromJson(Map<String, dynamic> json) {
     return DetailHitoList(
         titulo: json['titulo'],
@@ -29,7 +20,6 @@ class DetailHitoList {
         fecha: json['fecha']);
   }
 
-  // Método para convertir de objeto Dart a JSON
   Map<String, dynamic> toJson() {
     return {
       'titulo': titulo,

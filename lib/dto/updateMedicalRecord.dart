@@ -9,11 +9,8 @@ class RequestPassengerMedicalEdit {
   List<String> medicamentosEvitar;
   int idPassenger;
   int idTour;
-
   bool requiereCuidadosEspeciales;
   String? cuidadosEspeciales;
-
-  // NEW COVERAGE FIELDS
   bool tieneFonasa;
   bool tieneIsapre;
   String? nombreIsapre;
@@ -31,8 +28,6 @@ class RequestPassengerMedicalEdit {
     required this.idTour,
     required this.requiereCuidadosEspeciales,
     this.cuidadosEspeciales,
-
-    // NEW
     required this.tieneFonasa,
     required this.tieneIsapre,
     this.nombreIsapre,
@@ -52,8 +47,6 @@ class RequestPassengerMedicalEdit {
       'idTour': idTour,
       'requiereCuidadosEspeciales': requiereCuidadosEspeciales,
       'cuidadosEspeciales': cuidadosEspeciales,
-
-      // NEW
       'tieneFonasa': tieneFonasa,
       'tieneIsapre': tieneIsapre,
       'nombreIsapre': nombreIsapre,

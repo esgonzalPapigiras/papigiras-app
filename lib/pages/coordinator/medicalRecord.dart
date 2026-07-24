@@ -1,95 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/PassengerList.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
-import 'package:papigiras_app/pages/coordinator/activities.dart';
-import 'package:papigiras_app/pages/coordinator/addHito.dart';
-import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/contador.dart';
-import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecordScreenEditCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
-import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:papigiras_app/utils/LocationService.dart';
-import 'package:provider/provider.dart';
+import 'package:papigiras_app/utils/coordinator_widgets.dart';
 
 class MedicalCoordScreen extends StatefulWidget {
-  @override
-  _MedicalCoordScreenState createState() => _MedicalCoordScreenState();
   final TourSales login;
   MedicalCoordScreen({required this.login});
+
+  @override
+  _MedicalCoordScreenState createState() => _MedicalCoordScreenState();
 }
 
 class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  bool _isAscending = true; // Bandera para ordenación
-  List<PassengerList> pasajeros = [];
-  final usuarioProvider = CoordinatorProviders();
-
-  void logoutUser(BuildContext context) async {
-    // Borrar el estado de la sesión
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    final locationService =
-        Provider.of<LocationService>(context, listen: false);
-    locationService.stopTracking();
-
-    // Redirigir al login o realizar otra acción
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => WelcomeScreen()),
-      (route) =>
-          false, // Esto elimina todas las rutas anteriores de la pila de navegación
-    );
-  }
-
-  Future<bool> isSessionValid() async {
-    final prefs = await SharedPreferences.getInstance();
-    final expiryDateString = prefs.getString('expiryDate');
-    if (expiryDateString == null) return false;
-
-    final expiryDate = DateTime.parse(expiryDateString);
-    return DateTime.now().isBefore(expiryDate);
-  }
+  final _coordinatorProvider = CoordinatorProviders();
+  List<Map<String, dynamic>> documents = [];
+  bool _isAscending = true;
 
   @override
   void initState() {
     super.initState();
-    // Llama a fetchDocuments al iniciar el widget
-    _fetchItineraries(widget.login.tourSalesId.toString());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LocationService>().startTracking();
-    });
+    _fetchMedicalRecords();
   }
 
-  Future<void> _fetchItineraries(String tourCode) async {
-    pasajeros = await usuarioProvider.getListPassenger(tourCode);
+  Future<void> _fetchMedicalRecords() async {
+    final passengers = await _coordinatorProvider.getListPassenger(widget.login.tourSalesId.toString());
     setState(() {
-      documents = pasajeros.map((passenger) {
+      documents = passengers.map((passenger) {
         return {
-          'name': passenger
-              .passengerName, // Asegúrate de que esto coincida con tu DTO
+          'name': passenger.passengerName,
           'id': passenger.passengerIdentification,
           'idPassenger': passenger.passengerId,
-
           'passengerApellidos': passenger.passengerApellidos,
           'countMedicalRecordOk': passenger.countMedicalRecordOk,
           'countMedicalRecordNoOk': passenger.countMedicalRecordNoOk,
-          'statusMedicalRecord': passenger
-              .statusMedicalRecord // Asegúrate de que esto coincida con tu DTO
+          'statusMedicalRecord': passenger.statusMedicalRecord
         };
       }).toList();
     });
   }
-
-  List<Map<String, dynamic>> documents = []; // Inicializa como lista vacía
 
   void _sortDocuments() {
     setState(() {
@@ -102,219 +54,19 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
     });
   }
 
-  Widget _buildFilterOptions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                'Fichas Médicas',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-            ),
-            GestureDetector(
-              onTap: _sortDocuments,
-              child: Row(
-                children: [
-                  Text(
-                    'Ordenar por Apellido',
-                    style: TextStyle(
-                      fontSize: 8,
-                      color: Colors.teal,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(
-                    _isAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                    color: Colors.teal,
-                    size: 10,
-                  ),
-                  SizedBox(width: 2),
-                  Icon(
-                    _isAscending ? Icons.arrow_downward : Icons.arrow_downward,
-                    color: Colors.teal,
-                    size: 10,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-
-        SizedBox(height: 12),
-
-        // Aquí el conteo centrado "llenas / no llenas"
-        Center(
-          child: Text(
-            'Contador de fichas',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
-            ),
-          ),
-        ),
-
-        SizedBox(height: 8),
-
-        // --- Aquí el contador color-coded (verde = llenas, rojo = no llenas) ---
-        if (documents.isNotEmpty)
-          Center(
-            child: RichText(
-              text: TextSpan(
-                // Aquí pones el color base (por ejemplo gris oscuro)
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-                children: [
-                  TextSpan(
-                    text: '${documents[0]['countMedicalRecordOk']}',
-                    style: TextStyle(color: Colors.green),
-                  ),
-                  // Ahora el slash hereda el color gris
-                  TextSpan(text: ' / '),
-                  TextSpan(
-                    text: '${documents[0]['countMedicalRecordNoOk']}',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else
-          Center(
-            child: Text(
-              'Sin datos de fichas',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[500],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9), // Fondo turquesa
-      endDrawer: _buildDrawer(),
+      backgroundColor: kCoordinatorTeal,
+      endDrawer: CoordinatorEndDrawer(login: widget.login),
       body: Stack(
         children: [
           _buildBackground(),
           Column(
             children: [
-              _buildAppBar(context),
-              Expanded(
-                child: _buildBinnacleContent(),
-              ),
-            ],
-          ),
-        ],
-      ),
-      //bottomNavigationBar: _buildCustomBottomNavigationBar(),
-    );
-  }
-
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl =
-        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
-
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(
-        whatsappUrl,
-        mode: LaunchMode.externalApplication,
-      );
-    } else {
-      print('No se puede abrir WhatsApp');
-      // Intenta con el esquema directo
-      final whatsappDirect = Uri.parse(
-          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(
-          whatsappDirect,
-          mode: LaunchMode.externalApplication,
-        );
-      } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
-      }
-    }
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          _buildDrawerHeader(),
-          ListTile(
-            leading: Icon(Icons.phone, color: Colors.teal),
-            title: Text('Contactar Agencia'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.phone, color: Colors.teal),
-                SizedBox(width: 10),
-                Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
-              ],
-            ),
-            onTap: () {
-              sendMessage(
-                  phone: "+56932157564", message: "Hola! Necesito ayuda");
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.report_problem, color: Colors.teal),
-            title: Text('Reportar un Problema'),
-            onTap: () {
-              sendMessage(
-                  phone: "+56932157564", message: "Hola! Necesito ayuda");
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.logout, color: Colors.teal),
-            title: Text('Cerrar Sesión'),
-            onTap: () {
-              logoutUser(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawerHeader() {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 35,
-            backgroundImage: AssetImage('assets/profile.jpg'),
-          ),
-          SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.login.tourTripulationNameId,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8),
-              ),
-              Text(widget.login.tourTripulationIdentificationId),
+              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey),
+              Expanded(child: _buildContent()),
             ],
           ),
         ],
@@ -323,257 +75,68 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
   }
 
   Widget _buildBackground() {
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/background.png'),
-          fit: BoxFit.cover,
-        ),
-      ),
-    );
+    return Container(decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
   }
 
-  Widget _buildAppBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-      child: Row(
-        children: [
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.arrow_back,
-                  color: Colors.white, size: 30), // Flecha blanca
-              onPressed: () {
-                // Navegar a otra ruta cuando la flecha es presionada
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => TravelCoordinatorDashboard(
-                          login:
-                              widget.login)), // Reemplaza con la ruta deseada
-                );
-              },
-            ),
-          ),
-          Spacer(),
-          Image.asset(
-            'assets/logo-letras-papigiras.png',
-            height: 50,
-          ),
-          Spacer(),
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.menu, color: Colors.white, size: 30),
-              onPressed: () {
-                _scaffoldKey.currentState?.openEndDrawer();
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBinnacleContent() {
+  Widget _buildContent() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(40),
-          topRight: Radius.circular(40),
-        ),
-      ),
-      padding: EdgeInsets.all(20),
+      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildFilterOptions(),
-          SizedBox(height: 20),
-          Expanded(
-            child: ListView(
-              children: _buildBinnacleEntries(),
-            ),
-          ),
-        ],
+        children: [_buildHeader(), Expanded(child: ListView(children: _buildMedicalRecordCards()))],
       ),
     );
   }
 
-  List<Widget> _buildBinnacleEntries() {
-    return documents.map((document) {
-      return Card(
-        margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0), // Espaciado para mayor comodidad
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Título y subtítulo
-              ListTile(
-                leading: Icon(
-                  Icons.medical_services,
-                  color: Colors.teal,
-                  size: 40,
-                ),
-                title: Text(
-                  document['name'],
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-                subtitle: Text(
-                  document['id'],
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text('Fichas Médicas', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800])),
+            ),
+            GestureDetector(
+              onTap: _sortDocuments,
+              child: Row(
+                children: [
+                  Text('Ordenar por Apellido', style: TextStyle(fontSize: 8, color: Colors.teal, fontWeight: FontWeight.w600)),
+                  SizedBox(width: 4),
+                  Icon(_isAscending ? Icons.arrow_upward : Icons.arrow_downward, color: Colors.teal, size: 10),
+                ],
               ),
-              // Centrar los botones en el Card
-              if (document['statusMedicalRecord'] == 'Lleno')
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit, color: Colors.teal),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  MedicalRecordScreenEditCoordinator(
-                                login: widget.login,
-                                idPassenger: document['idPassenger'].toString(),
-                                idDocumento: document['id'].toString(),
-                                nombrepassenger: document['name'].toString(),
-                                passengerApellidos:
-                                    document['passengerApellidos'].toString(),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                        onPressed: () {
-                          usuarioProvider.viewDocumentMedicalRecord(
-                            widget.login.tourSalesId.toString(),
-                            document['idPassenger'].toString(),
-                            context,
-                            document['id'].toString(),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.download, color: Colors.teal),
-                        onPressed: () {
-                          usuarioProvider.downloadDocumentMedicalRecord(
-                            widget.login.tourSalesId.toString(),
-                            document['idPassenger'].toString(),
-                            document['id'].toString(),
-                          );
-                          QuickAlert.show(
-                            context: context,
-                            type: QuickAlertType.success,
-                            title: 'Éxito',
-                            text: 'Documento Descargado',
-                            confirmBtnText: 'Continuar',
-                            onConfirmBtnTap: () => Navigator.of(context).pop(),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.share, color: Colors.teal),
-                        onPressed: () {
-                          usuarioProvider.shareDocumentMedicalRecord(
-                            widget.login.tourSalesId.toString(),
-                            document['idPassenger'].toString(),
-                            document['id'].toString(),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
+            ),
+          ],
         ),
+        const SizedBox(height: 12),
+        _buildCounter(),
+      ],
+    );
+  }
+
+  Widget _buildCounter() {
+    if (documents.isEmpty) {
+      return Center(
+        child: Text('Sin datos de fichas', style: TextStyle(fontSize: 16, color: Colors.grey[500])),
       );
-    }).toList();
-  }
-
-  Widget _buildCustomBottomNavigationBar() {
-    return Container(
-      padding:
-          EdgeInsets.symmetric(vertical: 35), // Ajuste del espacio vertical
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 5,
-            blurRadius: 10,
-            offset: Offset(0, -3),
-          ),
-        ],
-      ),
+    }
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildBottomButton(
-                  Icons.connect_without_contact_sharp,
-                  'Actividades',
-                  null,
-                  ActivitiesCoordScreen(login: widget.login)),
-              Transform.translate(
-                offset:
-                    Offset(0, -20), // Ajuste de posición para el botón central
-                child: buildBottomButtonHito(Icons.add_circle, 'Hito', null,
-                    HitoAddCoordScreen(login: widget.login)),
-              ),
-              buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
-                  CountDownCoordScreen(login: widget.login)),
-            ],
-          ),
-          SizedBox(height: 10), // Espacio entre filas
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildBottomButton(Icons.medical_information, 'Fichas Medicas',
-                  null, MedicalCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
-                  BusCrewCoorScreen(login: widget.login)),
-              buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
-                  DocumentCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
-                  BitacoraCoordScreen(login: widget.login)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildBottomButton(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 40,
-            color: Colors.teal,
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.teal,
-              fontSize: 8,
+          Text('Contador de fichas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          const SizedBox(height: 8),
+          RichText(
+            text: TextSpan(
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800]),
+              children: [
+                TextSpan(text: '${documents.first['countMedicalRecordOk']}', style: const TextStyle(color: Colors.green)),
+                const TextSpan(text: ' / '),
+                TextSpan(text: '${documents.first['countMedicalRecordNoOk']}', style: const TextStyle(color: Colors.red)),
+              ],
             ),
           ),
         ],
@@ -581,52 +144,95 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
     );
   }
 
-  Widget buildBottomButtonHito(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 70,
-            color: Colors.teal,
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.teal,
-              fontSize: 8,
+  List<Widget> _buildMedicalRecordCards() {
+    return documents.map((document) => _buildMedicalRecordCard(document)).toList();
+  }
+
+  Widget _buildMedicalRecordCard(Map<String, dynamic> document) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.medical_services, color: Colors.teal, size: 40),
+              title: Text(document['name'], style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              subtitle: Text(document['id'], style: const TextStyle(fontSize: 12, color: Colors.grey)),
             ),
-          ),
-        ],
+            _buildMedicalRecordActions(document),
+          ],
+        ),
       ),
     );
   }
 
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0); // Desde abajo
-        const end = Offset.zero;
-        const curve = Curves.ease;
+  Widget _buildMedicalRecordActions(Map<String, dynamic> document) {
+    if (document['statusMedicalRecord'] != 'Lleno') {
+      return const SizedBox.shrink();
+    }
+    return Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [_buildEditButton(document), _buildViewButton(document), _buildDownloadButton(document), _buildShareButton(document)],
+      ),
+    );
+  }
 
-        var tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-
-        return SlideTransition(
-          position: offsetAnimation,
-          child: child,
+  Widget _buildEditButton(Map<String, dynamic> document) {
+    return IconButton(
+      icon: const Icon(Icons.edit, color: Colors.teal),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MedicalRecordScreenEditCoordinator(
+              login: widget.login,
+              idPassenger: document['idPassenger'].toString(),
+              idDocumento: document['id'].toString(),
+              nombrepassenger: document['name'].toString(),
+              passengerApellidos: document['passengerApellidos'].toString(),
+            ),
+          ),
         );
+      },
+    );
+  }
+
+  Widget _buildViewButton(Map<String, dynamic> document) {
+    return IconButton(
+      icon: const Icon(Icons.remove_red_eye, color: Colors.teal),
+      onPressed: () {
+        _coordinatorProvider.viewDocumentMedicalRecord(widget.login.tourSalesId.toString(), document['idPassenger'].toString(), context, document['id'].toString());
+      },
+    );
+  }
+
+  Widget _buildDownloadButton(Map<String, dynamic> document) {
+    return IconButton(
+      icon: const Icon(Icons.download, color: Colors.teal),
+      onPressed: () async {
+        await _coordinatorProvider.downloadDocumentMedicalRecord(widget.login.tourSalesId.toString(), document['idPassenger'].toString(), document['id'].toString());
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Éxito',
+          text: 'Documento Descargado',
+          confirmBtnText: 'Continuar',
+          onConfirmBtnTap: () {
+            Navigator.of(context).pop();
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildShareButton(Map<String, dynamic> document) {
+    return IconButton(
+      icon: const Icon(Icons.share, color: Colors.teal),
+      onPressed: () {
+        _coordinatorProvider.shareDocumentMedicalRecord(widget.login.tourSalesId.toString(), document['idPassenger'].toString(), document['id'].toString());
       },
     );
   }

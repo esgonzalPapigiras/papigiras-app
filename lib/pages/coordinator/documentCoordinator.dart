@@ -1,66 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/document.dart';
-import 'package:papigiras_app/pages/coordinator/activities.dart';
-import 'package:papigiras_app/pages/coordinator/addHito.dart';
-import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/contador.dart';
-import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
-import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
-import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:papigiras_app/utils/LocationService.dart';
-import 'package:provider/provider.dart';
+import 'package:papigiras_app/utils/coordinator_widgets.dart';
 
 class DocumentCoordScreen extends StatefulWidget {
-  @override
-  _DocumentCoordScreenState createState() => _DocumentCoordScreenState();
   final TourSales login;
   DocumentCoordScreen({required this.login});
+
+  @override
+  _DocumentCoordScreenState createState() => _DocumentCoordScreenState();
 }
 
 class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late Future<List<Document>> _documentsFuture;
-  final usuarioProvider = new CoordinatorProviders();
+  final _coordinatorProvider = new CoordinatorProviders();
+  List<Document> _documents = [];
 
   @override
   void initState() {
     super.initState();
-    // Llama a fetchDocuments al iniciar el widget
-    _documentsFuture = fetchDocuments(widget.login.tourSalesId.toString());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LocationService>().startTracking();
-    });
+    fetchDocuments();
   }
 
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl =
-        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
-
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(
-        whatsappUrl,
-        mode: LaunchMode.externalApplication,
-      );
-    } else {
-      print('No se puede abrir WhatsApp');
-      // Intenta con el esquema directo
-      final whatsappDirect = Uri.parse(
-          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(
-          whatsappDirect,
-          mode: LaunchMode.externalApplication,
-        );
-      } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
-      }
+  Future<void> fetchDocuments() async {
+    try {
+      final documents = await _coordinatorProvider.getDocument(widget.login.tourSalesId.toString());
+      setState(() => _documents = documents);
+      //print("Documentos cargados: $documents");
+    } catch (error) {
+      print("Error al cargar los documentos: $error");
     }
   }
 
@@ -68,104 +38,15 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9), // Fondo turquesa
-      endDrawer: _buildDrawer(),
+      backgroundColor: kCoordinatorTeal,
+      endDrawer: CoordinatorEndDrawer(login: widget.login),
       body: Stack(
         children: [
           _buildBackground(),
           Column(
             children: [
-              _buildAppBar(context),
-              Expanded(
-                child: _buildBinnacleContent(),
-              ),
-            ],
-          ),
-        ],
-      ),
-      //bottomNavigationBar: _buildCustomBottomNavigationBar(),
-    );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          _buildDrawerHeader(),
-          ListTile(
-            leading: Icon(Icons.phone, color: Colors.teal),
-            title: Text('Contactar Agencia'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.phone, color: Colors.teal),
-                SizedBox(width: 10),
-                Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
-              ],
-            ),
-            onTap: () {
-              sendMessage(
-                  phone: "+56932157564", message: "Hola! Necesito ayuda");
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.report_problem, color: Colors.teal),
-            title: Text('Reportar un Problema'),
-            onTap: () {
-              sendMessage(
-                  phone: "+56932157564", message: "Hola! Necesito ayuda");
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.logout, color: Colors.teal),
-            title: Text('Cerrar Sesión'),
-            onTap: () {
-              logoutUser(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void logoutUser(BuildContext context) async {
-    // Borrar el estado de la sesión
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    final locationService =
-        Provider.of<LocationService>(context, listen: false);
-    locationService.stopTracking();
-
-    // Redirigir al login o realizar otra acción
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => WelcomeScreen()),
-      (route) =>
-          false, // Esto elimina todas las rutas anteriores de la pila de navegación
-    );
-  }
-
-  Widget _buildDrawerHeader() {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 35,
-            backgroundImage: AssetImage('assets/profile.jpg'),
-          ),
-          SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.login.tourTripulationNameId,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
-              ),
-              Text(widget.login.tourTripulationIdentificationId),
+              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey),
+              Expanded(child: _buildContent()),
             ],
           ),
         ],
@@ -174,177 +55,86 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
   }
 
   Widget _buildBackground() {
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/background.png'),
-          fit: BoxFit.cover,
-        ),
-      ),
-    );
+    return Container(decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
   }
 
-  Widget _buildAppBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-      child: Row(
-        children: [
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.arrow_back,
-                  color: Colors.white, size: 30), // Flecha blanca
-              onPressed: () {
-                // Navegar a otra ruta cuando la flecha es presionada
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => TravelCoordinatorDashboard(
-                          login:
-                              widget.login)), // Reemplaza con la ruta deseada
-                );
-              },
-            ),
-          ),
-          Spacer(),
-          Image.asset(
-            'assets/logo-letras-papigiras.png',
-            height: 50,
-          ),
-          Spacer(),
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.menu, color: Colors.white, size: 30),
-              onPressed: () {
-                _scaffoldKey.currentState?.openEndDrawer();
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBinnacleContent() {
+  Widget _buildContent() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(40),
-          topRight: Radius.circular(40),
-        ),
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40)),
       ),
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFilterOptions(),
-          SizedBox(height: 20),
-          Expanded(
-            child: _buildBinnacleEntries(),
-          ),
+          _buildTitle(),
+          const SizedBox(height: 20),
+          Expanded(child: ListView(children: _buildDocumentCards())),
         ],
       ),
     );
   }
 
-  Widget _buildFilterOptions() {
+  Widget _buildTitle() {
+    return Center(
+      child: Text('Mis Documentos', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800])),
+    );
+  }
+
+  List<Widget> _buildDocumentCards() {
+    if (_documents.isEmpty) {
+      return const [
+        Padding(
+          padding: EdgeInsets.only(top: 40),
+          child: Center(child: Text("No documents found.")),
+        ),
+      ];
+    }
+    return _documents.map((document) => _buildDocumentCard(document)).toList();
+  }
+
+  Widget _buildDocumentCard(Document document) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+      child: ListTile(
+        leading: Icon(_getIconForDocumentType(document.documentType), color: Colors.teal, size: 40),
+        title: Text(document.documentType ?? 'Sin nombre', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        trailing: _buildActions(document),
+      ),
+    );
+  }
+
+  Widget _buildActions(Document document) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center, // Centra el texto
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          'Mis Documentos',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
+        IconButton(
+          icon: const Icon(Icons.remove_red_eye, color: Colors.teal),
+          onPressed: () => _viewDocument(document),
+        ),
+        IconButton(
+          icon: const Icon(Icons.download, color: Colors.teal),
+          onPressed: () => _downloadDocument(document),
         ),
       ],
     );
   }
 
-  Future<List<Document>> fetchDocuments(String tourCode) async {
-    try {
-      List<Document> documents = await usuarioProvider.getDocument(tourCode);
-      return documents; // Devuelve la lista de documentos
-    } catch (e) {
-      print('Error: $e');
-      return []; // Devuelve una lista vacía en caso de error
-    }
+  void _viewDocument(Document document) {
+    _coordinatorProvider.viewDocument(document.tourSalesUuid, document.documentName!, widget.login.tourSalesId.toString(), context, "documentosextras");
   }
 
-  Widget _buildBinnacleEntries() {
-    return FutureBuilder<List<Document>>(
-      future: _documentsFuture, // Usamos _documentsFuture aquí
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No documents found.'));
-        }
-
-        List<Document> documents = snapshot.data!;
-
-        return ListView.builder(
-          itemCount: documents.length,
-          itemBuilder: (context, index) {
-            final document = documents[index];
-            return Card(
-              margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              child: ListTile(
-                leading: Icon(
-                  _getIconForDocumentType(document.documentType),
-                  color: Colors.teal,
-                  size: 40,
-                ),
-                title: Text(
-                  document.documentType ?? 'Sin nombre',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                      onPressed: () {
-                        usuarioProvider.viewDocument(
-                            document.tourSalesUuid,
-                            document.documentName!,
-                            widget.login.tourSalesId.toString(),
-                            context,
-                            "documentosextras");
-                        // Acción para descargar el documento
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.download, color: Colors.teal),
-                      onPressed: () async {
-                        await usuarioProvider.downloadDocument(
-                            document.tourSalesUuid,
-                            document.documentName!,
-                            widget.login.tourSalesId.toString(),
-                            "documentosextras");
-                        QuickAlert.show(
-                          context: context,
-                          type: QuickAlertType.success,
-                          title: 'Éxito',
-                          text: 'Documento Descargado',
-                          confirmBtnText: 'Continuar',
-                          onConfirmBtnTap: () {
-                            Navigator.of(context).pop(); // Cierra el QuickAlert
-                          },
-                        );
-                        // Acción para descargar el documento
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+  Future<void> _downloadDocument(Document document) async {
+    await _coordinatorProvider.downloadDocument(document.tourSalesUuid, document.documentName!, widget.login.tourSalesId.toString(), "documentosextras");
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.success,
+      title: 'Éxito',
+      text: 'Documento Descargado',
+      confirmBtnText: 'Continuar',
+      onConfirmBtnTap: () {
+        Navigator.of(context).pop();
       },
     );
   }
@@ -362,141 +152,7 @@ class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
       case 'Nomina alumnos':
         return Icons.people;
       default:
-        return Icons.description; // Icono por defecto si no coincide
+        return Icons.description;
     }
-  }
-
-  Widget _buildCustomBottomNavigationBar() {
-    return Container(
-      padding:
-          EdgeInsets.symmetric(vertical: 35), // Ajuste del espacio vertical
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 5,
-            blurRadius: 10,
-            offset: Offset(0, -3),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildBottomButton(
-                  Icons.connect_without_contact_sharp,
-                  'Actividades',
-                  null,
-                  ActivitiesCoordScreen(login: widget.login)),
-              Transform.translate(
-                offset:
-                    Offset(0, -20), // Ajuste de posición para el botón central
-                child: buildBottomButtonHito(Icons.add_circle, 'Hito', null,
-                    HitoAddCoordScreen(login: widget.login)),
-              ),
-              buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
-                  CountDownCoordScreen(login: widget.login)),
-            ],
-          ),
-          SizedBox(height: 10), // Espacio entre filas
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildBottomButton(Icons.medical_information, 'Fichas Medicas',
-                  null, MedicalCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
-                  BusCrewCoorScreen(login: widget.login)),
-              buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
-                  DocumentCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
-                  BitacoraCoordScreen(login: widget.login)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildBottomButton(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 40,
-            color: Colors.teal,
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.teal,
-              fontSize: 8,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildBottomButtonHito(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 70,
-            color: Colors.teal,
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.teal,
-              fontSize: 8,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0); // Desde abajo
-        const end = Offset.zero;
-        const curve = Curves.ease;
-
-        var tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-
-        return SlideTransition(
-          position: offsetAnimation,
-          child: child,
-        );
-      },
-    );
   }
 }

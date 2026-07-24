@@ -22,7 +22,6 @@ class TourSales {
       required this.passengerCountsBySex,
       required this.tokenKey});
 
-  // Método para crear una instancia de TourSales desde un JSON
   factory TourSales.fromJson(Map<String, dynamic> json) {
     return TourSales(
         tourSalesId: json['tourSalesId'],
@@ -32,14 +31,11 @@ class TourSales {
         courseClient: json['courseClient'],
         seasonClient: json['seasonClient'],
         tourTripulationNameId: json['tourTripulationNameId'] ?? '',
-        tourTripulationIdentificationId:
-            json['tourTripulationIdentificationId'] ?? '',
-        passengerCountsBySex:
-            Map<String, int>.from(json['passengerCountsBySex']),
+        tourTripulationIdentificationId: json['tourTripulationIdentificationId'] ?? '',
+        passengerCountsBySex: Map<String, int>.from(json['passengerCountsBySex']),
         tokenKey: json['tokenKey']);
   }
 
-  // Método para convertir una instancia de TourSales a JSON
   Map<String, dynamic> toJson() {
     return {
       'tourSalesId': tourSalesId,

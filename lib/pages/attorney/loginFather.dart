@@ -6,12 +6,6 @@ import 'package:papigiras_app/utils/fcm_utils.dart';
 import 'package:papigiras_app/utils/session_utils.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:papigiras_app/dto/TourSales.dart';
-import 'package:papigiras_app/dto/responseAttorney.dart';
-import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
-import 'package:papigiras_app/pages/attorney/indexFather.dart';
-import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginFather extends StatefulWidget {
   @override
@@ -34,8 +28,6 @@ class _LoginFatherState extends State<LoginFather> {
     });
     _loadSavedCredentials();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Use replace: true so the login screen itself is swapped out,
-      // keeping the welcome screen underneath if the user presses back.
       await checkLoginStatus(context, replace: true);
     });
   }
@@ -88,30 +80,15 @@ class _LoginFatherState extends State<LoginFather> {
       _showError = false;
       _showErrorTwo = false;
     });
-    final login = await usuarioProvider.validateLoginUserFather(
-      _userController.text,
-      _passwordController.text,
-    );
+    final login = await usuarioProvider.validateLoginUserFather(_userController.text, _passwordController.text);
     if (login != null && login.isActive == true) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', login.tokenKey!);
-      await prefs.setString(
-        'tokenExpiry',
-        DateTime.now().add(Duration(days: 3)).toIso8601String(),
-      );
+      await prefs.setString('tokenExpiry', DateTime.now().add(Duration(days: 3)).toIso8601String());
       await prefs.setString('userRole', 'father');
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('loginData', jsonEncode(login.toJson()));
-      // ── Save FCM token for this Apoderado ────────────────────────────────
-      // apoderadoId is whatever uniquely identifies this parent in your DB.
-      // Adjust the field name to match your ResponseAttorney DTO.
-      FcmUtils.saveTokenForFather(
-        login.passengerIdentificacion.toString(),
-      )
-          .timeout(
-        const Duration(seconds: 10),
-      )
-          .catchError((e) {
+      FcmUtils.saveTokenForFather(login.passengerIdentificacion.toString()).timeout(const Duration(seconds: 10)).catchError((e) {
         print("FCM token save failed: $e");
       });
       if (!mounted) return;
@@ -122,14 +99,8 @@ class _LoginFatherState extends State<LoginFather> {
         text: 'Bienvenido',
         confirmBtnText: 'Continuar',
         onConfirmBtnTap: () async {
-          Navigator.of(context).pop(); // close alert
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (_) => WelcomeFatherScreen(login: login),
-            ),
-            (route) => false,
-          );
+          Navigator.of(context).pop();
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => WelcomeFatherScreen(login: login)), (route) => false);
         },
       );
     } else {
@@ -148,12 +119,7 @@ class _LoginFatherState extends State<LoginFather> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/background.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
+        decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -164,40 +130,17 @@ class _LoginFatherState extends State<LoginFather> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10.0,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
+                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10.0, offset: Offset(0, 5))],
                   ),
-                  padding:
-                      EdgeInsets.symmetric(vertical: 30.0, horizontal: 20.0),
+                  padding: EdgeInsets.symmetric(vertical: 30.0, horizontal: 20.0),
                   width: double.infinity,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Image.asset(
-                        'assets/logo-letras-papigiras.png',
-                        height: 60.0,
-                      ),
+                      Image.asset('assets/logo-letras-papigiras.png', height: 60.0),
                       SizedBox(height: 10.0),
-                      Text(
-                        'Bienvenido(s)',
-                        style: TextStyle(
-                          fontSize: 22.0,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                      Text(
-                        'Apoderado(s)',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          color: Colors.grey[600],
-                        ),
-                      ),
+                      Text('Bienvenido(s)', style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+                      Text('Apoderado(s)', style: TextStyle(fontSize: 16.0, color: Colors.grey[600])),
                       SizedBox(height: 30.0),
                       TextField(
                         controller: _userController,
@@ -205,39 +148,24 @@ class _LoginFatherState extends State<LoginFather> {
                         decoration: InputDecoration(
                           labelText: 'Rut Alumno',
                           labelStyle: TextStyle(color: Colors.grey),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: _showError ? Colors.red : Colors.grey,
-                            ),
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: _showError ? Colors.red : Colors.teal,
-                            ),
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
+                          enabledBorder:
+                              OutlineInputBorder(borderSide: BorderSide(color: _showError ? Colors.red : Colors.grey), borderRadius: BorderRadius.circular(10.0)),
+                          focusedBorder:
+                              OutlineInputBorder(borderSide: BorderSide(color: _showError ? Colors.red : Colors.teal), borderRadius: BorderRadius.circular(10.0)),
                         ),
                         keyboardType: TextInputType.text,
                         onChanged: (value) {
                           setState(() {
                             _userController.text = _formatRut(value);
-                            _userController.selection =
-                                TextSelection.fromPosition(
-                              TextPosition(offset: _userController.text.length),
-                            );
+                            _userController.selection = TextSelection.fromPosition(TextPosition(offset: _userController.text.length));
                             _showError = false;
                           });
                         },
                       ),
                       if (_showError)
                         Padding(
-                          padding: const EdgeInsets.only(top: 5.0),
-                          child: Text(
-                            'Debes ingresar un rut de alumno',
-                            style: TextStyle(color: Colors.red, fontSize: 12.0),
-                          ),
-                        ),
+                            padding: const EdgeInsets.only(top: 5.0),
+                            child: Text('Debes ingresar un rut de alumno', style: TextStyle(color: Colors.red, fontSize: 12.0))),
                       SizedBox(height: 20.0),
                       TextField(
                         controller: _passwordController,
@@ -245,24 +173,14 @@ class _LoginFatherState extends State<LoginFather> {
                         decoration: InputDecoration(
                           labelText: 'Contraseña',
                           labelStyle: TextStyle(color: Colors.grey),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: _showErrorTwo ? Colors.red : Colors.grey,
-                            ),
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
+                          enabledBorder:
+                              OutlineInputBorder(borderSide: BorderSide(color: _showErrorTwo ? Colors.red : Colors.grey), borderRadius: BorderRadius.circular(10.0)),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: _showErrorTwo ? Colors.red : Colors.teal,
-                            ),
+                            borderSide: BorderSide(color: _showErrorTwo ? Colors.red : Colors.teal),
                             borderRadius: BorderRadius.circular(10.0),
                           ),
                           suffixIcon: IconButton(
-                            icon: Icon(
-                              _isPasswordHidden
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                            ),
+                            icon: Icon(_isPasswordHidden ? Icons.visibility : Icons.visibility_off),
                             onPressed: () {
                               setState(() {
                                 _isPasswordHidden = !_isPasswordHidden;
@@ -278,17 +196,11 @@ class _LoginFatherState extends State<LoginFather> {
                       ElevatedButton(
                         onPressed: _handleLogin,
                         style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 50.0, vertical: 15.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20.0),
-                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 50.0, vertical: 15.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
                           backgroundColor: Colors.teal,
                         ),
-                        child: Text(
-                          'Ingresar',
-                          style: TextStyle(fontSize: 18.0, color: Colors.white),
-                        ),
+                        child: Text('Ingresar', style: TextStyle(fontSize: 18.0, color: Colors.white)),
                       ),
                     ],
                   ),

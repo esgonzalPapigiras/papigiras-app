@@ -7,9 +7,8 @@ class RequestHito {
   final String longitud;
   final String hora;
   final String fecha;
-  final int idTour; // En Dart usamos `int` para números enteros.
+  final int idTour;
 
-  // Constructor
   RequestHito(
       {required this.titulo,
       required this.descripcion,
@@ -21,7 +20,6 @@ class RequestHito {
       required this.idTour,
       required this.fecha});
 
-  // Método para convertir el objeto a un mapa (para enviar en una solicitud POST)
   Map<String, dynamic> toJson() {
     return {
       'titulo': titulo,
@@ -36,7 +34,6 @@ class RequestHito {
     };
   }
 
-  // Método para crear una instancia de RequestHito a partir de un mapa (para recibir una respuesta)
   factory RequestHito.fromJson(Map<String, dynamic> json) {
     return RequestHito(
         titulo: json['titulo'],

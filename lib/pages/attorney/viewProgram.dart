@@ -1,17 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
 import 'package:papigiras_app/dto/ProgramViewDto.dart';
 import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
-import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
-import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
@@ -29,9 +25,7 @@ class _ViewProgramScreenState extends State<ViewProgramScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final usuarioProvider = new CoordinatorProviders();
-  final TextEditingController _alergiasController = TextEditingController();
-  final TextEditingController _enfermedadesController = TextEditingController();
-  final TextEditingController _medicamentosController = TextEditingController();
+  
   Future<ProgramViewDto>? _hitoDetailFuture;
 
   XFile? _image;
