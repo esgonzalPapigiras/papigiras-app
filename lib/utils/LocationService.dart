@@ -10,13 +10,24 @@ import 'package:background_locator_2/settings/ios_settings.dart';
 class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   bool _isTracking = true;
   bool _backgroundTrackingEnabled = true;
+  bool _initialized = false;
   var urlDynamic = 'stingray-app-9tqd9-djh6d.ondigitalocean.app';
-  //var urlDynamic = '192.168.1.5:8084';
   bool get isTracking => _isTracking;
   bool get backgroundTrackingEnabled => _backgroundTrackingEnabled;
+  bool get initialized => _initialized;
 
   LocationService() {
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  Future<void> initializeForCoordinatorSession() async {
+    if (_initialized) return;
+    final prefs = await SharedPreferences.getInstance();
+    _backgroundTrackingEnabled = prefs.getBool('backgroundTrackingEnabled') ?? true;
+    _isTracking = true;
+    _initialized = true;
+    notifyListeners();
+    await _registerLocator();
   }
 
   Future<void> startTracking() async {
@@ -24,6 +35,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     await prefs.setBool('backgroundTrackingEnabled', true);
     _isTracking = true;
     _backgroundTrackingEnabled = true;
+    _initialized = true;
     notifyListeners();
     await _registerLocator();
   }
@@ -33,6 +45,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     await prefs.setBool('backgroundTrackingEnabled', false);
     _isTracking = false;
     _backgroundTrackingEnabled = false;
+    _initialized = false;
     notifyListeners();
     await BackgroundLocator.unRegisterLocationUpdate();
   }
@@ -42,6 +55,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     await prefs.setBool('backgroundTrackingEnabled', false);
     _isTracking = true;
     _backgroundTrackingEnabled = false;
+    _initialized = true;
     notifyListeners();
     await _registerLocator();
   }

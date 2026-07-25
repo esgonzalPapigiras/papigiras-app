@@ -183,8 +183,8 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
   Widget _buildEditButton(Map<String, dynamic> document) {
     return IconButton(
       icon: const Icon(Icons.edit, color: Colors.teal),
-      onPressed: () {
-        Navigator.push(
+      onPressed: () async {
+        final wasUpdated = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
             builder: (_) => MedicalRecordScreenEditCoordinator(
@@ -196,6 +196,9 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
             ),
           ),
         );
+        if (wasUpdated == true && mounted) {
+          await _fetchMedicalRecords();
+        }
       },
     );
   }

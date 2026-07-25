@@ -90,7 +90,8 @@ class _DetalleBitacoraCoordScreenState extends State<DetalleBitacoraCoordScreen>
                   onConfirmBtnTap: () async {
                     Navigator.of(context).pop();
                     await _coordinatorProvider.deleteHito(widget.idHito, widget.login.tourSalesId.toString());
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => TravelCoordinatorDashboard(login: widget.login)));
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
                   },
                   onCancelBtnTap: () {
                     Navigator.of(context).pop();

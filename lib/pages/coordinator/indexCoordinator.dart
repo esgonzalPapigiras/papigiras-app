@@ -28,8 +28,8 @@ class _TravelCoordinatorDashboardState extends State<TravelCoordinatorDashboard>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LocationService>().startTracking();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context.read<LocationService>().initializeForCoordinatorSession();
     });
   }
 
@@ -44,7 +44,7 @@ class _TravelCoordinatorDashboardState extends State<TravelCoordinatorDashboard>
           _buildBackground(),
           Column(
             children: [
-              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey),
+              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey, showBackButton: false),
               Expanded(child: _buildContent()),
               buildBottomBar(),
             ],
@@ -157,8 +157,7 @@ class _TravelCoordinatorDashboardState extends State<TravelCoordinatorDashboard>
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => ListPassengerCoordScreen(login: widget.login)));
               },
-              child: const Text('Ver Nómina Pasajeros',
-                  style: TextStyle(fontSize: 16, color: Colors.teal, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+              child: const Text('Ver Nómina Pasajeros', style: TextStyle(fontSize: 16, color: Colors.teal, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
             ),
           ],
         ),
@@ -183,11 +182,7 @@ class _TravelCoordinatorDashboardState extends State<TravelCoordinatorDashboard>
   Widget _buildDateItem(String title, String date) {
     return Column(
       children: [
-        Row(children: [
-          const Icon(Icons.calendar_today, color: Colors.teal, size: 20),
-          const SizedBox(width: 4),
-          Text(title, style: const TextStyle(color: Colors.grey))
-        ]),
+        Row(children: [const Icon(Icons.calendar_today, color: Colors.teal, size: 20), const SizedBox(width: 4), Text(title, style: const TextStyle(color: Colors.grey))]),
         const SizedBox(height: 4),
         Text(date, style: const TextStyle(color: Colors.teal, fontSize: 16)),
       ],

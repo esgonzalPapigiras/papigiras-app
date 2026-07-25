@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/PassengerList.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/coordinator/activities.dart';
@@ -7,15 +6,11 @@ import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
-import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:papigiras_app/utils/LocationService.dart';
-import 'package:provider/provider.dart';
+import 'package:papigiras_app/utils/coordinator_widgets.dart';
 
 class ListPassengerCoordScreen extends StatefulWidget {
   @override
@@ -36,9 +31,6 @@ class _ListPassengerCoordScreenState extends State<ListPassengerCoordScreen> {
   void initState() {
     super.initState();
     _fetchItineraries(widget.login.tourSalesId.toString());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LocationService>().startTracking();
-    });
   }
 
   Future<bool> isSessionValid() async {
@@ -93,89 +85,24 @@ class _ListPassengerCoordScreenState extends State<ListPassengerCoordScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Color(0xFF3AC5C9),
-      endDrawer: _buildDrawer(),
+      endDrawer: CoordinatorEndDrawer(login: widget.login),
       body: Stack(
         children: [
           _buildBackground(),
-          Column(children: [_buildAppBar(context), Expanded(child: _buildBinnacleContent())]),
+          Column(
+            children: [
+              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey),
+              Expanded(child: _buildBinnacleContent()),
+            ],
+          ),
         ],
       ),
       bottomNavigationBar: _buildCustomBottomNavigationBar(),
     );
   }
 
-  Widget _buildDrawer() {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          _buildDrawerHeader(),
-          ListTile(
-            leading: Icon(Icons.phone, color: Colors.teal),
-            title: Text('Contactar Agencia'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [Icon(Icons.phone, color: Colors.teal), SizedBox(width: 10), Icon(FontAwesomeIcons.whatsapp, color: Colors.teal)],
-            ),
-            onTap: () {},
-          ),
-          ListTile(leading: Icon(Icons.report_problem, color: Colors.teal), title: Text('Reportar un Problema'), onTap: () {}),
-          ListTile(leading: Icon(Icons.logout, color: Colors.teal), title: Text('Cerrar Sesión'), onTap: () {}),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawerHeader() {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      child: Row(
-        children: [
-          CircleAvatar(radius: 35, backgroundImage: AssetImage('assets/profile.jpg')),
-          SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.login.tourTripulationNameId, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 8)),
-              Text(widget.login.tourTripulationIdentificationId),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBackground() {
     return Container(decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
-  }
-
-  Widget _buildAppBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-      child: Row(
-        children: [
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.white, size: 30),
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => TravelCoordinatorDashboard(login: widget.login)));
-              },
-            ),
-          ),
-          Spacer(),
-          Image.asset('assets/logo-letras-papigiras.png', height: 50),
-          Spacer(),
-          Builder(
-            builder: (context) => IconButton(
-                icon: Icon(Icons.menu, color: Colors.white, size: 30),
-                onPressed: () {
-                  _scaffoldKey.currentState?.openEndDrawer();
-                }),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildBinnacleContent() {

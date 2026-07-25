@@ -1,17 +1,10 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
-import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/updateMedicalRecord.dart';
-import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:papigiras_app/utils/LocationService.dart';
+import 'package:papigiras_app/utils/coordinator_widgets.dart';
 import 'package:quickalert/quickalert.dart';
-import 'package:provider/provider.dart';
 
 class MedicalRecordScreenEditCoordinator extends StatefulWidget {
   final TourSales login;
@@ -21,540 +14,502 @@ class MedicalRecordScreenEditCoordinator extends StatefulWidget {
   final String passengerApellidos;
 
   const MedicalRecordScreenEditCoordinator(
-      {Key? key, required this.login, required this.idPassenger, required this.idDocumento, required this.passengerApellidos, required this.nombrepassenger})
-      : super(key: key);
+      {super.key, required this.login, required this.idPassenger, required this.idDocumento, required this.nombrepassenger, required this.passengerApellidos});
 
   @override
-  _MedicalRecordScreenEditState createState() => _MedicalRecordScreenEditState();
+  State<MedicalRecordScreenEditCoordinator> createState() => _MedicalRecordScreenEditState();
 }
 
 class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordinator> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final usuarioProvider = new CoordinatorProviders();
-  final _formKey = GlobalKey<FormState>();
-  XFile? _image;
-  String? _imageUrl;
-  List<String> enfermedades = [];
-  List<String> medicamentos = [];
-  List<String> medicamentosEvitar = [];
-  List<String> cuidados = [];
-  bool _tieneFonasa = false;
-  bool _tieneIsapre = false;
-  String? _grupoSanguineo;
-  PassengersMedicalRecordDTO? _record;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final CoordinatorProviders _coordinatorProvider = CoordinatorProviders();
+  final TextEditingController _grupoSanguineoController = TextEditingController();
+  final TextEditingController _nombreEmergenciaController = TextEditingController();
+  final TextEditingController _relacionEmergenciaController = TextEditingController();
+  final TextEditingController _telefonoEmergenciaController = TextEditingController();
+  final TextEditingController _emailEmergenciaController = TextEditingController();
   final TextEditingController _isapreController = TextEditingController();
-  bool _requiereCuidadosEspeciales = false;
-  final TextEditingController _cuidadosEspecialesController = TextEditingController();
-  final TextEditingController _especificarEnfermedadesController = TextEditingController();
+  final TextEditingController _enfermedadesController = TextEditingController();
   final TextEditingController _medicamentosController = TextEditingController();
   final TextEditingController _medicamentosEvitarController = TextEditingController();
-  TextEditingController _nombreEmergenciaController = TextEditingController();
-  TextEditingController _relacionEmergenciaController = TextEditingController();
-  TextEditingController _telefonoEmergenciaController = TextEditingController();
-  TextEditingController _emailEmergenciaController = TextEditingController();
-  TextEditingController _alergiasController = TextEditingController();
-  TextEditingController _GrupoSanguineoController = TextEditingController();
+  final TextEditingController _cuidadosEspecialesController = TextEditingController();
+  PassengersMedicalRecordDTO? _record;
 
-  Future<void> _loadRecord() async {
-    try {
-      final record = await usuarioProvider.getMedicalRecord(widget.login.tourSalesId.toString(), widget.idPassenger);
-      setState(() {
-        _record = record;
-        _nombreEmergenciaController.text = record.emergencyContactName!;
-        _relacionEmergenciaController.text = record.emergencyContactRelation!;
-        _telefonoEmergenciaController.text = record.emergencyContactPhone!;
-        _emailEmergenciaController.text = record.emergencyContactEmail!;
-        _GrupoSanguineoController.text = record.bloodType!;
-        _especificarEnfermedadesController.text = record.diseases ?? '';
-        _medicamentosController.text = record.medications ?? '';
-        _medicamentosEvitarController.text = record.avoidMedications ?? '';
-        enfermedades = record.diseases?.split('\n').where((e) => e.isNotEmpty).toList() ?? [];
-        medicamentos = record.medications?.split('\n').where((e) => e.isNotEmpty).toList() ?? [];
-        medicamentosEvitar = record.avoidMedications?.split('\n').where((e) => e.isNotEmpty).toList() ?? [];
-      });
-    } catch (e) {}
-  }
+  bool _isLoading = true;
+  bool _isSaving = false;
+  bool _tieneFonasa = false;
+  bool _tieneIsapre = false;
+  bool _requiereCuidadosEspeciales = false;
 
   @override
   void initState() {
     super.initState();
     _loadRecord();
-    _loadImage();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LocationService>().startTracking();
-    });
   }
 
   @override
   void dispose() {
-    _medicamentosEvitarController.dispose();
+    _grupoSanguineoController.dispose();
+    _nombreEmergenciaController.dispose();
+    _relacionEmergenciaController.dispose();
+    _telefonoEmergenciaController.dispose();
+    _emailEmergenciaController.dispose();
+    _isapreController.dispose();
+    _enfermedadesController.dispose();
     _medicamentosController.dispose();
-    _especificarEnfermedadesController.dispose();
+    _medicamentosEvitarController.dispose();
+    _cuidadosEspecialesController.dispose();
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) return 'El correo es obligatorio';
-    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-    if (!emailRegex.hasMatch(value)) return 'Ingresa un correo válido';
-    return null;
-  }
-
-  Future<void> _loadImage() async {
+  Future<void> _loadRecord() async {
     try {
-      Responseimagepassenger imageUrl = await usuarioProvider.getPicturePassenger(widget.idDocumento.toString(), widget.login.tourSalesId.toString());
-      if (imageUrl.image.isNotEmpty) {
-        setState(() {
-          _imageUrl = imageUrl.image;
-        });
-      } else {
-        setState(() {
-          _imageUrl = null;
-        });
-      }
-    } catch (e) {
+      final record = await _coordinatorProvider.getMedicalRecord(widget.login.tourSalesId.toString(), widget.idPassenger);
+      if (!mounted) return;
+      _record = record;
+      _grupoSanguineoController.text = record.bloodType ?? '';
+      _nombreEmergenciaController.text = record.emergencyContactName ?? '';
+      _relacionEmergenciaController.text = record.emergencyContactRelation ?? '';
+      _telefonoEmergenciaController.text = record.emergencyContactPhone ?? '';
+      _emailEmergenciaController.text = record.emergencyContactEmail ?? '';
+      _enfermedadesController.text = _formatMultilineValue(record.diseases);
+      _medicamentosController.text = _formatMultilineValue(record.medications);
+      _medicamentosEvitarController.text = _formatMultilineValue(record.avoidMedications);
+      _cuidadosEspecialesController.text = _formatMultilineValue(record.specialCareDetails);
+      _requiereCuidadosEspeciales = _cuidadosEspecialesController.text.trim().isNotEmpty;
       setState(() {
-        _imageUrl = null;
+        _isLoading = false;
       });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      QuickAlert.show(context: context, type: QuickAlertType.error, title: 'Error', text: 'No se pudo cargar la ficha médica.', confirmBtnText: 'Aceptar');
     }
   }
 
-  bool _isBase64(String data) {
-    try {
-      base64Decode(data.split(',').last);
-      return true;
-    } catch (e) {
-      return false;
+  String _formatMultilineValue(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '';
     }
+    return value.replaceAll(' - ', '\n').replaceAll('-', '\n').trim();
   }
 
-  String? _validateTelefono(String? value) {
-    if (value == null || value.isEmpty) return 'El teléfono es obligatorio';
-    final phoneRegex = RegExp(r'^[0-9]{9,12}$');
-    if (!phoneRegex.hasMatch(value)) return 'Ingresa un teléfono válido';
-    return null;
-  }
-
-  String? _formatRut(String? text) {
-    if (text == null || text.isEmpty) return null;
-    text = text.replaceAll(RegExp(r'[^0-9kK]'), '');
-    final buffer = StringBuffer();
-    for (int i = 0; i < text.length; i++) {
-      if (i == text.length - 1) {
-        buffer.write('-');
-      } else if ((text.length - i - 1) % 3 == 0 && i != text.length - 2) {
-        buffer.write('.');
-      }
-      buffer.write(text[i]);
-    }
-    return buffer.toString();
+  List<String> _controllerToList(TextEditingController controller) {
+    return controller.text.split('\n').map((item) => item.trim()).where((item) => item.isNotEmpty).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_record == null) {
-      return Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9),
-      endDrawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            Container(
-              color: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(color: Colors.teal, shape: BoxShape.circle),
-                    child: CircleAvatar(
-                      radius: 35,
-                      backgroundImage: _image != null
-                          ? FileImage(File(_image!.path)) as ImageProvider<Object>
-                          : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                              ? (_isBase64(_imageUrl!)
-                                  ? MemoryImage(base64Decode(_imageUrl!.split(',').last)) as ImageProvider<Object>
-                                  : NetworkImage(_imageUrl!) as ImageProvider<Object>)
-                              : AssetImage('assets/profile.jpg') as ImageProvider<Object>,
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${widget.nombrepassenger}\n${widget.passengerApellidos}', style: TextStyle(fontSize: 14, color: Colors.black, fontWeight: FontWeight.bold)),
-                      Text(widget.idDocumento, style: TextStyle(fontSize: 14, color: Colors.black)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      backgroundColor: kCoordinatorTeal,
+      endDrawer: CoordinatorEndDrawer(login: widget.login),
+      body: Stack(
+        children: [
+          _buildBackground(),
+          Column(
+            children: [
+              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey),
+              Expanded(child: _buildBody()),
+            ],
+          ),
+        ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-              child: Row(
-                children: [
-                  Spacer(),
-                  Image.asset('assets/logo-letras-papigiras.png', height: 50),
-                  Spacer(),
-                  Builder(
-                    builder: (context) => IconButton(
-                      icon: Icon(Icons.menu, color: Colors.white, size: 30),
-                      onPressed: () {
-                        _scaffoldKey.currentState?.openEndDrawer();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40)),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [Text('Ficha Médica', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800]))],
-                      ),
-                      SizedBox(height: 20),
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 1. DATOS DEL PASAJERO
-                            _buildTextField('Grupo Sanguineo', _GrupoSanguineoController, null),
-                            Divider(),
-                            SizedBox(height: 10),
-                            // 2. CONTACTOS DE EMERGENCIA
-                            Text('Contactos de Emergencia', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            _buildTextField('Nombre y Apellido', _nombreEmergenciaController, null),
-                            _buildTextField('Relación con el Alumno(a)', _relacionEmergenciaController, null),
-                            _buildTextFieldCelular('Teléfono Celular', _telefonoEmergenciaController, _validateTelefono),
-                            _buildTextField('Correo Electrónico', _emailEmergenciaController, _validateEmail),
-                            Divider(),
-                            SizedBox(height: 10),
-                            Text('Cobertura', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 10),
-                            SwitchListTile(
-                              title: Text('FONASA'),
-                              value: _tieneFonasa,
-                              onChanged: (value) {
-                                setState(() {
-                                  _tieneFonasa = value;
-                                  if (value) _tieneIsapre = false;
-                                });
-                              },
-                            ),
-                            SwitchListTile(
-                              title: Text('ISAPRE'),
-                              value: _tieneIsapre,
-                              onChanged: (value) {
-                                setState(() {
-                                  _tieneIsapre = value;
-                                  if (value) _tieneFonasa = false;
-                                });
-                              },
-                            ),
-                            if (_tieneIsapre) _buildTextField('Nombre de la Isapre', _isapreController, null),
-                            Divider(),
-                            SizedBox(height: 10),
-                            // 4. ANTECEDENTES MÉDICOS
-                            Text('Enfermedades', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            buildInfoSectionEnfermedades('', _record!.diseases ?? "No hay enfermedades registradas"),
-                            Divider(),
-                            SizedBox(height: 10),
-                            // 5. MEDICAMENTOS
-                            Text('Medicamentos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            buildInfoSectionMedicamentos('', _record!.medications ?? "No hay medicamentos registradas"),
-                            Divider(),
-                            SizedBox(height: 10),
-                            // 5. MEDICAMENTOS
-                            Text('Medicamentos a Evitar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            buildInfoSectionMedicamentosEvitar('', _record!.avoidMedications ?? "No hay medicamentos registradas"),
-                            SizedBox(height: 10),
-                            Text('Cuidados especiales', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            buildInfoSectionCuidados('', _record!.specialCareDetails ?? "No hay cuidados especiales"),
-                            Divider(),
-                            SizedBox(height: 10),
-                            Center(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  handleMedicamentos();
-                                  handleEnfermedades();
-                                  handleMedicamentosEvitar();
-                                  RequestPassengerMedicalEdit medical = RequestPassengerMedicalEdit(
-                                    grupoSanguineo: _GrupoSanguineoController.text,
-                                    contactoEmergenciaNombre: _nombreEmergenciaController.text,
-                                    contactoEmergenciaRelacion: _relacionEmergenciaController.text,
-                                    contactoEmergenciaTelefono: _telefonoEmergenciaController.text,
-                                    contactoEmergenciaEmail: _emailEmergenciaController.text,
-                                    enfermedades: enfermedades,
-                                    idPassenger: int.parse(widget.idPassenger),
-                                    idTour: widget.login.tourSalesId,
-                                    medicamentos: medicamentos,
-                                    medicamentosEvitar: medicamentosEvitar,
-                                    requiereCuidadosEspeciales: _requiereCuidadosEspeciales,
-                                    cuidadosEspeciales: _requiereCuidadosEspeciales ? _cuidadosEspecialesController.text : null,
-                                    tieneFonasa: _tieneFonasa,
-                                    tieneIsapre: _tieneIsapre,
-                                    nombreIsapre: _tieneIsapre ? _isapreController.text : null,
-                                  );
-                                  usuarioProvider.sendMedicalDataEdit(medical).then((response) {
-                                    QuickAlert.show(
-                                      context: context,
-                                      type: QuickAlertType.success,
-                                      title: 'Éxito',
-                                      text: 'Ficha Médica Actualizada',
-                                      confirmBtnText: 'Continuar',
-                                      onConfirmBtnTap: () {
-                                        Navigator.of(context).pop();
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => MedicalCoordScreen(login: widget.login),
-                                          ),
-                                        ); // Cierra el QuickAlert
-                                      },
-                                    );
-                                  }).catchError((error) {
-                                    QuickAlert.show(context: context, type: QuickAlertType.error, title: 'Error', text: 'No se pudo Actualizar la ficha médica');
-                                  });
-                                  ;
-                                },
-                                child: Text('Guardar Ficha Médica'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.teal,
-                                  foregroundColor: Colors.white,
-                                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                                  textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 20),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), spreadRadius: 5, blurRadius: 10, offset: Offset(0, -3))],
-              ),
-            ),
-          ],
+    );
+  }
+
+  Widget _buildBackground() {
+    return Container(decoration: const BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return _buildLoadingState();
+    }
+    if (_record == null) {
+      return _buildEmptyState();
+    }
+    return _buildContent();
+  }
+
+  Widget _buildLoadingState() {
+    return Container(
+      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
+      child: const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
+      child: const Center(child: Text('No se encontró la ficha médica.')),
+    );
+  }
+
+  Widget _buildContent() {
+    return Container(
+      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildPageHeader(),
+              const SizedBox(height: 24),
+              _buildPassengerInformationSection(),
+              _buildSectionDivider(),
+              _buildEmergencyContactSection(),
+              _buildSectionDivider(),
+              _buildCoverageSection(),
+              _buildSectionDivider(),
+              _buildMedicalBackgroundSection(),
+              _buildSectionDivider(),
+              _buildSpecialCareSection(),
+              const SizedBox(height: 30),
+              _buildSaveButton(),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget buildInfoSection(String title) {
+  Widget _buildPageHeader() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$title:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-        SizedBox(height: 5),
-        Container(
-          constraints: BoxConstraints(maxHeight: 80),
-          decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
-          padding: EdgeInsets.all(10),
-          child: TextField(
-            controller: _alergiasController,
-            maxLines: null,
-            expands: true,
-            decoration: InputDecoration(border: InputBorder.none, hintText: 'Escribe aquí...', hintStyle: TextStyle(color: Colors.grey[600])),
-            style: TextStyle(color: Colors.grey[800]),
-          ),
+        const Icon(Icons.medical_information, size: 42, color: Colors.teal),
+        const SizedBox(height: 8),
+        Text('Ficha Médica', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800])),
+        const SizedBox(height: 8),
+        Text(
+          '${widget.nombrepassenger} ${widget.passengerApellidos}',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[700]),
         ),
+        const SizedBox(height: 4),
+        Text(widget.idDocumento, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
       ],
     );
   }
 
-  @override
-  Widget buildInfoSectionEnfermedades(String title, String content) {
-    String formattedContent = content.replaceAll('-', '\n');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildPassengerInformationSection() {
+    return _buildFormSection(
+      title: 'Datos del pasajero',
+      icon: Icons.person,
+      children: [_buildTextFormField(label: 'Grupo sanguíneo', controller: _grupoSanguineoController, hintText: 'Ejemplo: O+', validator: _validateRequiredField)],
+    );
+  }
+
+  Widget _buildEmergencyContactSection() {
+    return _buildFormSection(
+      title: 'Contacto de emergencia',
+      icon: Icons.emergency,
       children: [
-        Text('$title', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-        SizedBox(height: 5),
-        Container(
-          constraints: BoxConstraints(maxHeight: 150),
-          decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
-          padding: EdgeInsets.all(10),
-          child: TextField(
-            controller: _especificarEnfermedadesController,
-            maxLines: null,
-            expands: true,
-            decoration: InputDecoration(border: InputBorder.none, hintText: 'Escribe aquí...', hintStyle: TextStyle(color: Colors.grey[600])),
-            style: TextStyle(color: Colors.grey[800]),
-            onChanged: (newValue) {
-              setState(() {
-                enfermedades = newValue.split('\n').where((element) => element.isNotEmpty).toList();
-              });
+        _buildTextFormField(label: 'Nombre y apellido', controller: _nombreEmergenciaController, hintText: 'Nombre del contacto', validator: _validateRequiredField),
+        _buildTextFormField(
+            label: 'Relación con el alumno(a)', controller: _relacionEmergenciaController, hintText: 'Ejemplo: Madre, padre o tutor', validator: _validateRequiredField),
+        _buildTextFormField(
+            label: 'Teléfono celular',
+            controller: _telefonoEmergenciaController,
+            hintText: 'Ejemplo: 923223212',
+            keyboardType: TextInputType.phone,
+            validator: _validatePhone),
+        _buildTextFormField(
+            label: 'Correo electrónico',
+            controller: _emailEmergenciaController,
+            hintText: 'correo@ejemplo.com',
+            keyboardType: TextInputType.emailAddress,
+            validator: _validateEmail),
+      ],
+    );
+  }
+
+  Widget _buildCoverageSection() {
+    return _buildFormSection(
+      title: 'Cobertura de salud',
+      icon: Icons.health_and_safety,
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('FONASA'),
+          subtitle: const Text('El pasajero tiene cobertura FONASA'),
+          value: _tieneFonasa,
+          activeColor: Colors.teal,
+          onChanged: _isSaving
+              ? null
+              : (value) {
+                  setState(() {
+                    _tieneFonasa = value;
+                    if (value) {
+                      _tieneIsapre = false;
+                      _isapreController.clear();
+                    }
+                  });
+                },
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('ISAPRE'),
+          subtitle: const Text('El pasajero tiene cobertura ISAPRE'),
+          value: _tieneIsapre,
+          activeColor: Colors.teal,
+          onChanged: _isSaving
+              ? null
+              : (value) {
+                  setState(() {
+                    _tieneIsapre = value;
+                    if (value) {
+                      _tieneFonasa = false;
+                    } else {
+                      _isapreController.clear();
+                    }
+                  });
+                },
+        ),
+        if (_tieneIsapre)
+          _buildTextFormField(
+            label: 'Nombre de la ISAPRE',
+            controller: _isapreController,
+            hintText: 'Escriba el nombre de la ISAPRE',
+            validator: (value) {
+              if (!_tieneIsapre) return null;
+              return _validateRequiredField(value);
             },
           ),
-        ),
       ],
     );
   }
 
-  void handleEnfermedades() {
-    if (enfermedades.isEmpty) {
-      enfermedades = _especificarEnfermedadesController.text.split('\n').where((element) => element.isNotEmpty).toList();
-    } else {}
-  }
-
-  void handleMedicamentos() {
-    if (medicamentos.isEmpty) {
-      medicamentos = _medicamentosController.text.split('\n').where((element) => element.isNotEmpty).toList();
-    } else {}
-  }
-
-  void handleMedicamentosEvitar() {
-    if (medicamentosEvitar.isEmpty) {
-      medicamentosEvitar = _medicamentosEvitarController.text.split('\n').where((element) => element.isNotEmpty).toList();
-    } else {}
-  }
-
-  Widget buildInfoSectionCuidados(String title, String content) {
-    String formattedContent = content.replaceAll('-', '\n');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildMedicalBackgroundSection() {
+    return _buildFormSection(
+      title: 'Antecedentes médicos',
+      icon: Icons.medical_services,
       children: [
-        Text('$title', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-        SizedBox(height: 5),
-        Container(
-          constraints: BoxConstraints(maxHeight: 150),
-          decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
-          padding: EdgeInsets.all(10),
-          child: TextField(
+        _buildMultilineField(label: 'Enfermedades', controller: _enfermedadesController, hintText: 'Escriba una enfermedad por línea'),
+        _buildMultilineField(label: 'Medicamentos', controller: _medicamentosController, hintText: 'Escriba un medicamento por línea'),
+        _buildMultilineField(label: 'Medicamentos a evitar', controller: _medicamentosEvitarController, hintText: 'Escriba un medicamento por línea'),
+      ],
+    );
+  }
+
+  Widget _buildSpecialCareSection() {
+    return _buildFormSection(
+      title: 'Cuidados especiales',
+      icon: Icons.volunteer_activism,
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Requiere cuidados especiales'),
+          subtitle: const Text('Active esta opción si debe registrar indicaciones adicionales'),
+          value: _requiereCuidadosEspeciales,
+          activeColor: Colors.teal,
+          onChanged: _isSaving
+              ? null
+              : (value) {
+                  setState(() {
+                    _requiereCuidadosEspeciales = value;
+                    if (!value) {
+                      _cuidadosEspecialesController.clear();
+                    }
+                  });
+                },
+        ),
+        if (_requiereCuidadosEspeciales)
+          _buildMultilineField(
+            label: 'Detalle de los cuidados',
             controller: _cuidadosEspecialesController,
-            maxLines: null,
-            expands: true,
-            decoration: InputDecoration(border: InputBorder.none, hintText: 'Escribe aquí...', hintStyle: TextStyle(color: Colors.grey[600])),
-            style: TextStyle(color: Colors.grey[800]),
-            onChanged: (newValue) {
-              setState(() {
-                cuidados = newValue.split('\n').where((element) => element.isNotEmpty).toList();
-              });
+            hintText: 'Describa los cuidados especiales requeridos',
+            validator: (value) {
+              if (!_requiereCuidadosEspeciales) return null;
+              if (value == null || value.trim().isEmpty) {
+                return 'Debe describir los cuidados especiales';
+              }
+              return null;
             },
           ),
-        ),
       ],
     );
   }
 
-  @override
-  Widget buildInfoSectionMedicamentos(String title, String content) {
-    String formattedContent = content.replaceAll('-', '\n');
+  Widget _buildFormSection({required String title, required IconData icon, required List<Widget> children}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$title', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-        SizedBox(height: 5),
-        Container(
-          constraints: BoxConstraints(maxHeight: 150),
-          decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
-          padding: EdgeInsets.all(10),
-          child: TextField(
-            controller: _medicamentosController,
-            maxLines: null,
-            expands: true,
-            decoration: InputDecoration(border: InputBorder.none, hintText: 'Escribe aquí...', hintStyle: TextStyle(color: Colors.grey[600])),
-            style: TextStyle(color: Colors.grey[800]),
-            onChanged: (newValue) {
-              setState(() {
-                medicamentos = newValue.split('\n').where((element) => element.isNotEmpty).toList();
-              });
-            },
+        Row(
+          children: [
+            Icon(icon, color: Colors.teal, size: 24),
+            const SizedBox(width: 10),
+            Expanded(child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800]))),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ...children,
+      ],
+    );
+  }
+
+  Widget _buildTextFormField({
+    required String label,
+    required TextEditingController controller,
+    String? hintText,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+          controller: controller, keyboardType: keyboardType, validator: validator, enabled: !_isSaving, decoration: _buildInputDecoration(label: label, hintText: hintText)),
+    );
+  }
+
+  Widget _buildMultilineField({required String label, required TextEditingController controller, required String hintText, String? Function(String?)? validator}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: TextFormField(
+        controller: controller,
+        validator: validator,
+        enabled: !_isSaving,
+        minLines: 4,
+        maxLines: 7,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: _buildInputDecoration(label: label, hintText: hintText, alignLabelWithHint: true),
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration({required String label, String? hintText, bool alignLabelWithHint = false}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hintText,
+      alignLabelWithHint: alignLabelWithHint,
+      filled: true,
+      fillColor: Colors.grey[100],
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.teal, width: 2)),
+    );
+  }
+
+  Widget _buildSectionDivider() {
+    return const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider());
+  }
+
+  Widget _buildSaveButton() {
+    return Center(
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: _isSaving ? null : _saveMedicalRecord,
+          icon: _isSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.save),
+          label: Text(
+            _isSaving ? 'Guardando...' : 'Guardar ficha médica',
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.teal,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: Colors.teal.withOpacity(0.6),
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+            textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
           ),
         ),
-      ],
+      ),
     );
   }
 
-  Widget buildInfoSectionMedicamentosEvitar(String title, String content) {
-    String formattedContent = content.replaceAll('-', '\n');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('$title', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-        SizedBox(height: 5),
-        Container(
-          constraints: BoxConstraints(maxHeight: 150),
-          decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
-          padding: EdgeInsets.all(10),
-          child: TextField(
-            controller: _medicamentosEvitarController,
-            maxLines: null,
-            expands: true,
-            decoration: InputDecoration(border: InputBorder.none, hintText: 'Escribe aquí...', hintStyle: TextStyle(color: Colors.grey[600])),
-            style: TextStyle(color: Colors.grey[800]),
-            onChanged: (newValue) {
-              setState(() {
-                medicamentosEvitar = newValue.split('\n').where((element) => element.isNotEmpty).toList();
-              });
-            },
-          ),
-        ),
-      ],
+  Future<void> _saveMedicalRecord() async {
+    FocusScope.of(context).unfocus();
+    final formIsValid = _formKey.currentState?.validate() ?? false;
+    if (!formIsValid) {
+      return;
+    }
+    final passengerId = int.tryParse(widget.idPassenger);
+    if (passengerId == null) {
+      await QuickAlert.show(context: context, type: QuickAlertType.error, title: 'Error', text: 'El identificador del pasajero no es válido.', confirmBtnText: 'Aceptar');
+      return;
+    }
+    setState(() {
+      _isSaving = true;
+    });
+
+    final request = RequestPassengerMedicalEdit(
+      grupoSanguineo: _grupoSanguineoController.text.trim(),
+      contactoEmergenciaNombre: _nombreEmergenciaController.text.trim(),
+      contactoEmergenciaRelacion: _relacionEmergenciaController.text.trim(),
+      contactoEmergenciaTelefono: _telefonoEmergenciaController.text.trim(),
+      contactoEmergenciaEmail: _emailEmergenciaController.text.trim(),
+      enfermedades: _controllerToList(_enfermedadesController),
+      medicamentos: _controllerToList(_medicamentosController),
+      medicamentosEvitar: _controllerToList(_medicamentosEvitarController),
+      idPassenger: passengerId,
+      idTour: widget.login.tourSalesId,
+      requiereCuidadosEspeciales: _requiereCuidadosEspeciales,
+      cuidadosEspeciales: _requiereCuidadosEspeciales ? _cuidadosEspecialesController.text.trim() : null,
+      tieneFonasa: _tieneFonasa,
+      tieneIsapre: _tieneIsapre,
+      nombreIsapre: _tieneIsapre ? _isapreController.text.trim() : null,
     );
+    try {
+      await _coordinatorProvider.sendMedicalDataEdit(request);
+      if (!mounted) return;
+      setState(() {
+        _isSaving = false;
+      });
+      await QuickAlert.show(
+        context: context,
+        type: QuickAlertType.success,
+        title: 'Éxito',
+        text: 'Ficha médica actualizada.',
+        confirmBtnText: 'Continuar',
+        onConfirmBtnTap: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).pop(true);
+        },
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isSaving = false;
+      });
+      await QuickAlert.show(context: context, type: QuickAlertType.error, title: 'Error', text: 'No se pudo actualizar la ficha médica.', confirmBtnText: 'Aceptar');
+    }
   }
 
-  Widget _buildTextFieldCelular(String label, TextEditingController controller, String? Function(String?)? validator, {TextInputType keyboardType = TextInputType.text}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 5),
-        TextFormField(
-          controller: controller,
-          validator: validator,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(border: OutlineInputBorder(), hintText: '923223212 ejemplo'),
-        ),
-        SizedBox(height: 15),
-      ],
-    );
+  String? _validateRequiredField(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Este campo es obligatorio';
+    }
+    return null;
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, String? Function(String?)? validator, {TextInputType keyboardType = TextInputType.text}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 5),
-        TextFormField(
-          controller: controller,
-          validator: validator,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(border: OutlineInputBorder(), hintText: 'Escribe Aqui ....'),
-        ),
-        SizedBox(height: 15),
-      ],
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'El correo es obligatorio';
+    }
+    final emailRegex = RegExp(
+      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
     );
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Ingrese un correo válido';
+    }
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'El teléfono es obligatorio';
+    }
+    final normalizedPhone = value.replaceAll(RegExp(r'[\s()+-]'), '');
+    final phoneRegex = RegExp(r'^[0-9]{9,12}$');
+    if (!phoneRegex.hasMatch(normalizedPhone)) {
+      return 'Ingrese un teléfono válido';
+    }
+    return null;
   }
 }

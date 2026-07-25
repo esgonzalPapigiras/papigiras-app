@@ -199,12 +199,9 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
                                     return;
                                   }
                                   final locationService = Provider.of<LocationService>(context, listen: false);
-                                  locationService.startTracking();
-                                  Navigator.pushAndRemoveUntil(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => TravelCoordinatorDashboard(login: login)),
-                                    (route) => false,
-                                  );
+                                  await locationService.initializeForCoordinatorSession();
+                                  if (!mounted) return;
+                                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => TravelCoordinatorDashboard(login: login)), (route) => false);
                                 },
                               );
                             } else {

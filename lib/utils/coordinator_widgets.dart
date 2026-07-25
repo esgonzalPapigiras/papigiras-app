@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
-import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
 
@@ -26,10 +25,12 @@ Future<void> sendWhatsAppMessage({required String phone, required String message
 }
 
 Future<void> logoutCoordinator(BuildContext context) async {
+  final locationService = Provider.of<LocationService>(context, listen: false);
+  await locationService.stopTracking();
   final prefs = await SharedPreferences.getInstance();
   await prefs.clear();
-  Provider.of<LocationService>(context, listen: false).stopTracking();
-  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => WelcomeScreen()), (route) => false);
+  if (!context.mounted) return;
+  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => WelcomeScreen()), (route) => false);
 }
 
 class CoordinatorTopBar extends StatelessWidget {
@@ -58,7 +59,7 @@ class CoordinatorTopBar extends StatelessWidget {
     return IconButton(
       icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
       onPressed: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => TravelCoordinatorDashboard(login: login)));
+        Navigator.of(context).maybePop();
       },
     );
   }
