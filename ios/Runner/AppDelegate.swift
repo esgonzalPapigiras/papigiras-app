@@ -1,5 +1,10 @@
 import UIKit
 import Flutter
+import background_locator_2
+
+func registerPlugins(registry: FlutterPluginRegistry) {
+  GeneratedPluginRegistrant.register(with: registry)
+}
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -8,6 +13,7 @@ import Flutter
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
+    BackgroundLocatorPlugin.setPluginRegistrantCallback(registerPlugins)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }

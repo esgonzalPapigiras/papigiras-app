@@ -29,10 +29,13 @@ class AppDrawerCoordinator extends StatelessWidget {
   }
 
   Future<void> _logout(BuildContext context) async {
+    final locationService = Provider.of<LocationService>(context, listen: false);
+    await locationService.stopTracking();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('codigoGira');
     await prefs.remove('userPassword');
     await prefs.clear();
+    if (!context.mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => WelcomeScreen()),
@@ -122,14 +125,21 @@ class AppDrawerCoordinator extends StatelessWidget {
               'Permite compartir tu ubicación aunque la app esté minimizada',
               style: TextStyle(fontSize: 12),
             ),
-            value: locationService.isTracking,
-            onChanged: (value) async {
-              if (value) {
-                await locationService.startTracking();
-              } else {
-                await locationService.stopTracking();
-              }
-            },
+            value: locationService.backgroundTrackingEnabled,
+            onChanged: locationService.isChangingMode
+                ? null
+                : (value) async {
+                    if (value) {
+                      await locationService.startTracking();
+                    } else {
+                      await locationService.enableForegroundOnlyTracking();
+                    }
+                    if (context.mounted && locationService.lastError != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(locationService.lastError!)),
+                      );
+                    }
+                  },
           ),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.teal),
@@ -137,7 +147,7 @@ class AppDrawerCoordinator extends StatelessWidget {
               'Cerrar Sesión',
               style: TextStyle(color: Colors.grey[800]),
             ),
-            onTap: () => _logout(context),
+            onTap: locationService.isChangingMode ? null : () => _logout(context),
           ),
         ],
       ),

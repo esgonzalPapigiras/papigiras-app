@@ -6,8 +6,6 @@ import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:papigiras_app/utils/LocationService.dart';
-import 'package:provider/provider.dart';
 
 class ViewProgramCoordScreen extends StatefulWidget {
   final TourSales login;
@@ -26,9 +24,6 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
   void initState() {
     super.initState();
     _hitoDetailFuture = usuarioProvider.getviewProgram(widget.login.tourSalesId.toString());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LocationService>().startTracking();
-    });
   }
 
   @override

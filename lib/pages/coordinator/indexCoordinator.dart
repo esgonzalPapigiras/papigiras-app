@@ -29,7 +29,12 @@ class _TravelCoordinatorDashboardState extends State<TravelCoordinatorDashboard>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await context.read<LocationService>().initializeForCoordinatorSession();
+      final locationService = context.read<LocationService>();
+      await locationService.initializeForCoordinatorSession();
+      if (!mounted || locationService.lastError == null) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(locationService.lastError!)),
+      );
     });
   }
 

@@ -79,7 +79,9 @@ didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 }
 
 -(void)applicationWillTerminate:(UIApplication *)application {
-    [self observeRegionForLocation:_lastLocation];
+    if (_lastLocation != nil) {
+        [self observeRegionForLocation:_lastLocation];
+    }
     if([PreferencesManager isStopWithTerminate]){
         [self removeLocator];
     }
@@ -162,12 +164,18 @@ didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 - (void)startLocatorService:(int64_t)handle {
     [PreferencesManager setCallbackDispatcherHandle:handle];
     FlutterCallbackInformation *info = [FlutterCallbackCache lookupCallbackInformation:handle];
-    NSAssert(info != nil, @"failed to find callback");
+    if (info == nil) {
+        NSLog(@"BackgroundLocatorPlugin: failed to find callback information");
+        return;
+    }
+    if (registerPlugins == nil) {
+        NSLog(@"BackgroundLocatorPlugin: plugin registrant callback is not configured");
+        return;
+    }
     
     NSString *entrypoint = info.callbackName;
     NSString *uri = info.callbackLibraryPath;
     [_headlessRunner runWithEntrypoint:entrypoint libraryURI:uri];
-    NSAssert(registerPlugins != nil, @"failed to set registerPlugins");
 
     // Once our headless runner has been started, we need to register the application's plugins
     // with the runner in order for them to work on the background isolate. `registerPlugins` is

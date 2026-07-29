@@ -79,7 +79,7 @@ class CoordinatorEndDrawer extends StatelessWidget {
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
-        children: [_buildHeader(), _buildReportProblemTile(context), _buildLocationToggleTile(locationService), _buildLogoutTile(context)],
+        children: [_buildHeader(), _buildReportProblemTile(context), _buildLocationToggleTile(context, locationService), _buildLogoutTile(context, locationService)],
       ),
     );
   }
@@ -116,27 +116,34 @@ class CoordinatorEndDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildLocationToggleTile(LocationService locationService) {
+  Widget _buildLocationToggleTile(BuildContext context, LocationService locationService) {
     return SwitchListTile(
       secondary: const Icon(Icons.location_on, color: Colors.teal),
       title: Text('Ubicación en segundo plano', style: TextStyle(color: Colors.grey[800])),
       subtitle: const Text('Permite compartir tu ubicación aunque la app esté minimizada', style: TextStyle(fontSize: 12)),
       value: locationService.backgroundTrackingEnabled,
-      onChanged: (value) async {
-        if (value) {
-          await locationService.startTracking();
-        } else {
-          await locationService.enableForegroundOnlyTracking();
-        }
-      },
+      onChanged: locationService.isChangingMode
+          ? null
+          : (value) async {
+              if (value) {
+                await locationService.startTracking();
+              } else {
+                await locationService.enableForegroundOnlyTracking();
+              }
+              if (context.mounted && locationService.lastError != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(locationService.lastError!)),
+                );
+              }
+            },
     );
   }
 
-  Widget _buildLogoutTile(BuildContext context) {
+  Widget _buildLogoutTile(BuildContext context, LocationService locationService) {
     return ListTile(
         leading: const Icon(Icons.logout, color: Colors.teal),
         title: Text('Cerrar Sesión', style: TextStyle(color: Colors.grey[800])),
-        onTap: () => logoutCoordinator(context));
+        onTap: locationService.isChangingMode ? null : () => logoutCoordinator(context));
   }
 }
 
