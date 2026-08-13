@@ -9,13 +9,16 @@ import 'package:background_locator_2/background_locator.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
+import 'package:papigiras_app/dto/coordinator_session.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/coordinatorTourSelection.dart';
 import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'firebase_options.dart';
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -31,16 +34,29 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-  const DarwinInitializationSettings iosInit = DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false);
-  const InitializationSettings initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
+  const AndroidInitializationSettings androidInit =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+  const DarwinInitializationSettings iosInit = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false);
+  const InitializationSettings initSettings =
+      InitializationSettings(android: androidInit, iOS: iosInit);
   await flutterLocalNotificationsPlugin.initialize(initSettings);
-  const AndroidNotificationChannel channel = AndroidNotificationChannel('hito_channel', 'Hitos', description: 'Notificaciones de nuevos hitos', importance: Importance.high);
-  await flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(channel);
-  final settings = await FirebaseMessaging.instance.requestPermission(alert: true, badge: true, sound: true);
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'hito_channel', 'Hitos',
+      description: 'Notificaciones de nuevos hitos',
+      importance: Importance.high);
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+  final settings = await FirebaseMessaging.instance
+      .requestPermission(alert: true, badge: true, sound: true);
   debugPrint('========== FCM PERMISSION ==========');
   print(settings.authorizationStatus);
-  if (settings.authorizationStatus == AuthorizationStatus.authorized || settings.authorizationStatus == AuthorizationStatus.provisional) {
+  if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+      settings.authorizationStatus == AuthorizationStatus.provisional) {
     try {
       final token = await FirebaseMessaging.instance.getToken();
       debugPrint('========== FCM TOKEN ==========');
@@ -61,8 +77,10 @@ Future<void> main() async {
           notification.title,
           notification.body,
           const NotificationDetails(
-              android: AndroidNotificationDetails('hito_channel', 'Hitos', importance: Importance.max, priority: Priority.high),
-              iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true)));
+              android: AndroidNotificationDetails('hito_channel', 'Hitos',
+                  importance: Importance.max, priority: Priority.high),
+              iOS: DarwinNotificationDetails(
+                  presentAlert: true, presentBadge: true, presentSound: true)));
     }
   });
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
@@ -97,16 +115,33 @@ Future<Widget> _determineStartScreen() async {
     await _clearPrefsSession(prefs);
     return WelcomeScreen();
   }
-  final String? loginJson = prefs.getString('loginData');
   final String role = prefs.getString('userRole') ?? '';
-  if (loginJson == null) return WelcomeScreen();
-  final loginMap = jsonDecode(loginJson);
   try {
     if (role == 'coordinator') {
-      return TravelCoordinatorDashboard(login: TourSales.fromJson(loginMap));
+      final coordinatorJson = prefs.getString('coordinatorData');
+      if (coordinatorJson == null) {
+        await _clearPrefsSession(prefs);
+        return WelcomeScreen();
+      }
+      final coordinator =
+          CoordinatorLogin.fromJson(jsonDecode(coordinatorJson));
+      final loginJson = prefs.getString('loginData');
+      if (loginJson == null) {
+        return CoordinatorTourSelectionScreen(coordinator: coordinator);
+      }
+      return TravelCoordinatorDashboard(
+        login: TourSales.fromJson(jsonDecode(loginJson)),
+      );
     } else if (role == 'passenger') {
-      return TravelPassengerDashboard(login: ResponseAttorney.fromJson(loginMap));
+      final loginJson = prefs.getString('loginData');
+      if (loginJson == null) return WelcomeScreen();
+      final loginMap = jsonDecode(loginJson);
+      return TravelPassengerDashboard(
+          login: ResponseAttorney.fromJson(loginMap));
     } else if (role == 'father') {
+      final loginJson = prefs.getString('loginData');
+      if (loginJson == null) return WelcomeScreen();
+      final loginMap = jsonDecode(loginJson);
       return TravelFatherDashboard(login: ResponseAttorney.fromJson(loginMap));
     } else {
       await _clearPrefsSession(prefs);
@@ -122,6 +157,8 @@ Future<void> _clearPrefsSession(SharedPreferences prefs) async {
   await prefs.remove('token');
   await prefs.remove('tokenExpiry');
   await prefs.remove('loginData');
+  await prefs.remove('coordinatorData');
+  await prefs.remove('selectedTourId');
   await prefs.remove('userRole');
   await prefs.setBool('isLoggedIn', false);
 }
@@ -131,6 +168,9 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key, required this.startScreen});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: startScreen, routes: {'welcome': (context) => WelcomeScreen()});
+    return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: startScreen,
+        routes: {'welcome': (context) => WelcomeScreen()});
   }
 }

@@ -20,8 +20,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
   LatLng? _currentPosition;
-  LatLng? _coordinatorPosition;
-  LatLng? _newPosition;
+  List<PositionCoordinator> _coordinatorPositions = [];
   Timer? _updateTimer;
   final usuarioProvider = new CoordinatorProviders();
 
@@ -50,7 +49,8 @@ class _MapScreenState extends State<MapScreen> {
         );
         return;
       }
-      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
       });
@@ -70,12 +70,17 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _updateCoordinatorPosition() async {
     try {
-      PositionCoordinator result = await usuarioProvider.uniqueID(widget.login.tourId.toString());
-      LatLng newPosition = LatLng(result.positionCoordinatorLatitud, result.positionCoordinatorLongitud);
+      final results =
+          await usuarioProvider.uniqueID(widget.login.tourId.toString());
       setState(() {
-        _coordinatorPosition = newPosition;
+        _coordinatorPositions = results;
       });
-      _mapController.move(newPosition, 15.0);
+      if (results.isNotEmpty) {
+        _mapController.move(
+          LatLng(results.first.latitude, results.first.longitude),
+          15.0,
+        );
+      }
     } catch (e) {
       print('Error updating coordinator position: $e');
     }
@@ -86,7 +91,8 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.teal,
-        title: const Text('Ubicación en tiempo real', style: TextStyle(color: Colors.white)),
+        title: const Text('Ubicación en tiempo real',
+            style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
@@ -99,35 +105,57 @@ class _MapScreenState extends State<MapScreen> {
           Expanded(
             child: FlutterMap(
               mapController: _mapController,
-              options: MapOptions(initialCenter: _currentPosition ?? LatLng(0, 0), initialZoom: 13.0, maxZoom: 40.0, minZoom: 5.0),
+              options: MapOptions(
+                  initialCenter: _currentPosition ?? LatLng(0, 0),
+                  initialZoom: 13.0,
+                  maxZoom: 40.0,
+                  minZoom: 5.0),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?api_key=14a3454b-2487-40e7-b692-e4a001b9abbd',
+                  urlTemplate:
+                      'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?api_key=14a3454b-2487-40e7-b692-e4a001b9abbd',
                   userAgentPackageName: 'com.papigiras',
                 ),
                 if (_currentPosition != null)
                   LocationMarkerLayer(
-                    position: LocationMarkerPosition(latitude: _currentPosition!.latitude, longitude: _currentPosition!.longitude, accuracy: 50.0),
+                    position: LocationMarkerPosition(
+                        latitude: _currentPosition!.latitude,
+                        longitude: _currentPosition!.longitude,
+                        accuracy: 50.0),
                     style: LocationMarkerStyle(
-                      marker: DefaultLocationMarker(color: Colors.blue, child: Icon(Icons.my_location, color: Colors.white, size: 20)),
+                      marker: DefaultLocationMarker(
+                          color: Colors.blue,
+                          child: Icon(Icons.my_location,
+                              color: Colors.white, size: 20)),
                       accuracyCircleColor: Colors.blue.withOpacity(0.1),
                     ),
                   ),
-                if (_coordinatorPosition != null)
+                if (_coordinatorPositions.isNotEmpty)
                   MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: _coordinatorPosition!,
-                        width: 100,
-                        height: 100,
-                        child: Column(
-                          children: [
-                            Text('Coordinador', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, backgroundColor: Colors.white)),
-                            Icon(Icons.location_on, color: Colors.red, size: 30)
-                          ],
-                        ),
-                      ),
-                    ],
+                    markers: _coordinatorPositions
+                        .map(
+                          (coordinator) => Marker(
+                            point: LatLng(
+                                coordinator.latitude, coordinator.longitude),
+                            width: 100,
+                            height: 100,
+                            child: Column(
+                              children: [
+                                Text(
+                                  coordinator.fullName,
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    backgroundColor: Colors.white,
+                                  ),
+                                ),
+                                Icon(Icons.location_on,
+                                    color: Colors.red, size: 30)
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
               ],
             ),

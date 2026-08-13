@@ -97,7 +97,6 @@ class _ListPassengerCoordScreenState extends State<ListPassengerCoordScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildCustomBottomNavigationBar(),
     );
   }
 
@@ -128,78 +127,5 @@ class _ListPassengerCoordScreenState extends State<ListPassengerCoordScreen> {
         ),
       );
     }).toList();
-  }
-
-  Widget _buildCustomBottomNavigationBar() {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 35),
-      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), spreadRadius: 5, blurRadius: 10, offset: Offset(0, -3))]),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildBottomButton(Icons.connect_without_contact_sharp, 'Actividades', null, ActivitiesCoordScreen(login: widget.login)),
-              Transform.translate(offset: Offset(0, -20), child: buildBottomButtonHito(Icons.add_circle, 'Hito', null, HitoAddCoordScreen(login: widget.login))),
-              buildBottomButton(Icons.person_add_alt_1, 'Contador', null, CountDownCoordScreen(login: widget.login)),
-            ],
-          ),
-          SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildBottomButton(Icons.medical_information, 'Fichas Medicas', null, MedicalCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null, BusCrewCoorScreen(login: widget.login)),
-              buildBottomButton(Icons.folder_open, 'Mis Documentos', null, DocumentCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.book, 'Bitácora del Viaje', null, BitacoraCoordScreen(login: widget.login)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildBottomButton(IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 40, color: Colors.teal), SizedBox(height: 8), Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))],
-      ),
-    );
-  }
-
-  Widget buildBottomButtonHito(IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 70, color: Colors.teal), SizedBox(height: 8), Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))],
-      ),
-    );
-  }
-
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0);
-        const end = Offset.zero;
-        const curve = Curves.ease;
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-        return SlideTransition(position: offsetAnimation, child: child);
-      },
-    );
-  }
+  }  
 }

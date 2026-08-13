@@ -26,7 +26,8 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
 
   Future<void> _fetchItineraries() async {
     try {
-      final itineraries = await _coordinatorProvider.getBinnacle(widget.login.tourSalesId.toString());
+      final itineraries = await _coordinatorProvider
+          .getBinnacle(widget.login.tourSalesId.toString());
       setState(() => _itineraries = itineraries);
       //print("Itinerarios cargados: $itineraries");
     } catch (error) {
@@ -55,14 +56,19 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
   }
 
   Widget _buildBackground() {
-    return Container(decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
+    return Container(
+        decoration: BoxDecoration(
+            image: DecorationImage(
+                image: AssetImage('assets/background.png'),
+                fit: BoxFit.cover)));
   }
 
   Widget _buildContent() {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40)),
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(40), topRight: Radius.circular(40)),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -75,7 +81,9 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
   }
 
   List<Widget> _buildBinnacleEntries() {
-    return _itineraries.map((binnacle) => _buildBinnacleCard(binnacle)).toList();
+    return _itineraries
+        .map((binnacle) => _buildBinnacleCard(binnacle))
+        .toList();
   }
 
   Widget _buildBinnacleCard(ConsolidatedTourSalesDTO binnacle) {
@@ -87,9 +95,19 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildBinnacleDate(binnacle),
-            Text(binnacle.binnacleTitulo, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Text(binnacle.binnacleTitulo,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
-            Text(binnacle.binnacleUbicacion, style: const TextStyle(fontSize: 14, color: Colors.black54)),
+            Text(
+              binnacle.author == null
+                  ? 'Autor: registro histórico'
+                  : 'Autor: ${binnacle.author!.fullName}',
+              style: const TextStyle(fontSize: 12, color: Colors.teal),
+            ),
+            const SizedBox(height: 4),
+            Text(binnacle.binnacleUbicacion,
+                style: const TextStyle(fontSize: 14, color: Colors.black54)),
             const SizedBox(height: 10),
             _buildViewMoreButton(binnacle),
           ],
@@ -102,7 +120,8 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
     final shortDate = binnacle.binnacleFecha.split('/').sublist(0, 2).join('/');
     return Padding(
       padding: const EdgeInsets.only(bottom: 6.0),
-      child: Text('$shortDate • ${binnacle.binnacleHora}', style: const TextStyle(fontSize: 11, color: Colors.teal)),
+      child: Text('$shortDate • ${binnacle.binnacleHora}',
+          style: const TextStyle(fontSize: 11, color: Colors.teal)),
     );
   }
 
@@ -122,6 +141,7 @@ class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
         DetalleBitacoraCoordScreen(
           idHito: binnacle.binnacleDetailId.toString(),
           login: widget.login,
+          canModify: binnacle.canModify,
         ),
       ),
     );

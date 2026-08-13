@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:background_locator_2/location_dto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -24,17 +22,15 @@ Future<void> sendCoordinatorLocation({
   }
 
   final token = prefs.getString('token');
-  final tourSales = prefs.getString('loginData');
-  if (tourSales == null) return;
-
-  final body = json.decode(tourSales);
+  final selectedTourId = prefs.getInt('selectedTourId');
+  if (selectedTourId == null) return;
   final url = Uri.https(
     'stingray-app-9tqd9-djh6d.ondigitalocean.app',
     '/app/services/add-position-coordinator',
     {
       'latitud': latitude.toString(),
       'longitud': longitude.toString(),
-      'idCoordinator': body['tourSalesId'].toString(),
+      'tourId': selectedTourId.toString(),
     },
   );
 

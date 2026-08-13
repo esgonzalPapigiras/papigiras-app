@@ -1,3 +1,37 @@
+class TourCoordinator {
+  final int coordinatorId;
+  final String rut;
+  final String name;
+  final String lastname;
+  final String phone;
+
+  const TourCoordinator({
+    required this.coordinatorId,
+    required this.rut,
+    required this.name,
+    required this.lastname,
+    required this.phone,
+  });
+
+  factory TourCoordinator.fromJson(Map<String, dynamic> json) {
+    return TourCoordinator(
+      coordinatorId: (json['coordinatorId'] as num).toInt(),
+      rut: json['rut'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      lastname: json['lastname'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'coordinatorId': coordinatorId,
+        'rut': rut,
+        'name': name,
+        'lastname': lastname,
+        'phone': phone,
+      };
+}
+
 class ResponseAttorney {
   final int? passengerId;
   final String? passengerName;
@@ -19,6 +53,7 @@ class ResponseAttorney {
   final int? tourYear;
   final bool? isActive;
   final String? tokenKey;
+  final List<TourCoordinator> coordinators;
 
   ResponseAttorney(
       {this.passengerId,
@@ -40,7 +75,8 @@ class ResponseAttorney {
       this.tourName,
       this.tourYear,
       this.isActive,
-      this.tokenKey});
+      this.tokenKey,
+      this.coordinators = const []});
 
   Map<String, dynamic> toMap() {
     return {
@@ -63,7 +99,8 @@ class ResponseAttorney {
       'tourName': tourName,
       'tourYear': tourYear,
       'isActive': isActive,
-      'tokenKey': tokenKey
+      'tokenKey': tokenKey,
+      'coordinators': coordinators.map((item) => item.toJson()).toList()
     };
   }
 
@@ -88,7 +125,11 @@ class ResponseAttorney {
         tourName: map['tourName'],
         tourYear: map['tourYear'],
         isActive: map['isActive'],
-        tokenKey: map['tokenKey']);
+        tokenKey: map['tokenKey'],
+        coordinators: ((map['coordinators'] as List<dynamic>?) ?? const [])
+            .map((item) =>
+                TourCoordinator.fromJson(item as Map<String, dynamic>))
+            .toList());
   }
 
   factory ResponseAttorney.fromJson(Map<String, dynamic> json) {
@@ -112,7 +153,11 @@ class ResponseAttorney {
         tourName: json['tourName'],
         tourYear: json['tourYear'],
         isActive: json['isActive'],
-        tokenKey: json['tokenKey']);
+        tokenKey: json['tokenKey'],
+        coordinators: ((json['coordinators'] as List<dynamic>?) ?? const [])
+            .map((item) =>
+                TourCoordinator.fromJson(item as Map<String, dynamic>))
+            .toList());
   }
 
   Map<String, dynamic> toJson() {
@@ -137,6 +182,7 @@ class ResponseAttorney {
       'tourYear': tourYear,
       'isActive': isActive,
       'tokenKey': tokenKey,
+      'coordinators': coordinators.map((item) => item.toJson()).toList(),
     };
   }
 }
