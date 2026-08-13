@@ -18,12 +18,10 @@ class TravelCoordinatorDashboard extends StatefulWidget {
   TravelCoordinatorDashboard({required this.login});
 
   @override
-  _TravelCoordinatorDashboardState createState() =>
-      _TravelCoordinatorDashboardState();
+  _TravelCoordinatorDashboardState createState() => _TravelCoordinatorDashboardState();
 }
 
-class _TravelCoordinatorDashboardState
-    extends State<TravelCoordinatorDashboard> {
+class _TravelCoordinatorDashboardState extends State<TravelCoordinatorDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final usuarioProvider = new CoordinatorProviders();
   late final Future<Map<String, int>> _passengerCountsFuture;
@@ -56,10 +54,7 @@ class _TravelCoordinatorDashboardState
           _buildBackground(),
           Column(
             children: [
-              CoordinatorTopBar(
-                  login: widget.login,
-                  scaffoldKey: _scaffoldKey,
-                  showBackButton: false),
+              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey, showBackButton: false),
               Expanded(child: _buildContent()),
               buildBottomBar(),
             ],
@@ -70,19 +65,12 @@ class _TravelCoordinatorDashboardState
   }
 
   Widget _buildBackground() {
-    return Container(
-        decoration: BoxDecoration(
-            image: DecorationImage(
-                image: AssetImage('assets/background.png'),
-                fit: BoxFit.cover)));
+    return Container(decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
   }
 
   Widget _buildContent() {
     return Container(
-      decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(40), topRight: Radius.circular(40))),
+      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -97,6 +85,15 @@ class _TravelCoordinatorDashboardState
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 42),
                     child: CircularProgressIndicator(),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Text(
+                      'No se pudieron cargar los pasajeros',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   );
                 }
                 final counts = snapshot.data ?? const <String, int>{};
@@ -125,30 +122,20 @@ class _TravelCoordinatorDashboardState
         const SizedBox(width: 20),
         Container(
           padding: const EdgeInsets.all(4),
-          decoration:
-              const BoxDecoration(color: Colors.teal, shape: BoxShape.circle),
-          child: const CircleAvatar(
-              radius: 50, backgroundImage: AssetImage('assets/profile.jpg')),
+          decoration: const BoxDecoration(color: Colors.teal, shape: BoxShape.circle),
+          child: const CircleAvatar(radius: 50, backgroundImage: AssetImage('assets/profile.jpg')),
         ),
         const SizedBox(width: 30),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(widget.login.tourTripulationNameId,
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800])),
+              Text(widget.login.tourTripulationNameId, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey[800])),
               const SizedBox(height: 5),
-              Text('En Gira con:',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+              Text('En Gira con:', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
               Text(
                 '${widget.login.nameClient} ${widget.login.courseClient} ${widget.login.seasonClient}',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800]),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[800]),
               ),
               const SizedBox(height: 10),
             ],
@@ -228,26 +215,13 @@ class _TravelCoordinatorDashboardState
             const SizedBox(width: 8),
             GestureDetector(
               onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            ListPassengerCoordScreen(login: widget.login)));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ListPassengerCoordScreen(login: widget.login)));
               },
-              child: const Text('Ver Nómina Pasajeros',
-                  style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.teal,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline)),
+              child: const Text('Ver Nómina Pasajeros', style: TextStyle(fontSize: 16, color: Colors.teal, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
             ),
           ],
         ),
-        Container(
-            height: 2,
-            width: 320,
-            color: Colors.teal,
-            margin: const EdgeInsets.symmetric(vertical: 8)),
+        Container(height: 2, width: 320, color: Colors.teal, margin: const EdgeInsets.symmetric(vertical: 8)),
       ],
     );
   }
@@ -268,11 +242,7 @@ class _TravelCoordinatorDashboardState
   Widget _buildDateItem(String title, String date) {
     return Column(
       children: [
-        Row(children: [
-          const Icon(Icons.calendar_today, color: Colors.teal, size: 20),
-          const SizedBox(width: 4),
-          Text(title, style: const TextStyle(color: Colors.grey))
-        ]),
+        Row(children: [const Icon(Icons.calendar_today, color: Colors.teal, size: 20), const SizedBox(width: 4), Text(title, style: const TextStyle(color: Colors.grey))]),
         const SizedBox(height: 4),
         Text(date, style: const TextStyle(color: Colors.teal, fontSize: 16)),
       ],
@@ -283,26 +253,17 @@ class _TravelCoordinatorDashboardState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$title:',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800])),
+        Text('$title:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800])),
         SizedBox(height: 5),
         Center(
           child: Container(
             width: 320,
             constraints: BoxConstraints(maxHeight: 80),
-            decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
             padding: EdgeInsets.all(10),
             child: TextField(
                 maxLines: 3,
-                decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: "",
-                    hintStyle: TextStyle(color: Colors.grey[600])),
+                decoration: InputDecoration(border: InputBorder.none, hintText: "", hintStyle: TextStyle(color: Colors.grey[600])),
                 style: TextStyle(color: Colors.grey[800])),
           ),
         ),
@@ -313,43 +274,25 @@ class _TravelCoordinatorDashboardState
   Widget buildBottomBar() {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 35),
-      decoration: BoxDecoration(color: Colors.white, boxShadow: [
-        BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 5,
-            blurRadius: 10,
-            offset: Offset(0, -3))
-      ]),
+      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), spreadRadius: 5, blurRadius: 10, offset: Offset(0, -3))]),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              buildBottomButton(
-                  Icons.connect_without_contact_sharp,
-                  'Actividades',
-                  null,
-                  ActivitiesCoordScreen(login: widget.login)),
-              Transform.translate(
-                  offset: Offset(0, -30),
-                  child: buildBottomButtonHito(Icons.add_circle, 'Hito', null,
-                      HitoAddCoordScreen(login: widget.login))),
-              buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
-                  CountDownCoordScreen(login: widget.login)),
+              buildBottomButton(Icons.connect_without_contact_sharp, 'Actividades', null, ActivitiesCoordScreen(login: widget.login)),
+              Transform.translate(offset: Offset(0, -30), child: buildBottomButtonHito(Icons.add_circle, 'Hito', null, HitoAddCoordScreen(login: widget.login))),
+              buildBottomButton(Icons.person_add_alt_1, 'Contador', null, CountDownCoordScreen(login: widget.login)),
             ],
           ),
           SizedBox(height: 5), // Espacio entre las filas
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              buildBottomButton(Icons.medical_information, 'Fichas Medicas',
-                  null, MedicalCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
-                  BusCrewCoorScreen(login: widget.login)),
-              buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
-                  DocumentCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
-                  BitacoraCoordScreen(login: widget.login)),
+              buildBottomButton(Icons.medical_information, 'Fichas Medicas', null, MedicalCoordScreen(login: widget.login)),
+              buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null, BusCrewCoorScreen(login: widget.login)),
+              buildBottomButton(Icons.folder_open, 'Mis Documentos', null, DocumentCoordScreen(login: widget.login)),
+              buildBottomButton(Icons.book, 'Bitácora del Viaje', null, BitacoraCoordScreen(login: widget.login)),
             ],
           ),
         ],
@@ -357,8 +300,7 @@ class _TravelCoordinatorDashboardState
     );
   }
 
-  Widget buildBottomButton(
-      IconData icon, String label, String? badge, Widget? destination) {
+  Widget buildBottomButton(IconData icon, String label, String? badge, Widget? destination) {
     return GestureDetector(
       onTap: () {
         if (destination != null) {
@@ -367,17 +309,12 @@ class _TravelCoordinatorDashboardState
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 40, color: Colors.teal),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))
-        ],
+        children: [Icon(icon, size: 40, color: Colors.teal), SizedBox(height: 8), Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))],
       ),
     );
   }
 
-  Widget buildBottomButtonHito(
-      IconData icon, String label, String? badge, Widget? destination) {
+  Widget buildBottomButtonHito(IconData icon, String label, String? badge, Widget? destination) {
     return GestureDetector(
       onTap: () {
         if (destination != null) {
@@ -386,11 +323,7 @@ class _TravelCoordinatorDashboardState
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 70, color: Colors.teal),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))
-        ],
+        children: [Icon(icon, size: 70, color: Colors.teal), SizedBox(height: 8), Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))],
       ),
     );
   }
@@ -403,8 +336,7 @@ class _TravelCoordinatorDashboardState
         const begin = Offset(0.0, 1.0); // Desde abajo
         const end = Offset.zero;
         const curve = Curves.ease;
-        var tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
         var offsetAnimation = animation.drive(tween);
         return SlideTransition(position: offsetAnimation, child: child);
       },
