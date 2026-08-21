@@ -7,16 +7,20 @@ import 'package:background_locator_2/settings/locator_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:papigiras_app/utils/location_callback.dart';
+import 'package:permission_handler/permission_handler.dart' as permissions;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   static const _backgroundTrackingPreference = 'backgroundTrackingEnabled';
+  static const _trackingModeConfiguredPreference =
+      'coordinatorTrackingModeConfiguredV2';
 
   bool _isTracking = false;
   bool _backgroundTrackingEnabled = false;
   bool _initialized = false;
   bool _isChangingMode = false;
   StreamSubscription<geo.Position>? _foregroundPositionSubscription;
+  Timer? _foregroundHeartbeatTimer;
   String? _lastError;
 
   bool get isTracking => _isTracking;
@@ -34,8 +38,14 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
 
     _isChangingMode = true;
     final prefs = await SharedPreferences.getInstance();
-    _backgroundTrackingEnabled =
-        prefs.getBool(_backgroundTrackingPreference) ?? false;
+    final modeAlreadyConfigured =
+        prefs.getBool(_trackingModeConfiguredPreference) ?? false;
+    _backgroundTrackingEnabled = modeAlreadyConfigured
+        ? prefs.getBool(_backgroundTrackingPreference) ?? true
+        : true;
+    await prefs.setBool(_trackingModeConfiguredPreference, true);
+    await prefs.setBool(
+        _backgroundTrackingPreference, _backgroundTrackingEnabled);
     _isTracking = true;
     _initialized = true;
     notifyListeners();
@@ -44,9 +54,11 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
       if (_backgroundTrackingEnabled) {
         final activated = await _activateBackgroundTracking();
         if (!activated) {
+          final backgroundError = _lastError;
           _backgroundTrackingEnabled = false;
           await prefs.setBool(_backgroundTrackingPreference, false);
           await _activateForegroundTracking();
+          _lastError = backgroundError;
         }
       } else {
         await _activateForegroundTracking();
@@ -55,6 +67,13 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
       _backgroundTrackingEnabled = false;
       await prefs.setBool(_backgroundTrackingPreference, false);
       _setModeError(error);
+      final backgroundError = _lastError;
+      try {
+        await _activateForegroundTracking();
+        _lastError = backgroundError;
+      } catch (foregroundError) {
+        _setModeError(foregroundError);
+      }
     } finally {
       _isChangingMode = false;
       notifyListeners();
@@ -76,9 +95,12 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
       final activated = await _activateBackgroundTracking();
       _backgroundTrackingEnabled = activated;
       await prefs.setBool(_backgroundTrackingPreference, activated);
+      await prefs.setBool(_trackingModeConfiguredPreference, true);
 
       if (!activated) {
+        final backgroundError = _lastError;
         await _activateForegroundTracking();
+        _lastError = backgroundError;
       }
     } catch (error) {
       _backgroundTrackingEnabled = false;
@@ -95,6 +117,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     _isChangingMode = true;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_backgroundTrackingPreference, false);
+    await prefs.setBool(_trackingModeConfiguredPreference, true);
 
     _isTracking = true;
     _backgroundTrackingEnabled = false;
@@ -116,9 +139,6 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> stopTracking() async {
     if (_isChangingMode) return;
     _isChangingMode = true;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_backgroundTrackingPreference, false);
-
     _isTracking = false;
     _backgroundTrackingEnabled = false;
     _initialized = false;
@@ -137,13 +157,15 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<bool> _activateBackgroundTracking() async {
-    if (!await _ensureLocationPermission()) {
+    if (!await _ensureLocationPermission(requireAlways: true)) {
       return false;
     }
 
     await _stopForegroundTracking();
+    _startForegroundHeartbeat();
 
     if (await BackgroundLocator.isServiceRunning()) {
+      await _sendCurrentPositionOnce();
       return true;
     }
 
@@ -151,12 +173,13 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
       locationCallback,
       iosSettings: const IOSSettings(
         accuracy: LocationAccuracy.NAVIGATION,
-        distanceFilter: 100,
+        distanceFilter: 25,
+        showsBackgroundLocationIndicator: true,
       ),
       androidSettings: const AndroidSettings(
         accuracy: LocationAccuracy.NAVIGATION,
         interval: 60,
-        distanceFilter: 100,
+        distanceFilter: 25,
         androidNotificationSettings: AndroidNotificationSettings(
           notificationChannelName: 'Location tracking',
           notificationTitle: 'Papigiras tracking activo',
@@ -167,6 +190,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
         ),
       ),
     );
+    await _sendCurrentPositionOnce();
     return true;
   }
 
@@ -181,7 +205,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
 
     const settings = geo.LocationSettings(
       accuracy: geo.LocationAccuracy.bestForNavigation,
-      distanceFilter: 100,
+      distanceFilter: 25,
     );
     _foregroundPositionSubscription =
         geo.Geolocator.getPositionStream(locationSettings: settings).listen(
@@ -199,10 +223,12 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
         notifyListeners();
       },
     );
+    _startForegroundHeartbeat();
+    await _sendCurrentPositionOnce();
     return true;
   }
 
-  Future<bool> _ensureLocationPermission() async {
+  Future<bool> _ensureLocationPermission({bool requireAlways = false}) async {
     if (!await geo.Geolocator.isLocationServiceEnabled()) {
       _lastError = 'Los servicios de ubicación están desactivados.';
       debugPrint(_lastError);
@@ -223,6 +249,19 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
       return false;
     }
 
+    if (requireAlways && permission != geo.LocationPermission.always) {
+      final alwaysStatus =
+          await permissions.Permission.locationAlways.request();
+      permission = await geo.Geolocator.checkPermission();
+      if (!alwaysStatus.isGranted ||
+          permission != geo.LocationPermission.always) {
+        _lastError =
+            'Para compartir la ubicación con el teléfono bloqueado debes permitir acceso "Siempre" en Configuración. Se usará solo mientras la app esté abierta.';
+        debugPrint(_lastError);
+        return false;
+      }
+    }
+
     _lastError = null;
     return true;
   }
@@ -230,6 +269,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _stopForegroundTracking() async {
     await _foregroundPositionSubscription?.cancel();
     _foregroundPositionSubscription = null;
+    _stopForegroundHeartbeat();
   }
 
   Future<void> _stopBackgroundTracking() async {
@@ -243,30 +283,69 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     debugPrint(_lastError);
   }
 
+  void _startForegroundHeartbeat() {
+    _stopForegroundHeartbeat();
+    final lifecycleState = WidgetsBinding.instance.lifecycleState;
+    if (lifecycleState != null && lifecycleState != AppLifecycleState.resumed) {
+      return;
+    }
+    _foregroundHeartbeatTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => unawaited(_sendCurrentPositionOnce()),
+    );
+  }
+
+  void _stopForegroundHeartbeat() {
+    _foregroundHeartbeatTimer?.cancel();
+    _foregroundHeartbeatTimer = null;
+  }
+
+  Future<void> _sendCurrentPositionOnce() async {
+    if (!_isTracking) return;
+    try {
+      final position = await geo.Geolocator.getCurrentPosition(
+        locationSettings: const geo.LocationSettings(
+          accuracy: geo.LocationAccuracy.bestForNavigation,
+        ),
+      );
+      await sendCoordinatorLocation(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+    } catch (error) {
+      _lastError = 'No se pudo obtener la ubicación actual: $error';
+      debugPrint(_lastError);
+      notifyListeners();
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    if (_isChangingMode ||
-        !_initialized ||
-        !_isTracking ||
-        _backgroundTrackingEnabled) {
+    if (_isChangingMode || !_initialized || !_isTracking) {
       return;
     }
 
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached ||
         state == AppLifecycleState.inactive) {
+      _stopForegroundHeartbeat();
       await _stopForegroundTracking();
     }
 
-    if (state == AppLifecycleState.resumed &&
-        _foregroundPositionSubscription == null) {
-      await _activateForegroundTracking();
+    if (state == AppLifecycleState.resumed) {
+      if (_backgroundTrackingEnabled) {
+        _startForegroundHeartbeat();
+        await _sendCurrentPositionOnce();
+      } else if (_foregroundPositionSubscription == null) {
+        await _activateForegroundTracking();
+      }
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _stopForegroundHeartbeat();
     unawaited(_stopForegroundTracking());
     super.dispose();
   }

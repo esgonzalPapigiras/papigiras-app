@@ -46,6 +46,7 @@ post_install do |installer|
         '$(inherited)',
         'PERMISSION_PHOTOS=1', # Para permisos de galería de fotos
         'PERMISSION_CAMERA=1', # Si también necesitas acceso a la cámara
+        'PERMISSION_LOCATION=1', # Incluye permisos When In Use y Always
       ]
     end
   end

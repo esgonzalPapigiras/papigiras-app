@@ -36,23 +36,24 @@ class TourSales {
 
   factory TourSales.fromJson(Map<String, dynamic> json) {
     return TourSales(
-        coordinatorId: json['coordinatorId'] ?? 0,
-        tourSalesId: json['tourSalesId'],
+        coordinatorId: (json['coordinatorId'] as num?)?.toInt() ?? 0,
+        tourSalesId: (json['tourSalesId'] as num).toInt(),
         tourCode: json['tourCode'] ?? '',
-        tourSalesInit: json['tourSalesInit'],
-        tourSalesFinal: json['tourSalesFinal'],
-        nameClient: json['nameClient'],
-        courseClient: json['courseClient'],
-        seasonClient: json['seasonClient'],
+        tourSalesInit: json['tourSalesInit'] ?? '',
+        tourSalesFinal: json['tourSalesFinal'] ?? '',
+        nameClient: json['nameClient'] ?? '',
+        courseClient: json['courseClient'] ?? '',
+        seasonClient: (json['seasonClient'] as num?)?.toInt() ?? 0,
         tourTripulationNameId: json['tourTripulationNameId'] ?? '',
         tourTripulationIdentificationId:
             json['tourTripulationIdentificationId'] ?? '',
-        passengerCountsBySex:
-            Map<String, int>.from(json['passengerCountsBySex']),
+        passengerCountsBySex: _parsePassengerCounts(
+          json['passengerCountsBySex'],
+        ),
         tokenKey: json['tokenKey'] ?? '',
-        studentCount: json['studentCount'] ?? 0,
+        studentCount: (json['studentCount'] as num?)?.toInt() ?? 0,
         status: json['status'] ?? '',
-        assignmentId: json['assignmentId'] ?? 0);
+        assignmentId: (json['assignmentId'] as num?)?.toInt() ?? 0);
   }
 
   Map<String, dynamic> toJson() {
@@ -91,11 +92,21 @@ class TourSales {
       tourTripulationNameId:
           '${coordinator.name} ${coordinator.lastname}'.trim(),
       tourTripulationIdentificationId: coordinator.rut,
-      passengerCountsBySex: const {},
+      passengerCountsBySex: tour.passengerCountsBySex,
       tokenKey: coordinator.token,
       studentCount: tour.studentCount,
       status: tour.status,
       assignmentId: tour.assignmentId,
     );
   }
+}
+
+Map<String, int> _parsePassengerCounts(dynamic value) {
+  if (value is! Map) return const <String, int>{};
+  return value.map(
+    (key, count) => MapEntry(
+      key.toString(),
+      count is num ? count.toInt() : int.tryParse(count.toString()) ?? 0,
+    ),
+  );
 }

@@ -91,6 +91,7 @@ class CoordinatorTourDetail {
   final int branchId;
   final String branchName;
   final int assignmentId;
+  final Map<String, int> passengerCountsBySex;
 
   const CoordinatorTourDetail({
     required this.tourId,
@@ -106,6 +107,7 @@ class CoordinatorTourDetail {
     required this.branchId,
     required this.branchName,
     required this.assignmentId,
+    required this.passengerCountsBySex,
   });
 
   factory CoordinatorTourDetail.fromJson(Map<String, dynamic> json) {
@@ -123,8 +125,21 @@ class CoordinatorTourDetail {
       branchId: (json['branchId'] as num?)?.toInt() ?? 0,
       branchName: json['branchName'] as String? ?? '',
       assignmentId: (json['assignmentId'] as num).toInt(),
+      passengerCountsBySex: _parsePassengerCounts(
+        json['passengerCountsBySex'],
+      ),
     );
   }
+}
+
+Map<String, int> _parsePassengerCounts(dynamic value) {
+  if (value is! Map) return const <String, int>{};
+  return value.map(
+    (key, count) => MapEntry(
+      key.toString(),
+      count is num ? count.toInt() : int.tryParse(count.toString()) ?? 0,
+    ),
+  );
 }
 
 class CoordinatorProfile {
