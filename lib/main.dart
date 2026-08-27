@@ -15,10 +15,10 @@ import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/coordinatorTourSelection.dart';
 import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
+import 'package:papigiras_app/utils/fcm_utils.dart';
 import 'firebase_options.dart';
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -34,37 +34,14 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  const AndroidInitializationSettings androidInit =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
-  const DarwinInitializationSettings iosInit = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false);
-  const InitializationSettings initSettings =
-      InitializationSettings(android: androidInit, iOS: iosInit);
+  const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const DarwinInitializationSettings iosInit = DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false);
+  const InitializationSettings initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
   await flutterLocalNotificationsPlugin.initialize(initSettings);
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      'hito_channel', 'Hitos',
-      description: 'Notificaciones de nuevos hitos',
-      importance: Importance.high);
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
-  final settings = await FirebaseMessaging.instance
-      .requestPermission(alert: true, badge: true, sound: true);
-  debugPrint('========== FCM PERMISSION ==========');
-  print(settings.authorizationStatus);
-  if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-      settings.authorizationStatus == AuthorizationStatus.provisional) {
-    try {
-      final token = await FirebaseMessaging.instance.getToken();
-      debugPrint('========== FCM TOKEN ==========');
-      debugPrint(token);
-    } catch (e) {
-      debugPrint('Failed to obtain FCM token: $e');
-    }
-  }
+  const AndroidNotificationChannel channel = AndroidNotificationChannel('hito_channel', 'Hitos', description: 'Notificaciones de nuevos hitos', importance: Importance.high);
+  await flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(channel);
+  final settings = await FirebaseMessaging.instance.requestPermission(alert: true, badge: true, sound: true);
+  debugPrint('FCM permission: ${settings.authorizationStatus}');
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     debugPrint('========== FOREGROUND FCM ==========');
     debugPrint('Title: ${message.notification?.title}');
@@ -77,10 +54,8 @@ Future<void> main() async {
           notification.title,
           notification.body,
           const NotificationDetails(
-              android: AndroidNotificationDetails('hito_channel', 'Hitos',
-                  importance: Importance.max, priority: Priority.high),
-              iOS: DarwinNotificationDetails(
-                  presentAlert: true, presentBadge: true, presentSound: true)));
+              android: AndroidNotificationDetails('hito_channel', 'Hitos', importance: Importance.max, priority: Priority.high),
+              iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true)));
     }
   });
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
@@ -123,8 +98,7 @@ Future<Widget> _determineStartScreen() async {
         await _clearPrefsSession(prefs);
         return WelcomeScreen();
       }
-      final coordinator =
-          CoordinatorLogin.fromJson(jsonDecode(coordinatorJson));
+      final coordinator = CoordinatorLogin.fromJson(jsonDecode(coordinatorJson));
       final loginJson = prefs.getString('loginData');
       if (loginJson == null) {
         return CoordinatorTourSelectionScreen(coordinator: coordinator);
@@ -136,13 +110,22 @@ Future<Widget> _determineStartScreen() async {
       final loginJson = prefs.getString('loginData');
       if (loginJson == null) return WelcomeScreen();
       final loginMap = jsonDecode(loginJson);
-      return TravelPassengerDashboard(
-          login: ResponseAttorney.fromJson(loginMap));
+      return TravelPassengerDashboard(login: ResponseAttorney.fromJson(loginMap));
     } else if (role == 'father') {
       final loginJson = prefs.getString('loginData');
-      if (loginJson == null) return WelcomeScreen();
-      final loginMap = jsonDecode(loginJson);
-      return TravelFatherDashboard(login: ResponseAttorney.fromJson(loginMap));
+      if (loginJson == null) {
+        return WelcomeScreen();
+      }
+      final login = ResponseAttorney.fromJson(jsonDecode(loginJson));
+      final passengerRut = login.passengerIdentificacion;
+      if (passengerRut != null && passengerRut.isNotEmpty) {
+        try {
+          await FcmUtils.startForFather(passengerRut).timeout(const Duration(seconds: 15));
+        } catch (error) {
+          debugPrint('FCM session synchronization failed: $error');
+        }
+      }
+      return TravelFatherDashboard(login: login);
     } else {
       await _clearPrefsSession(prefs);
       return WelcomeScreen();
@@ -168,9 +151,6 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key, required this.startScreen});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: startScreen,
-        routes: {'welcome': (context) => WelcomeScreen()});
+    return MaterialApp(debugShowCheckedModeBanner: false, home: startScreen, routes: {'welcome': (context) => WelcomeScreen()});
   }
 }

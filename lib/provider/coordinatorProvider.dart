@@ -88,31 +88,21 @@ class CoordinatorProviders with ChangeNotifier {
     final url = Uri.https(urlDynamic, '/app/services/coordinator/me/tours');
     final response = await http.get(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ?? ''
-      },
+      headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''},
     );
     if (response.statusCode != 200) {
       throw Exception(_readError(response, 'No se pudieron cargar las giras'));
     }
-    final decoded =
-        jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
-    return decoded
-        .map((item) => CoordinatorTour.fromJson(item as Map<String, dynamic>))
-        .toList();
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+    return decoded.map((item) => CoordinatorTour.fromJson(item as Map<String, dynamic>)).toList();
   }
 
   Future<CoordinatorTourDetail> getCoordinatorTourDetail(int tourId) async {
     final token = await _loadToken();
-    final url =
-        Uri.https(urlDynamic, '/app/services/coordinator/tours/$tourId');
+    final url = Uri.https(urlDynamic, '/app/services/coordinator/tours/$tourId');
     final response = await http.get(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ?? ''
-      },
+      headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''},
     );
     if (response.statusCode != 200) {
       throw Exception(_readError(response, 'No se pudo cargar la gira'));
@@ -127,10 +117,7 @@ class CoordinatorProviders with ChangeNotifier {
     final url = Uri.https(urlDynamic, '/app/services/coordinator/me');
     final response = await http.get(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ?? ''
-      },
+      headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''},
     );
     if (response.statusCode != 200) {
       throw Exception(_readError(response, 'No se pudo cargar el perfil'));
@@ -152,10 +139,7 @@ class CoordinatorProviders with ChangeNotifier {
         'currentPassword': currentPassword,
         'newPassword': newPassword,
       }),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ?? ''
-      },
+      headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''},
     );
     if (response.statusCode != 200) {
       throw Exception(_readError(response, 'No se pudo cambiar la contraseña'));
@@ -166,9 +150,7 @@ class CoordinatorProviders with ChangeNotifier {
     try {
       final decoded = jsonDecode(utf8.decode(response.bodyBytes));
       if (decoded is Map<String, dynamic>) {
-        return decoded['message']?.toString() ??
-            decoded['error']?.toString() ??
-            fallback;
+        return decoded['message']?.toString() ?? decoded['error']?.toString() ?? fallback;
       }
     } catch (_) {}
     return fallback;
@@ -176,17 +158,11 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<TourTripulation>> getTripulation(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        urlDynamic, '/app/services/tripulations', {'tourId': tourCode});
-    final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/tripulations', {'tourId': tourCode});
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
-      return decorespoCreate
-          .map((job) => new TourTripulation.fromJson(job))
-          .toList();
+      return decorespoCreate.map((job) => new TourTripulation.fromJson(job)).toList();
     } else {
       throw Exception('Failed to load services');
     }
@@ -194,12 +170,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<Itinerary>> getItineray(String tourCode) async {
     String? token = await _loadToken();
-    var url =
-        Uri.https(urlDynamic, '/app/services/binnacle', {'tourId': tourCode});
-    final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/binnacle', {'tourId': tourCode});
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
       return decorespoCreate.map((job) => new Itinerary.fromJson(job)).toList();
@@ -210,17 +182,11 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<ActivitiesList>> getItinerayGuardados(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https(urlDynamic, '/app/services/get/create-activities',
-        {'tourId': tourCode});
-    final resp = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/get/create-activities', {'tourId': tourCode});
+    final resp = await http.get(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
-      return decorespoCreate
-          .map((job) => new ActivitiesList.fromJson(job))
-          .toList();
+      return decorespoCreate.map((job) => new ActivitiesList.fromJson(job)).toList();
     } else {
       throw Exception('Failed to load services');
     }
@@ -229,12 +195,7 @@ class CoordinatorProviders with ChangeNotifier {
   Future<void> activitiesCreate(RequestActivities tourCode) async {
     String? token = await _loadToken();
     var url = Uri.https(urlDynamic, '/app/services/create-activities');
-    final resp = await http.post(url,
-        body: jsonEncode(tourCode.toJson()),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ?? ''
-        });
+    final resp = await http.post(url, body: jsonEncode(tourCode.toJson()), headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       notifyListeners();
     } else {
@@ -245,17 +206,10 @@ class CoordinatorProviders with ChangeNotifier {
   Future<ConsolidatedTourSalesDTO> addHito(RequestHito tourCode) async {
     String? token = await _loadToken();
     var url = Uri.https(urlDynamic, '/app/services/create-hito');
-    final resp = await http.post(url,
-        body: jsonEncode(tourCode.toJson()),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ?? ''
-        });
+    final resp = await http.post(url, body: jsonEncode(tourCode.toJson()), headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
-      LinkedHashMap<String, dynamic> decorespoCreate =
-          json.decode(utf8.decode(resp.bodyBytes));
-      ConsolidatedTourSalesDTO login =
-          new ConsolidatedTourSalesDTO.fromJson(decorespoCreate);
+      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
+      ConsolidatedTourSalesDTO login = new ConsolidatedTourSalesDTO.fromJson(decorespoCreate);
       notifyListeners();
       return login;
     } else {
@@ -263,8 +217,7 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<void> addHitoFoto(
-      int hito, String tourId, List<XFile> imageFiles) async {
+  Future<void> addHitoFoto(int hito, String tourId, List<XFile> imageFiles) async {
     final token = await _loadToken();
     final uri = Uri.https(urlDynamic, '/app/services/create-hito/fotos');
     final request = http.MultipartRequest('POST', uri)
@@ -275,23 +228,13 @@ class CoordinatorProviders with ChangeNotifier {
     }
     final tmpDir = await getTemporaryDirectory();
     for (final image in imageFiles) {
-      final compressedPath =
-          '${tmpDir.path}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
-      final result = await FlutterImageCompress.compressAndGetFile(
-          image.path, compressedPath,
-          quality: 50,
-          minWidth: 500,
-          minHeight: 500,
-          format: CompressFormat.jpeg);
+      final compressedPath = '${tmpDir.path}/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
+      final result = await FlutterImageCompress.compressAndGetFile(image.path, compressedPath, quality: 50, minWidth: 500, minHeight: 500, format: CompressFormat.jpeg);
       if (result == null) {
         print('No se pudo comprimir ${image.path}, enviando original');
-        request.files.add(await http.MultipartFile.fromPath(
-            'images', image.path,
-            filename: image.name));
+        request.files.add(await http.MultipartFile.fromPath('images', image.path, filename: image.name));
       } else {
-        request.files.add(await http.MultipartFile.fromPath(
-            'images', result.path,
-            filename: image.name));
+        request.files.add(await http.MultipartFile.fromPath('images', result.path, filename: image.name));
       }
     }
     try {
@@ -310,13 +253,9 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<void> deleteHito(String idHito, String idTour) async {
     final token = await _loadToken();
-    var url = Uri.https(urlDynamic, '/app/services/delete-hito',
-        {'idHito': idHito, 'idTour': idTour});
+    var url = Uri.https(urlDynamic, '/app/services/delete-hito', {'idHito': idHito, 'idTour': idTour});
     try {
-      final resp = await http.post(url, headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ?? ''
-      });
+      final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
       if (resp.statusCode == 200) {
         print('Hito eliminado correctamente (ID: $idHito)');
       } else if (resp.statusCode == 403) {
@@ -331,15 +270,10 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<DetailHitoList> getHitoComplete(String hito, String tourId) async {
     String? token = await _loadToken();
-    var url = Uri.https(urlDynamic, '/app/services/get/detail/create-hito',
-        {'idTour': tourId, 'idHito': hito.toString()});
-    final resp = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/get/detail/create-hito', {'idTour': tourId, 'idHito': hito.toString()});
+    final resp = await http.get(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
-      Map<String, dynamic> decodedResponse =
-          json.decode(utf8.decode(resp.bodyBytes));
+      Map<String, dynamic> decodedResponse = json.decode(utf8.decode(resp.bodyBytes));
       DetailHitoList login = new DetailHitoList.fromJson(decodedResponse);
       notifyListeners();
       return login;
@@ -350,17 +284,11 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<ConsolidatedTourSalesDTO>> getBinnacle(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        urlDynamic, '/app/services/get/create-hito', {'tourId': tourCode});
-    final resp = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/get/create-hito', {'tourId': tourCode});
+    final resp = await http.get(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
-      return decorespoCreate
-          .map((job) => new ConsolidatedTourSalesDTO.fromJson(job))
-          .toList();
+      return decorespoCreate.map((job) => new ConsolidatedTourSalesDTO.fromJson(job)).toList();
     } else {
       throw Exception('Failed to load services');
     }
@@ -368,12 +296,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<Document>> getDocument(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        urlDynamic, '/app/services/document-records', {'tourId': tourCode});
-    final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/document-records', {'tourId': tourCode});
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
       return decorespoCreate.map((job) => new Document.fromJson(job)).toList();
@@ -384,36 +308,21 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<PassengerList>> getListPassenger(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        urlDynamic, '/app/services/passengers/list', {'tourId': tourCode});
-    final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/passengers/list', {'tourId': tourCode});
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
-      return decorespoCreate
-          .map((job) => new PassengerList.fromJson(job))
-          .toList();
+      return decorespoCreate.map((job) => new PassengerList.fromJson(job)).toList();
     } else {
       throw Exception('Failed to load services');
     }
   }
 
-  Future<void> downloadDocument(
-      String folderName, String fileName, String idTour, String folder) async {
+  Future<void> downloadDocument(String folderName, String fileName, String idTour, String folder) async {
     await requestStoragePermission();
     String? token = await _loadToken();
-    final url = Uri.https(urlDynamic, '/app/services/download', {
-      'folderName': folderName,
-      'fileName': fileName,
-      'idTour': idTour,
-      'folder': folder
-    });
-    final response = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    final url = Uri.https(urlDynamic, '/app/services/download', {'folderName': folderName, 'fileName': fileName, 'idTour': idTour, 'folder': folder});
+    final response = await http.get(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (fileName == "Nomina alumnos") {
       fileName = "NominaAlumnos.pdf";
     } else if (fileName == "Programa gira") {
@@ -426,20 +335,11 @@ class CoordinatorProviders with ChangeNotifier {
     print('Archivo descargado en: $filePath');
   }
 
-  Future<void> viewDocument(String folderName, String fileName, String idTour,
-      BuildContext context, String folder) async {
+  Future<void> viewDocument(String folderName, String fileName, String idTour, BuildContext context, String folder) async {
     String? token = await _loadToken();
     try {
-      final url = Uri.https(urlDynamic, '/app/services/view', {
-        'folderName': folderName,
-        'fileName': fileName,
-        'idTour': idTour,
-        'folder': folder
-      });
-      final resp = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ?? ''
-      });
+      final url = Uri.https(urlDynamic, '/app/services/view', {'folderName': folderName, 'fileName': fileName, 'idTour': idTour, 'folder': folder});
+      final resp = await http.get(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
       if (resp.statusCode == 200) {
         final Uint8List documentBytes = resp.bodyBytes;
         final Directory appDocDir = await getApplicationDocumentsDirectory();
@@ -501,8 +401,7 @@ class CoordinatorProviders with ChangeNotifier {
   Future<String> getDownloadDirectory() async {
     try {
       if (Platform.isAndroid) {
-        Directory? downloadsDirectory =
-            Directory('/storage/emulated/0/Download');
+        Directory? downloadsDirectory = Directory('/storage/emulated/0/Download');
         if (await downloadsDirectory.exists()) {
           return downloadsDirectory.path;
         } else {
@@ -532,15 +431,11 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<ResponseAttorney?> validateLoginUserFather(
-      String rut, String password) async {
-    var url = Uri.https(urlDynamic, '/app/services/attorney/login',
-        {'user': rut, 'password': password});
-    final resp =
-        await http.post(url, headers: {'Content-Type': 'application/json'});
+  Future<ResponseAttorney?> validateLoginUserFather(String rut, String password) async {
+    var url = Uri.https(urlDynamic, '/app/services/attorney/login', {'user': rut, 'password': password});
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json'});
     if (resp.statusCode == 200) {
-      LinkedHashMap<String, dynamic> decorespoCreate =
-          json.decode(utf8.decode(resp.bodyBytes));
+      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
       ResponseAttorney login = ResponseAttorney.fromJson(decorespoCreate);
       return login;
     } else {
@@ -548,15 +443,11 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<ResponseAttorney?> validateLoginUserPassenger(
-      String rut, String password) async {
-    var url = Uri.https(urlDynamic, '/app/services/passenger/login',
-        {'user': rut, 'password': password});
-    final resp =
-        await http.post(url, headers: {'Content-Type': 'application/json'});
+  Future<ResponseAttorney?> validateLoginUserPassenger(String rut, String password) async {
+    var url = Uri.https(urlDynamic, '/app/services/passenger/login', {'user': rut, 'password': password});
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json'});
     if (resp.statusCode == 200) {
-      LinkedHashMap<String, dynamic> decorespoCreate =
-          json.decode(utf8.decode(resp.bodyBytes));
+      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
       ResponseAttorney login = ResponseAttorney.fromJson(decorespoCreate);
       return login;
     } else {
@@ -566,12 +457,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<bool> validateMedicalRecord(String rut) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        urlDynamic, '/app/services/validate/medical-records', {'user': rut});
-    final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/validate/medical-records', {'user': rut});
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.body.toLowerCase() == 'true') {
       return true;
     } else {
@@ -579,17 +466,11 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<bool> createMedicalRecord(
-      RequestPassengerMedical medicalRecord) async {
+  Future<bool> createMedicalRecord(RequestPassengerMedical medicalRecord) async {
     String? token = await _loadToken();
     var url = Uri.https(urlDynamic, '/app/services/medical-records');
     print(medicalRecord.toJson());
-    final resp = await http.post(url,
-        body: jsonEncode(medicalRecord.toJson()),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ?? ''
-        });
+    final resp = await http.post(url, body: jsonEncode(medicalRecord.toJson()), headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       return true;
     } else {
@@ -597,20 +478,13 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<PassengersMedicalRecordDTO> getMedicalRecord(
-      String idTour, String idPassenger) async {
+  Future<PassengersMedicalRecordDTO> getMedicalRecord(String idTour, String idPassenger) async {
     String? token = await _loadToken();
-    var url = Uri.https(urlDynamic, '/app/services/get/medical-records',
-        {'tourId': idTour, 'idPassenger': idPassenger});
-    final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/get/medical-records', {'tourId': idTour, 'idPassenger': idPassenger});
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
-      LinkedHashMap<String, dynamic> decorespoCreate =
-          json.decode(utf8.decode(resp.bodyBytes));
-      PassengersMedicalRecordDTO login =
-          new PassengersMedicalRecordDTO.fromJson(decorespoCreate);
+      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
+      PassengersMedicalRecordDTO login = new PassengersMedicalRecordDTO.fromJson(decorespoCreate);
       return login;
     } else {
       throw Exception('Failed to load services');
@@ -619,15 +493,10 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<ProgramViewDto> getviewProgram(String idTour) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        urlDynamic, '/app/services/get/program-view', {'tourId': idTour});
-    final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/get/program-view', {'tourId': idTour});
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
-      LinkedHashMap<String, dynamic> decorespoCreate =
-          json.decode(utf8.decode(resp.bodyBytes));
+      LinkedHashMap<String, dynamic> decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
       ProgramViewDto login = new ProgramViewDto.fromJson(decorespoCreate);
       return login;
     } else {
@@ -635,42 +504,24 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<void> downloadDocumentMedicalRecord(
-      String idTour, String idPassenger, String identificacion) async {
+  Future<void> downloadDocumentMedicalRecord(String idTour, String idPassenger, String identificacion) async {
     await requestStoragePermission();
     String? token = await _loadToken();
     String fileName = "fichamedica" + "-" + identificacion + ".pdf";
-    final url = Uri.https(
-        urlDynamic, '/app/services/get/pdf/view/medical-records', {
-      'tourId': idTour,
-      'idPassenger': idPassenger,
-      'identificacion': identificacion
-    });
-    final response = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    final url = Uri.https(urlDynamic, '/app/services/get/pdf/view/medical-records', {'tourId': idTour, 'idPassenger': idPassenger, 'identificacion': identificacion});
+    final response = await http.get(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     String downloadPath = await getDownloadDirectory();
     final filePath = path.join(downloadPath, fileName);
     final file = File(filePath);
     await file.writeAsBytes(response.bodyBytes);
   }
 
-  Future<void> shareDocumentMedicalRecord(
-      String idTour, String idPassenger, String identificacion) async {
+  Future<void> shareDocumentMedicalRecord(String idTour, String idPassenger, String identificacion) async {
     await requestStoragePermission();
     String? token = await _loadToken();
     String fileName = "fichamedica" + "-" + identificacion + ".pdf";
-    final url = Uri.https(
-        urlDynamic, '/app/services/get/pdf/view/medical-records', {
-      'tourId': idTour,
-      'idPassenger': idPassenger,
-      'identificacion': identificacion
-    });
-    final response = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    final url = Uri.https(urlDynamic, '/app/services/get/pdf/view/medical-records', {'tourId': idTour, 'idPassenger': idPassenger, 'identificacion': identificacion});
+    final response = await http.get(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     String downloadPath = await getDownloadDirectory();
     final filePath = path.join(downloadPath, fileName);
     final file = File(filePath);
@@ -678,17 +529,12 @@ class CoordinatorProviders with ChangeNotifier {
     await Share.shareXFiles([XFile(filePath)], text: 'Ficha médica adjunta');
   }
 
-  Future<void> viewDocumentMedicalRecord(String idTour, String idPassenger,
-      BuildContext context, String identificacion) async {
+  Future<void> viewDocumentMedicalRecord(String idTour, String idPassenger, BuildContext context, String identificacion) async {
     String? token = await _loadToken();
     try {
-      final url = Uri.https(urlDynamic, '/app/services/get/pdf/medical-records',
-          {'tourId': idTour, 'idPassenger': idPassenger});
+      final url = Uri.https(urlDynamic, '/app/services/get/pdf/medical-records', {'tourId': idTour, 'idPassenger': idPassenger});
       String fileName = "fichamedica" + "-" + identificacion;
-      final resp = await http.post(url, headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ?? ''
-      });
+      final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
       if (resp.statusCode == 200) {
         final Uint8List documentBytes = resp.bodyBytes;
         final Directory appDocDir = await getApplicationDocumentsDirectory();
@@ -709,17 +555,11 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<PositionMap>> positionMap(String tourCode) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        urlDynamic, '/app/services/get/binnacle-map', {'tourId': tourCode});
-    final resp = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/get/binnacle-map', {'tourId': tourCode});
+    final resp = await http.get(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       List decorespoCreate = json.decode(utf8.decode(resp.bodyBytes));
-      return decorespoCreate
-          .map((job) => new PositionMap.fromJson(job))
-          .toList();
+      return decorespoCreate.map((job) => new PositionMap.fromJson(job)).toList();
     } else {
       throw Exception('Failed to load services');
     }
@@ -727,12 +567,8 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<void> desactivateAccount(String rut) async {
     String? token = await _loadToken();
-    var url =
-        Uri.https(urlDynamic, '/app/services/desactivate/login', {'rut': rut});
-    final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/desactivate/login', {'rut': rut});
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       notifyListeners();
     } else {
@@ -740,8 +576,7 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<void> addHitoFotoPassenger(
-      String hito, String tourId, XFile imageFiles) async {
+  Future<void> addHitoFotoPassenger(String hito, String tourId, XFile imageFiles) async {
     String? token = await _loadToken();
     var url = Uri.https(urlDynamic, '/app/services/add/fotos/passenger');
     var request = http.MultipartRequest('POST', url);
@@ -750,8 +585,7 @@ class CoordinatorProviders with ChangeNotifier {
     if (token != null && token.isNotEmpty) {
       request.headers['Authorization'] = token;
     }
-    var file = await http.MultipartFile.fromPath('image', imageFiles.path,
-        filename: imageFiles.name);
+    var file = await http.MultipartFile.fromPath('image', imageFiles.path, filename: imageFiles.name);
     request.files.add(file);
     try {
       var response = await request.send();
@@ -765,20 +599,13 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<Responseimagepassenger> getPicturePassenger(
-      String passenger, String tourId) async {
+  Future<Responseimagepassenger> getPicturePassenger(String passenger, String tourId) async {
     String? token = await _loadToken();
-    var url = Uri.https(urlDynamic, '/app/services/get/fotos/passenger',
-        {'tourId': tourId, 'passengerId': passenger.toString()});
-    final resp = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/get/fotos/passenger', {'tourId': tourId, 'passengerId': passenger.toString()});
+    final resp = await http.post(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
-      Map<String, dynamic> decodedResponse =
-          json.decode(utf8.decode(resp.bodyBytes));
-      Responseimagepassenger login =
-          new Responseimagepassenger.fromJson(decodedResponse);
+      Map<String, dynamic> decodedResponse = json.decode(utf8.decode(resp.bodyBytes));
+      Responseimagepassenger login = new Responseimagepassenger.fromJson(decodedResponse);
       notifyListeners();
       return login;
     } else {
@@ -788,18 +615,11 @@ class CoordinatorProviders with ChangeNotifier {
 
   Future<List<PositionCoordinator>> uniqueID(String gps) async {
     String? token = await _loadToken();
-    var url = Uri.https(
-        urlDynamic, '/app/services/gps/data', {'idTour': gps.toString()});
-    final resp = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ?? ''
-    });
+    var url = Uri.https(urlDynamic, '/app/services/gps/data', {'idTour': gps.toString()});
+    final resp = await http.get(url, headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       final decoded = json.decode(utf8.decode(resp.bodyBytes)) as List<dynamic>;
-      return decoded
-          .map((item) =>
-              PositionCoordinator.fromJson(item as Map<String, dynamic>))
-          .toList();
+      return decoded.map((item) => PositionCoordinator.fromJson(item as Map<String, dynamic>)).toList();
     } else {
       throw Exception('Failed to load GPS data');
     }
@@ -809,12 +629,7 @@ class CoordinatorProviders with ChangeNotifier {
     String? token = await _loadToken();
     var url = Uri.https(urlDynamic, '/app/services/medical-records/edit');
     print(token);
-    final resp = await http.post(url,
-        body: jsonEncode(medical.toJson()),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ?? ''
-        });
+    final resp = await http.post(url, body: jsonEncode(medical.toJson()), headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''});
     if (resp.statusCode == 200) {
       return true;
     } else {
@@ -822,26 +637,14 @@ class CoordinatorProviders with ChangeNotifier {
     }
   }
 
-  Future<bool> updateFcmToken(String apoderadoId, String fcmToken) async {
-    try {
-      String? token = await _loadToken();
-      var url =
-          Uri.https(urlDynamic, '/app/services/notifications/update-fcm-token');
-      final resp = await http.post(url,
-          body: jsonEncode({'passengerRut': apoderadoId, 'fcmToken': fcmToken}),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ?? ''
-          });
-      if (resp.statusCode == 200) {
-        return true;
-      } else {
-        debugPrint('updateFcmToken failed: ${resp.statusCode} ${resp.body}');
-        return false;
-      }
-    } catch (e) {
-      debugPrint('updateFcmToken exception: $e');
-      return false;
+  Future<void> updateFcmToken(String passengerRut, String fcmToken, String deviceType) async {
+    final token = await _loadToken();
+    final url = Uri.https(urlDynamic, '/app/services/notifications/update-fcm-token');
+    final response = await http.post(url,
+        headers: {'Content-Type': 'application/json', 'Authorization': token ?? ''},
+        body: jsonEncode({'passengerRut': passengerRut, 'fcmToken': fcmToken, 'deviceType': deviceType}));
+    if (response.statusCode != 200) {
+      throw Exception('FCM token registration failed: ${response.statusCode} ${response.body}');
     }
   }
 }

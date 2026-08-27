@@ -88,15 +88,23 @@ class _LoginFatherState extends State<LoginFather> {
       await prefs.setString('userRole', 'father');
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('loginData', jsonEncode(login.toJson()));
-      FcmUtils.saveTokenForFather(login.passengerIdentificacion.toString()).timeout(const Duration(seconds: 10)).catchError((e) {
-        print("FCM token save failed: $e");
-      });
+      Object? notificationError;
+      try {
+        await FcmUtils.startForFather(login.passengerIdentificacion.toString()).timeout(const Duration(seconds: 15));
+      } catch (error) {
+        notificationError = error;
+        debugPrint('FCM registration failed: $error');
+      }
       if (!mounted) return;
       QuickAlert.show(
         context: context,
-        type: QuickAlertType.success,
-        title: 'Éxito',
-        text: 'Bienvenido',
+        type: notificationError == null ? QuickAlertType.success : QuickAlertType.warning,
+        title: notificationError == null ? 'Éxito' : 'Sesión iniciada',
+        text: notificationError == null
+            ? 'Bienvenido'
+            : 'La sesión se inició, pero no fue posible registrar '
+                'las notificaciones. Verifica la conexión y vuelve '
+                'a abrir la aplicación.',
         confirmBtnText: 'Continuar',
         onConfirmBtnTap: () async {
           Navigator.of(context).pop();
@@ -148,10 +156,8 @@ class _LoginFatherState extends State<LoginFather> {
                         decoration: InputDecoration(
                           labelText: 'Rut Alumno',
                           labelStyle: TextStyle(color: Colors.grey),
-                          enabledBorder:
-                              OutlineInputBorder(borderSide: BorderSide(color: _showError ? Colors.red : Colors.grey), borderRadius: BorderRadius.circular(10.0)),
-                          focusedBorder:
-                              OutlineInputBorder(borderSide: BorderSide(color: _showError ? Colors.red : Colors.teal), borderRadius: BorderRadius.circular(10.0)),
+                          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: _showError ? Colors.red : Colors.grey), borderRadius: BorderRadius.circular(10.0)),
+                          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: _showError ? Colors.red : Colors.teal), borderRadius: BorderRadius.circular(10.0)),
                         ),
                         keyboardType: TextInputType.text,
                         onChanged: (value) {
@@ -163,9 +169,7 @@ class _LoginFatherState extends State<LoginFather> {
                         },
                       ),
                       if (_showError)
-                        Padding(
-                            padding: const EdgeInsets.only(top: 5.0),
-                            child: Text('Debes ingresar un rut de alumno', style: TextStyle(color: Colors.red, fontSize: 12.0))),
+                        Padding(padding: const EdgeInsets.only(top: 5.0), child: Text('Debes ingresar un rut de alumno', style: TextStyle(color: Colors.red, fontSize: 12.0))),
                       SizedBox(height: 20.0),
                       TextField(
                         controller: _passwordController,
