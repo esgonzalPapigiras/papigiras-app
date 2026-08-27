@@ -128,7 +128,7 @@ class AppDrawerFather extends StatelessWidget {
               children: const [
                 Icon(Icons.phone, color: Colors.teal),
                 SizedBox(width: 10),
-                Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
+                FaIcon(FontAwesomeIcons.whatsapp, color: Colors.teal),
               ],
             ),
             onTap: () => _sendMessage('+56932157564', 'Hola! Necesito ayuda'),

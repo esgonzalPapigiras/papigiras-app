@@ -180,7 +180,7 @@ class CoordinatorEndDrawer extends StatelessWidget {
       leading: const Icon(Icons.report_problem, color: Colors.teal),
       title: Text('Reportar un Problema',
           style: TextStyle(color: Colors.grey[800])),
-      trailing: const Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
+      trailing: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.teal),
       onTap: () => sendWhatsAppMessage(
           phone: kAgencyPhone, message: "Hola! Necesito ayuda"),
     );
