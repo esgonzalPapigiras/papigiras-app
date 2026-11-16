@@ -1,421 +1,386 @@
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/design/pilo_coordinator_home.dart';
+import 'package:papigiras_app/design/pilo_coordinator_activity.dart';
+import 'package:papigiras_app/design/pilo_coordinator_summary.dart';
+import 'package:papigiras_app/design/pilo_family_theme.dart';
+import 'package:papigiras_app/design/passenger_counter_session.dart';
+import 'package:papigiras_app/design/special_diet_passengers.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
-import 'package:papigiras_app/pages/coordinator/activities.dart';
+import 'package:papigiras_app/dto/coordinator_session.dart';
+import 'package:papigiras_app/gallery/trip_gallery_screen.dart';
+import 'package:papigiras_app/maps/hito_location_draft.dart';
+import 'package:papigiras_app/maps/trip_map_controller.dart';
+import 'package:papigiras_app/maps/trip_map_data.dart';
+import 'package:papigiras_app/maps/trip_map_view.dart';
+import 'package:papigiras_app/navigation/family_navigation.dart';
+import 'package:papigiras_app/pages/attorney/TraceMapFullScreen.dart';
 import 'package:papigiras_app/pages/coordinator/addHito.dart';
 import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
 import 'package:papigiras_app/pages/coordinator/contador.dart';
+import 'package:papigiras_app/pages/coordinator/coordinatorProfile.dart';
 import 'package:papigiras_app/pages/coordinator/documentCoordinator.dart';
+import 'package:papigiras_app/pages/coordinator/detailbinnacleCoodinator.dart';
 import 'package:papigiras_app/pages/coordinator/listPassenger.dart';
-import 'package:papigiras_app/pages/coordinator/medicalRecord.dart';
 import 'package:papigiras_app/pages/coordinator/tripulationbusCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:papigiras_app/ranking/coordinator_ranking_screen.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
-import 'package:provider/provider.dart';
+import 'package:papigiras_app/utils/coordinator_location_toggle.dart';
 import 'package:papigiras_app/utils/coordinator_widgets.dart';
+import 'package:papigiras_app/utils/page_navigation.dart';
+import 'package:papigiras_app/utils/profile_photo_avatar.dart';
+import 'package:provider/provider.dart';
 
 class TravelCoordinatorDashboard extends StatefulWidget {
+  const TravelCoordinatorDashboard({super.key, required this.login});
+
   final TourSales login;
-  TravelCoordinatorDashboard({required this.login});
 
   @override
-  _TravelCoordinatorDashboardState createState() =>
+  State<TravelCoordinatorDashboard> createState() =>
       _TravelCoordinatorDashboardState();
 }
 
 class _TravelCoordinatorDashboardState
     extends State<TravelCoordinatorDashboard> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final usuarioProvider = new CoordinatorProviders();
-  late final Future<Map<String, int>> _passengerCountsFuture;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _provider = CoordinatorProviders();
+  final _focus = ValueNotifier<(int?, int)>((null, 0));
+  final _galleryRevision = ValueNotifier<int>(0);
+  late final ValueNotifier<Future<CoordinatorTourDetail>> _tourSummary;
+  late TripMapController _map;
+  final _activity = ValueNotifier<Future<PiloCoordinatorActivity>?>(null);
+  TripMapData? _activitySource;
+  int _activityGeneration = 0;
+  late PassengerCounterSession _counterSession;
+  LocationService? _locationService;
 
   @override
   void initState() {
     super.initState();
-    _passengerCountsFuture = usuarioProvider
-        .getCoordinatorTourDetail(widget.login.tourSalesId)
-        .then((tour) => tour.passengerCountsBySex);
+    _counterSession = PassengerCounterSession(
+      tourId: widget.login.tourSalesId,
+      coordinatorId: widget.login.coordinatorId,
+    );
+    _tourSummary = ValueNotifier(_loadTourSummary());
+    _loadMap();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       final locationService = context.read<LocationService>();
       await locationService.initializeForCoordinatorSession();
       if (!mounted || locationService.lastError == null) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(locationService.lastError!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(locationService.lastError!)));
     });
   }
 
+  Future<CoordinatorTourDetail> _loadTourSummary() =>
+      _provider.getCoordinatorTourDetail(widget.login.tourSalesId);
+
   @override
-  Widget build(BuildContext context) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final service = context.read<LocationService>();
+    if (identical(service, _locationService)) return;
+    _locationService?.removeListener(_syncOwnBusSharing);
+    _locationService = service;
+    service.addListener(_syncOwnBusSharing);
+    _syncOwnBusSharing();
+  }
+
+  void _syncOwnBusSharing() {
+    final service = _locationService;
+    if (!mounted || service?.activeTourId != widget.login.tourSalesId) return;
+    _map.bus.setLocalSharing(
+      coordinatorId: widget.login.coordinatorId,
+      enabled: service!.isTracking,
+      confirmed: service.confirmedPosition,
+    );
+  }
+
+  void _loadMap() {
+    _map = TripMapController(
+      tourCode: widget.login.tourSalesId,
+      provider: _provider,
+    );
+    _map.addListener(_updateActivity);
+    _map.refresh();
+  }
+
+  @override
+  void didUpdateWidget(covariant TravelCoordinatorDashboard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.login.tourSalesId != widget.login.tourSalesId ||
+        oldWidget.login.coordinatorId != widget.login.coordinatorId) {
+      _counterSession = PassengerCounterSession(
+        tourId: widget.login.tourSalesId,
+        coordinatorId: widget.login.coordinatorId,
+      );
+      _map.removeListener(_updateActivity);
+      _map.dispose();
+      _activityGeneration++;
+      _activitySource = null;
+      _activity.value = null;
+      _loadMap();
+      _syncOwnBusSharing();
+      _tourSummary.value = _loadTourSummary();
+    }
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    // Derived counts depend on the running code. In debug, recompute after a
+    // hot reload without restarting the app or discarding an open hito draft.
+    _activitySource = null;
+    _updateActivity();
+  }
+
+  @override
+  void dispose() {
+    _locationService?.removeListener(_syncOwnBusSharing);
+    _focus.dispose();
+    _galleryRevision.dispose();
+    _tourSummary.dispose();
+    _activityGeneration++;
+    _activity.dispose();
+    _map.removeListener(_updateActivity);
+    _map.dispose();
+    _provider.dispose();
+    super.dispose();
+  }
+
+  void _openMap([int? hitoId]) {
+    _map.clearSelection();
+    _focus.value = (hitoId, _focus.value.$2 + 1);
+  }
+
+  @override
+  Widget build(BuildContext context) => FamilyNavigation(
+    key: ValueKey((widget.login.tourSalesId, widget.login.coordinatorId)),
+    pilo: true,
+    immersiveMap: true,
+    coordinatorTools: true,
+    onMapOpened: _openMap,
+    onMapRequested: _openMap,
+    builders: {
+      FamilySection.home: _buildHome,
+      FamilySection.crew: (_) => BusCrewCoorScreen(login: widget.login),
+      FamilySection.documents: (_) => DocumentCoordScreen(login: widget.login),
+      FamilySection.diary: (_) => BitacoraCoordScreen(
+        login: widget.login,
+        controller: _map,
+        onHitoChanged: _refreshHitos,
+      ),
+      FamilySection.map: (_) => ValueListenableBuilder<(int?, int)>(
+        valueListenable: _focus,
+        builder: (mapContext, focus, _) => TraceMapFullScreen(
+          key: ValueKey(focus.$2),
+          tourCode: widget.login.tourSalesId,
+          controller: _map,
+          initialHitoId: focus.$1,
+          edgeToEdge: true,
+          locationControl: const CoordinatorLocationToggle(compact: true),
+          coordinatorId: widget.login.coordinatorId,
+          onCreateHito: (point) =>
+              _createHito(mapContext, initialLocation: point),
+          onOpenHito: (entry) => _open(
+            mapContext,
+            DetalleBitacoraCoordScreen(
+              idHito: entry.id.toString(),
+              login: widget.login,
+              canModify: entry.source.canModify,
+              initialLocation:
+                  entry.position != null &&
+                      HitoLocationDraft.isValidPoint(entry.position!)
+                  ? HitoLocationDraft(
+                      point: entry.position!,
+                      label: entry.source.binnacleUbicacion,
+                    )
+                  : null,
+              onHitoChanged: _refreshHitos,
+            ),
+          ),
+        ),
+      ),
+      FamilySection.gallery: (_) => ValueListenableBuilder<int>(
+        valueListenable: _galleryRevision,
+        builder: (_, revision, _) => TripGalleryScreen(
+          key: ValueKey(revision),
+          tourId: widget.login.tourSalesId,
+          departure: widget.login.tourSalesInit,
+        ),
+      ),
+    },
+  );
+
+  Widget _buildHome(BuildContext context) {
+    final navigation = FamilyNavigationScope.maybeOf(context)!;
+    void profile() => _open(context, const CoordinatorProfileScreen());
+
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: kCoordinatorTeal,
+      backgroundColor: PiloFamilyTheme.paper,
       endDrawer: CoordinatorEndDrawer(login: widget.login),
-      body: Stack(
-        children: [
-          _buildBackground(),
-          Column(
-            children: [
-              CoordinatorTopBar(
-                  login: widget.login,
-                  scaffoldKey: _scaffoldKey,
-                  showBackButton: false),
-              Expanded(child: _buildContent()),
-              buildBottomBar(),
-            ],
+      body: SafeArea(
+        bottom: false,
+        child: PiloCoordinatorHome(
+          tour: widget.login,
+          avatar: ProfilePhotoAvatar(
+            radius: 28,
+            onOpenProfile: profile,
+            showEditBadge: true,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBackground() {
-    return Container(
-        decoration: BoxDecoration(
-            image: DecorationImage(
-                image: AssetImage('assets/background.png'),
-                fit: BoxFit.cover)));
-  }
-
-  Widget _buildContent() {
-    return Container(
-      decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 20),
-            _buildCoordinatorProfile(),
-            const SizedBox(height: 20),
-            FutureBuilder<Map<String, int>>(
-              future: _passengerCountsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 42),
-                    child: CircularProgressIndicator(),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Text(
-                      'No se pudieron cargar los pasajeros',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  );
-                }
-                final counts = snapshot.data ?? const <String, int>{};
-                return _buildPassengerCounters(
-                  counts['M'] ?? 0,
-                  counts['F'] ?? 0,
-                  counts['AM'] ?? 0,
-                  counts['AF'] ?? 0,
-                );
-              },
+          locationToggle: const CoordinatorLocationToggle(compact: true),
+          mapPreview: TripMapView(controller: _map, preview: true),
+          onOpenMap: () => navigation.select(FamilySection.map),
+          activity: _activityLabel(),
+          passengers: _passengers(context),
+          onMenu: () => _scaffoldKey.currentState?.openEndDrawer(),
+          onNewHito: () => _createHito(context),
+          onRanking: () => _open(
+            context,
+            CoordinatorRankingScreen(
+              initialSeason: widget.login.seasonClient > 0
+                  ? widget.login.seasonClient
+                  : null,
+              currentCoordinatorId: widget.login.coordinatorId,
             ),
-            const SizedBox(height: 20),
-            _buildPassengerListButton(),
-            _buildDateRange(),
-            const SizedBox(height: 30),
-          ],
+          ),
+          onCount: () => showPiloPassengerCounter(
+            context,
+            login: widget.login,
+            session: _counterSession,
+          ),
+          onProfile: profile,
+          onPassengers: () => _openRoster(context),
+          onCrew: () => navigation.select(FamilySection.crew),
+          onDocuments: () => navigation.select(FamilySection.documents),
         ),
       ),
     );
   }
 
-  Widget _buildCoordinatorProfile() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(width: 20),
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration:
-              const BoxDecoration(color: Colors.teal, shape: BoxShape.circle),
-          child: const CircleAvatar(
-              radius: 50, backgroundImage: AssetImage('assets/profile.jpg')),
-        ),
-        const SizedBox(width: 30),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.login.tourTripulationNameId,
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800])),
-              const SizedBox(height: 5),
-              Text('En Gira con:',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-              Text(
-                '${widget.login.nameClient} ${widget.login.courseClient} ${widget.login.seasonClient}',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800]),
+  void _openRoster(BuildContext context) => _open(
+    context,
+    ListPassengerCoordScreen(login: widget.login),
+    refreshSummary: true,
+  );
+
+  Widget _passengers(BuildContext context) =>
+      ValueListenableBuilder<Future<CoordinatorTourDetail>>(
+        valueListenable: _tourSummary,
+        builder: (context, future, _) => FutureBuilder<CoordinatorTourDetail>(
+          future: future,
+          builder: (context, snapshot) => PiloCoordinatorSummary(
+            detail: snapshot.data,
+            loading: snapshot.connectionState == ConnectionState.waiting,
+            hasError: snapshot.hasError,
+            onRetry: () => _tourSummary.value = _loadTourSummary(),
+            onOpenPassengers: () => _openRoster(context),
+            onOpenDiets: () => _open(
+              context,
+              SpecialDietPassengersScreen(
+                loadPassengers: () => _provider.getListPassenger(
+                  widget.login.tourSalesId.toString(),
+                ),
               ),
-              const SizedBox(height: 10),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPassengerCounters(
-    int countMale,
-    int countFemale,
-    int countMaleCompanion,
-    int countFemaleCompanion,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        Expanded(
-          child: _buildPassengerCounterColumn(
-            title: 'Alumnos a bordo',
-            maleCount: countMale,
-            femaleCount: countFemale,
-          ),
-        ),
-        Container(width: 2, height: 120, color: Colors.teal),
-        Expanded(
-          child: _buildPassengerCounterColumn(
-            title: 'Acompañantes',
-            maleCount: countMaleCompanion,
-            femaleCount: countFemaleCompanion,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPassengerCounterColumn({
-    required String title,
-    required int maleCount,
-    required int femaleCount,
-  }) {
-    return Column(
-      children: [
-        Text(title, style: const TextStyle(fontSize: 12)),
-        const SizedBox(height: 20),
-        _buildGenderCounter(Icons.man_2, Icons.male, maleCount),
-        const SizedBox(height: 20),
-        _buildGenderCounter(Icons.woman_2_sharp, Icons.female, femaleCount),
-      ],
-    );
-  }
-
-  Widget _buildGenderCounter(
-    IconData personIcon,
-    IconData genderIcon,
-    int value,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(personIcon, color: Colors.teal, size: 30),
-        Icon(genderIcon, color: Colors.teal, size: 30),
-        const SizedBox(width: 10),
-        Text(value.toString(), style: const TextStyle(fontSize: 18)),
-      ],
-    );
-  }
-
-  Widget _buildPassengerListButton() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.visibility, color: Colors.teal, size: 24),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            ListPassengerCoordScreen(login: widget.login)));
-              },
-              child: const Text('Ver Nómina Pasajeros',
-                  style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.teal,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline)),
+              refreshSummary: true,
             ),
-          ],
-        ),
-        Container(
-            height: 2,
-            width: 320,
-            color: Colors.teal,
-            margin: const EdgeInsets.symmetric(vertical: 8)),
-      ],
-    );
-  }
-
-  Widget _buildDateRange() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildDateItem('Fecha Salida', widget.login.tourSalesInit),
-        const SizedBox(width: 16),
-        const Icon(Icons.arrow_forward, color: Colors.teal, size: 24),
-        const SizedBox(width: 16),
-        _buildDateItem('Fecha Regreso', widget.login.tourSalesFinal),
-      ],
-    );
-  }
-
-  Widget _buildDateItem(String title, String date) {
-    return Column(
-      children: [
-        Row(children: [
-          const Icon(Icons.calendar_today, color: Colors.teal, size: 20),
-          const SizedBox(width: 4),
-          Text(title, style: const TextStyle(color: Colors.grey))
-        ]),
-        const SizedBox(height: 4),
-        Text(date, style: const TextStyle(color: Colors.teal, fontSize: 16)),
-      ],
-    );
-  }
-
-  Widget buildInfoSection(String title) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('$title:',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800])),
-        SizedBox(height: 5),
-        Center(
-          child: Container(
-            width: 320,
-            constraints: BoxConstraints(maxHeight: 80),
-            decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(10)),
-            padding: EdgeInsets.all(10),
-            child: TextField(
-                maxLines: 3,
-                decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: "",
-                    hintStyle: TextStyle(color: Colors.grey[600])),
-                style: TextStyle(color: Colors.grey[800])),
           ),
         ),
-      ],
+      );
+
+  Future<void> _createHito(
+    BuildContext context, {
+    HitoLocationDraft? initialLocation,
+  }) async {
+    final published = await showPiloNewHitoSheet(
+      context,
+      login: widget.login,
+      initialLocation: initialLocation,
+    );
+    if (mounted && published == true) _refreshHitos();
+  }
+
+  // The list load belongs to the shared map. Selection/panning notifications
+  // must not start photo reads again; only a new complete list invalidates it.
+  void _updateActivity() {
+    final data = _map.data;
+    if (data == null) {
+      if (!_map.loading && _map.error != null) {
+        _activity.value = Future.value(
+          const PiloCoordinatorActivity.unavailable(),
+        );
+      }
+      return;
+    }
+    if (identical(data, _activitySource)) return;
+    _activitySource = data;
+    final generation = ++_activityGeneration;
+    _activity.value = loadPiloCoordinatorActivity(
+      tourId: widget.login.tourSalesId,
+      coordinatorId: widget.login.coordinatorId,
+      hitos: data.entries.map((entry) => entry.source),
+      loadDetail: _provider.getHitoComplete,
+      isCurrent: () => mounted && generation == _activityGeneration,
     );
   }
 
-  Widget buildBottomBar() {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 35),
-      decoration: BoxDecoration(color: Colors.white, boxShadow: [
-        BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 5,
-            blurRadius: 10,
-            offset: Offset(0, -3))
-      ]),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildBottomButton(
-                  Icons.connect_without_contact_sharp,
-                  'Actividades',
-                  null,
-                  ActivitiesCoordScreen(login: widget.login)),
-              Transform.translate(
-                  offset: Offset(0, -30),
-                  child: buildBottomButtonHito(Icons.add_circle, 'Hito', null,
-                      HitoAddCoordScreen(login: widget.login))),
-              buildBottomButton(Icons.person_add_alt_1, 'Contador', null,
-                  CountDownCoordScreen(login: widget.login)),
-            ],
-          ),
-          SizedBox(height: 5), // Espacio entre las filas
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildBottomButton(Icons.medical_information, 'Fichas Medicas',
-                  null, MedicalCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null,
-                  BusCrewCoorScreen(login: widget.login)),
-              buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
-                  DocumentCoordScreen(login: widget.login)),
-              buildBottomButton(Icons.book, 'Bitácora del Viaje', null,
-                  BitacoraCoordScreen(login: widget.login)),
-            ],
-          ),
-        ],
-      ),
-    );
+  Widget _activityLabel() =>
+      ValueListenableBuilder<Future<PiloCoordinatorActivity>?>(
+        valueListenable: _activity,
+        builder: (_, future, _) => FutureBuilder<PiloCoordinatorActivity>(
+          future: future,
+          builder: (_, snapshot) {
+            if (future == null ||
+                snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('Cargando tus aportes…');
+            }
+            final counts = snapshot.data;
+            final hitos = counts?.hitoCount;
+            final photos = counts?.photoCount;
+            if (hitos == null) {
+              return const Tooltip(
+                message:
+                    'Recuento por coordinador no disponible para esta gira.',
+                child: Text('— hitos · — fotos'),
+              );
+            }
+            final label =
+                '$hitos ${hitos == 1 ? 'hito' : 'hitos'} · '
+                '${photos ?? '—'} ${photos == 1 ? 'foto' : 'fotos'}';
+            return Tooltip(
+              message: photos == null
+                  ? 'Tus hitos en esta gira. Recuento de fotos no disponible.'
+                  : 'Tus aportes en esta gira',
+              child: Text(
+                label,
+                key: const ValueKey('coordinator-own-activity'),
+              ),
+            );
+          },
+        ),
+      );
+
+  void _refreshHitos() {
+    _map.refresh();
+    _galleryRevision.value++;
   }
 
-  Widget buildBottomButton(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 40, color: Colors.teal),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))
-        ],
-      ),
+  Future<Object?> _open(
+    BuildContext context,
+    Widget destination, {
+    bool refreshSummary = false,
+  }) async {
+    final navigator = FamilyNavigationScope.maybeOf(context)!.sessionNavigator;
+    final result = await navigator.push(
+      buildPapiRoute(InheritedTheme.captureAll(context, destination)),
     );
-  }
-
-  Widget buildBottomButtonHito(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 70, color: Colors.teal),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))
-        ],
-      ),
-    );
-  }
-
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0); // Desde abajo
-        const end = Offset.zero;
-        const curve = Curves.ease;
-        var tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-        return SlideTransition(position: offsetAnimation, child: child);
-      },
-    );
+    if (mounted && refreshSummary) {
+      _tourSummary.value = _loadTourSummary();
+    }
+    return result;
   }
 }

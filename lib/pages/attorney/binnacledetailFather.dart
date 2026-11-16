@@ -1,246 +1,195 @@
-import 'dart:convert';
+import 'package:papigiras_app/design/pilo_family_theme.dart';
+import 'package:papigiras_app/voice/trip_voice_player.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:papigiras_app/dto/DetailHitoList.dart';
-import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
-import 'package:papigiras_app/pages/attorney/FullscreenImageFather.dart';
+import 'package:papigiras_app/maps/trip_hito_content.dart';
 import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
-import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:papigiras_app/utils/app_drawer_father.dart';
 
 class DetalleBitacoraFatherScreen extends StatefulWidget {
-  @override
-  _DetalleBitacoraFatherScreenState createState() => _DetalleBitacoraFatherScreenState();
+  const DetalleBitacoraFatherScreen({
+    super.key,
+    required this.idHito,
+    required this.login,
+    this.provider,
+  });
   final ResponseAttorney login;
   final String idHito;
-  DetalleBitacoraFatherScreen({required this.idHito, required this.login});
+  final CoordinatorProviders? provider;
+  @override
+  State<DetalleBitacoraFatherScreen> createState() =>
+      _DetalleBitacoraFatherScreenState();
 }
 
-class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final usuarioProvider = new CoordinatorProviders();
-  Future<DetailHitoList>? _hitoDetailFuture;
-  XFile? _image;
+class _DetalleBitacoraFatherScreenState
+    extends State<DetalleBitacoraFatherScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  late final CoordinatorProviders _provider;
+  late Future<DetailHitoList> _detail;
   String? _imageUrl;
-
-  Future<void> _loadImage() async {
-    try {
-      Responseimagepassenger imageUrl = await usuarioProvider.getPicturePassenger(widget.login.passengerIdentificacion.toString(), widget.login.tourId.toString());
-      if (imageUrl.image.isNotEmpty) {
-        setState(() {
-          _imageUrl = imageUrl.image;
-        });
-      } else {
-        setState(() {
-          _imageUrl = null;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _imageUrl = null;
-      });
-    }
-  }
-
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl = Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-    } else {
-      print('No se puede abrir WhatsApp');
-      final whatsappDirect = Uri.parse("whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(whatsappDirect, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
-      }
-    }
-  }
 
   @override
   void initState() {
     super.initState();
-    _loadImage();
-    _hitoDetailFuture = usuarioProvider.getHitoComplete(widget.idHito.toString(), widget.login.tourId.toString());
+    _provider = widget.provider ?? CoordinatorProviders();
+    _detail = _load();
+    _loadProfile();
+  }
+
+  Future<DetailHitoList> _load() {
+    final request = _provider.getHitoComplete(
+      widget.idHito,
+      widget.login.tourId.toString(),
+    );
+    // A retry may fail before the next frame attaches FutureBuilder. Register
+    // an error listener now; the original future still exposes its error to UI.
+    request.ignore();
+    return request;
+  }
+
+  void _reload() {
+    setState(() {
+      _detail = _load();
+    });
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final photo = await _provider.getPicturePassenger(
+        widget.login.passengerIdentificacion.toString(),
+        widget.login.tourId.toString(),
+      );
+      if (mounted)
+        setState(() => _imageUrl = photo.image.isEmpty ? null : photo.image);
+    } catch (_) {
+      /* Profile photo does not block access to the hito. */
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9),
-      endDrawer: AppDrawerFather(login: widget.login, imageFile: _image, imageUrl: _imageUrl),
-      body: Stack(
-        children: [
-          _buildBackground(),
-          Column(
-            children: [
-              _buildAppBar(context),
-              Expanded(
-                child: FutureBuilder<DetailHitoList>(
-                  future: _hitoDetailFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    } else if (snapshot.hasData) {
-                      DetailHitoList hitoDetail = snapshot.data!;
-                      return _buildBinnacleContent(hitoDetail);
-                    } else {
-                      return Center(child: Text('No data available'));
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+  void dispose() {
+    if (widget.provider == null) _provider.dispose();
+    super.dispose();
   }
 
-  void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => WelcomeScreen()), (route) => false);
-  }
-
-  Widget _buildBackground() {
-    return Container(decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
-  }
-
-  Widget _buildAppBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-      child: Row(
-        children: [
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.white, size: 30),
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => BitacoraFatherScreen(login: widget.login)));
-              },
-            ),
-          ),
-          Spacer(),
-          Image.asset('assets/logo-letras-papigiras.png', height: 50),
-          Spacer(),
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.menu, color: Colors.white, size: 30),
-              onPressed: () {
-                _scaffoldKey.currentState?.openEndDrawer();
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBinnacleContent(DetailHitoList hitoDetail) {
-    return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-      padding: EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [SizedBox(height: 20), Expanded(child: ListView(children: _buildBinnacleEntries(hitoDetail)))],
-      ),
-    );
-  }
-
-  List<Widget> _buildBinnacleEntries(DetailHitoList hitoDetail) {
-    List<Map<String, dynamic>> entries = [];
-    for (var i = 0; i < hitoDetail.images!.length; i++) {
-      String base64Image = hitoDetail.images![i];
-    }
-    String time = hitoDetail.fecha ?? 'Sin hora';
-    String activity = hitoDetail.titulo ?? 'Actividad no disponible';
-    String description = hitoDetail.descripcion ?? 'Descripción no disponible';
-    entries.add({'time': time, 'activity': activity, 'description': description, 'images': hitoDetail.images});
-    return entries.map((entry) {
-      return Card(
-        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.place, color: Colors.teal),
-                  SizedBox(width: 8),
-                  Text(entry['time']!, style: TextStyle(color: Colors.teal, fontSize: 16, fontWeight: FontWeight.bold)),
-                  SizedBox(width: 8),
-                  Text(entry['activity']!, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                ],
-              ),
-              SizedBox(height: 8),
-              Text(entry['description']!, style: TextStyle(color: Colors.grey, fontSize: 14)),
-              SizedBox(height: 16),
-              Column(
-                children: [
-                  for (var imageBase64 in entry['images'])
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => FullscreenImagePage(imageBytes: base64Decode(imageBase64.split(',').last))));
-                      },
-                      child: Image.memory(base64Decode(imageBase64.split(',').last), height: 200, width: 200, fit: BoxFit.cover),
-                    ),
-                ],
-              )
-            ],
-          ),
+  void _back() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BitacoraFatherScreen(login: widget.login),
         ),
       );
-    }).toList();
+    }
   }
 
-  Widget buildBottomButton(IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 40, color: Colors.teal), SizedBox(height: 8), Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))],
+  @override
+  Widget build(BuildContext context) => Theme(
+    data: PiloFamilyTheme.theme(Theme.of(context)),
+    child: Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: PiloFamilyTheme.paper,
+      endDrawer: AppDrawerFather(
+        login: widget.login,
+        imageFile: null,
+        imageUrl: _imageUrl,
       ),
-    );
-  }
-
-  Widget buildBottomButtonHito(IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 70, color: Colors.teal), SizedBox(height: 8), Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))],
+      body: Column(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: Align(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 700),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        tooltip: 'Volver a la bitácora',
+                        onPressed: _back,
+                        style: IconButton.styleFrom(
+                          backgroundColor: PiloFamilyTheme.soft,
+                          minimumSize: const Size(48, 48),
+                        ),
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                      IconButton(
+                        tooltip: 'Abrir menú',
+                        onPressed: () =>
+                            _scaffoldKey.currentState?.openEndDrawer(),
+                        icon: const Icon(Icons.menu_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<DetailHitoList>(
+              future: _detail,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: PiloFamilyTheme.accentText,
+                    ),
+                  );
+                }
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'No pudimos cargar este hito.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: PiloFamilyTheme.secondary),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton.icon(
+                            onPressed: _reload,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Reintentar'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                final detail = snapshot.data!;
+                final note = detail.voiceNote;
+                final tourId = widget.login.tourId;
+                return TripHitoContent(
+                  tourId: tourId,
+                  hitoId: int.tryParse(widget.idHito),
+                  detail: detail,
+                  familyStyle: true,
+                  voicePlayer: note == null || tourId == null
+                      ? null
+                      : TripVoicePlayer(
+                          key: ValueKey('voice-${widget.idHito}-${note.id}'),
+                          duration: note.duration,
+                          loadFile: () => _provider.readHitoVoice(
+                            int.parse(widget.idHito),
+                            tourId,
+                            note,
+                          ),
+                        ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
-    );
-  }
-
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0);
-        const end = Offset.zero;
-        const curve = Curves.ease;
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-        return SlideTransition(position: offsetAnimation, child: child);
-      },
-    );
-  }
+    ),
+  );
 }

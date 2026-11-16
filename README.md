@@ -1,16 +1,43 @@
-# papigiras_app
+# Pilo · entrega para revisión de Esteban
 
-A new Flutter project.
+Esta rama contiene la versión renovada elegida por Camilo. Es una candidata de pruebas, con frontend y backend compatibles; **no reemplazar producción ni fusionar directamente a main**. La interfaz corresponde a la versión probada en simulador y a la beta Android. No se incluyen datos de pasajeros, contraseñas reales, firmas, bases de datos ni el túnel temporal.
 
-## Getting Started
+## Qué cambió
 
-This project is a starting point for a Flutter application.
+- Interfaz Pilo, navegación uniforme por perfil e inicio con mapa para familias.
+- Mapa, selección de hitos, bitácora, fotos, galería y notas de voz de hasta 60 segundos.
+- Nómina con buscador, filtros, dietas, fotos y acceso a fichas; contador QR.
+- Ficha médica consistente, lectura bloqueada, edición por apoderado con nueva aceptación y PDF vigente sin marca, nombrado por alumno y RUT.
+- Documentos internos/vouchers, tripulación y varios coordinadores por gira; permisos por rol, pasajero y gira.
 
-A few resources to get you started if this is your first Flutter project:
+## Repositorios de esta entrega
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Usar la rama `revision/pilo-2026-11-16` de los tres repositorios de `esgonzalPapigiras`: `papigiras-app` (Flutter), `ms-papigiras-app` (API) y `papigiras-dashboard` (Angular). Cada repositorio tiene su commit y manifiesto `revision/ORIGEN.json`. No aplicar además los parches PG históricos: estas fuentes ya los contienen.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Lo imprescindible antes de integrar a producción
+
+La revisión distingue la experiencia aprobada de los adaptadores de pruebas. Autenticación/JWT, filesystem privado en lugar de Spaces, notificaciones locales en lugar de FCM y bloqueo a API local son parte del entorno de prueba. **No son únicamente variables de entorno: todavía requieren adaptación y pruebas para usar los servicios oficiales.** GPS del bus es sintético; contador QR está en memoria y falta confirmar el QR oficial. No se presentan como funciones productivas terminadas.
+
+Primero probar esta candidata aislada; después resolver esos adaptadores, revisar migraciones sobre copia de base y validar cámara/micrófono/QR/PDF en teléfonos. Sólo entonces preparar despliegue y tiendas. `revision/INTEGRACION.md` identifica los puntos concretos y los límites. La rama no publica ni despliega automáticamente.
+
+## Evidencia disponible
+
+La candidata base pasó 468 pruebas backend, 138 comprobaciones HTTP con datos ficticios, 959 pruebas Flutter más 46 pruebas focalizadas de PDF y 87 comprobaciones del panel con compilación. La variante beta posterior verificó transporte HTTPS, permisos, audio/fotos/PDF y firma APK; la prueba física Android/iPhone sigue pendiente. Estos resultados pertenecen a las fuentes identificadas en el manifiesto, no certifican producción. Las comprobaciones de empaquetado de esta rama se registran en `revision/VERIFICACION.json`.
+
+## Probar la app
+
+Requisitos: Flutter 3.38.10 / Dart 3.10.9, SDK Android; para iOS, macOS con Xcode y CocoaPods. La dependencia QR modificada está incluida en `third_party/`.
+
+```sh
+flutter pub get
+python3 scripts/check_isolation.py
+flutter run --dart-define=PAPIGIRAS_LOCAL_API_PORT=18084 --dart-define=PILO_HIDE_LAB_BANNER=true
+```
+
+Ese comando necesita la API compatible en el mismo equipo, puerto 18084. Android conectado por USB requiere `adb reverse tcp:18084 tcp:18084`. Para usar la beta remota ya preparada, compilar con `--dart-define=PAPIGIRAS_PREVIEW_HOST=HOST_TEMPORAL` en lugar del puerto; solicitar a Camilo el host vigente y las cuentas ficticias por canal privado. El host se fija al compilar y sólo admite el túnel de pruebas previsto. No cambiarlo por producción.
+
+Los IDs siguen separados de la app oficial. La firma release de pruebas requiere una clave propia externa al repositorio; `flutter run` usa desarrollo. No se incluyen claves ni se ha preparado firma de tienda. Para repetir pruebas: `python3 revision/validar.py`; las pruebas HTTP/native se ejecutan aparte contra fixtures.
+
+## Reconciliación con GitHub del 16/11/2026
+
+App y panel siguen sobre las mismas bases oficiales. El backend parte ahora de `947419a`, que Esteban añadió después de la copia inicial. Se conservaron sus fotos HD y miniaturas, nombres únicos, límites de carga, limpieza y texto de notificación. Pilo mantiene fotos completas en `images`, IDs estables en `imageIds`, audio y permisos; se añaden `thumbnails`/`photoIds` y lectura de foto con autorización por gira. La integración productiva de FCM sigue pendiente; se conserva el aviso local de pruebas. No hay migraciones nuevas en esta reconciliación. Suite backend de la rama: **475 pruebas aprobadas**, sin fallos, errores ni omisiones. No se reinició ningún servicio activo.

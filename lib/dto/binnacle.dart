@@ -1,3 +1,6 @@
+import '../voice/voice_note_metadata.dart';
+import 'json_fields.dart';
+
 class HitoAuthor {
   final int coordinatorId;
   final String name;
@@ -11,9 +14,9 @@ class HitoAuthor {
 
   factory HitoAuthor.fromJson(Map<String, dynamic> json) {
     return HitoAuthor(
-      coordinatorId: (json['coordinatorId'] as num).toInt(),
-      name: json['name'] as String? ?? '',
-      lastname: json['lastname'] as String? ?? '',
+      coordinatorId: JsonFields.id(json['coordinatorId']),
+      name: JsonFields.text(json['name']),
+      lastname: JsonFields.text(json['lastname']),
     );
   }
 
@@ -32,35 +35,41 @@ class ConsolidatedTourSalesDTO {
   final String binnacleFecha;
   final HitoAuthor? author;
   final bool canModify;
+  final VoiceNoteMetadata? voiceNote;
 
-  ConsolidatedTourSalesDTO(
-      {required this.binnacleDetailId,
-      required this.binnacleTitulo,
-      required this.binnacleDescripcion,
-      required this.binnacleUbicacion,
-      required this.binnacleNotaCierre,
-      required this.binnacleLatitud,
-      required this.binnacleLongitud,
-      required this.binnacleHora,
-      required this.binnacleFecha,
-      required this.author,
-      required this.canModify});
+  ConsolidatedTourSalesDTO({
+    required this.binnacleDetailId,
+    required this.binnacleTitulo,
+    required this.binnacleDescripcion,
+    required this.binnacleUbicacion,
+    required this.binnacleNotaCierre,
+    required this.binnacleLatitud,
+    required this.binnacleLongitud,
+    required this.binnacleHora,
+    required this.binnacleFecha,
+    required this.author,
+    required this.canModify,
+    this.voiceNote,
+  });
 
   factory ConsolidatedTourSalesDTO.fromJson(Map<String, dynamic> json) {
     return ConsolidatedTourSalesDTO(
-      binnacleDetailId: json['binnacleDetailId'],
-      binnacleTitulo: json['binnacleTitulo'],
-      binnacleDescripcion: json['binnacleDescripcion'],
-      binnacleUbicacion: json['binnacleUbicacion'],
-      binnacleNotaCierre: json['binnacleNotaCierre'],
-      binnacleLatitud: json['binnacleLatitud'],
-      binnacleLongitud: json['binnacleLongitud'],
-      binnacleHora: json['binnacleHora'],
-      binnacleFecha: json['binnacleFecha'] ?? json['binnaclefecha'] ?? '',
-      author: json['author'] == null
+      binnacleDetailId: JsonFields.id(json['binnacleDetailId']),
+      binnacleTitulo: JsonFields.text(json['binnacleTitulo']),
+      binnacleDescripcion: JsonFields.text(json['binnacleDescripcion']),
+      binnacleUbicacion: JsonFields.text(json['binnacleUbicacion']),
+      binnacleNotaCierre: JsonFields.text(json['binnacleNotaCierre']),
+      binnacleLatitud: JsonFields.text(json['binnacleLatitud']),
+      binnacleLongitud: JsonFields.text(json['binnacleLongitud']),
+      binnacleHora: JsonFields.text(json['binnacleHora']),
+      binnacleFecha: JsonFields.dateText(
+        json['binnacleFecha'] ?? json['binnaclefecha'],
+      ),
+      author: json['author'] is! Map<String, dynamic>
           ? null
           : HitoAuthor.fromJson(json['author'] as Map<String, dynamic>),
-      canModify: json['canModify'] as bool? ?? false,
+      canModify: JsonFields.boolean(json['canModify']),
+      voiceNote: VoiceNoteMetadata.parse(json['voiceNote']),
     );
   }
 
@@ -82,7 +91,8 @@ class ConsolidatedTourSalesDTO {
               'name': author!.name,
               'lastname': author!.lastname,
             },
-      'canModify': canModify
+      'canModify': canModify,
+      'voiceNote': voiceNote?.toJson(),
     };
   }
 }

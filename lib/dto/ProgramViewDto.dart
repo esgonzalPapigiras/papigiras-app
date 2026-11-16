@@ -1,23 +1,33 @@
-class ProgramViewDto {
-  String? tourInit;
-  String? tourEnd;
-  int? countPassenger;
-  String? nameClient;
-  String? courseClient;
-  int? seasonClient;
-  List<String>? activities;
+import 'json_fields.dart';
 
-  ProgramViewDto({this.tourInit, this.tourEnd, this.countPassenger, this.nameClient, this.courseClient, this.seasonClient, this.activities});
+class ProgramViewDto {
+  String tourInit;
+  String tourEnd;
+  int countPassenger;
+  String nameClient;
+  String courseClient;
+  int seasonClient;
+  List<String> activities;
+
+  ProgramViewDto({
+    this.tourInit = '',
+    this.tourEnd = '',
+    this.countPassenger = 0,
+    this.nameClient = '',
+    this.courseClient = '',
+    this.seasonClient = 0,
+    this.activities = const [],
+  });
 
   factory ProgramViewDto.fromJson(Map<String, dynamic> json) {
     return ProgramViewDto(
-      tourInit: json['tourInit'],
-      tourEnd: json['tourEnd'],
-      countPassenger: json['countPassenger'],
-      nameClient: json['nameClient'],
-      courseClient: json['courseClient'],
-      seasonClient: json['seasonClient'],
-      activities: List<String>.from(json['activities'] ?? []),
+      tourInit: JsonFields.dateText(json['tourInit']),
+      tourEnd: JsonFields.dateText(json['tourEnd']),
+      countPassenger: JsonFields.integer(json['countPassenger']),
+      nameClient: JsonFields.text(json['nameClient']),
+      courseClient: JsonFields.text(json['courseClient']),
+      seasonClient: JsonFields.integer(json['seasonClient']),
+      activities: JsonFields.strings(json['activities']),
     );
   }
 
@@ -29,7 +39,7 @@ class ProgramViewDto {
       'nameClient': nameClient,
       'courseClient': courseClient,
       'seasonClient': seasonClient,
-      'activities': activities
+      'activities': activities,
     };
   }
 }

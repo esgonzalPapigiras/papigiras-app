@@ -1,19 +1,12 @@
-import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
+import 'package:papigiras_app/lab/media.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:typed_data';
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
 
 class FullscreenImagePage extends StatefulWidget {
   final Uint8List imageBytes;
-  const FullscreenImagePage({
-    Key? key,
-    required this.imageBytes,
-  }) : super(key: key);
+  const FullscreenImagePage({Key? key, required this.imageBytes})
+    : super(key: key);
 
   @override
   State<FullscreenImagePage> createState() => _FullscreenImagePageState();
@@ -22,82 +15,32 @@ class FullscreenImagePage extends StatefulWidget {
 class _FullscreenImagePageState extends State<FullscreenImagePage> {
   bool _saving = false;
   Future<void> _saveImage() async {
+    if (_saving) return;
     setState(() => _saving = true);
     try {
-      // Detectar versión de Android
-      if (Platform.isAndroid) {
-        final deviceInfo = DeviceInfoPlugin();
-        final androidInfo = await deviceInfo.androidInfo;
-        int sdkInt = androidInfo.version.sdkInt ?? 0;
-        if (sdkInt < 33) {
-          // Android <13 necesita permiso de almacenamiento
-          PermissionStatus status = await Permission.storage.status;
-          if (status.isDenied || status.isLimited) {
-            PermissionStatus newStatus = await Permission.storage.request();
-            if (!newStatus.isGranted) {
-              if (newStatus.isPermanentlyDenied) {
-                openAppSettings();
-              }
-              setState(() => _saving = false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Permiso denegado para guardar imagen')),
-              );
-              return;
-            }
-          }
-        }
-        // Android 13+ no necesita permiso de almacenamiento (usa el sistema de medios)
-      } else if (Platform.isIOS) {
-        // En iOS, sigue siendo necesario el permiso de fotos
-        PermissionStatus status = await Permission.photos.request();
-        if (!status.isGranted) {
-          setState(() => _saving = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Permiso denegado para guardar imagen')),
-          );
-          return;
-        }
-      }
-
-      // Guardar imagen
-      final result = await ImageGallerySaverPlus.saveImage(
-        widget.imageBytes,
-        quality: 100,
-        name: 'hito_${DateTime.now().millisecondsSinceEpoch}',
-      );
-      setState(() => _saving = false);
-
-      if (result['isSuccess'] == true) {
+      await LabMedia.saveImage(widget.imageBytes);
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Imagen guardada en la galería')),
         );
-      } else {
+    } catch (error) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al guardar la imagen')),
+          SnackBar(content: Text('No se pudo guardar la imagen: $error')),
         );
-      }
-    } catch (e) {
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   Future<void> _shareImage() async {
     try {
-      final tempDir = await getTemporaryDirectory();
-      final file = await File('${tempDir.path}/shared_image.jpg')
-          .writeAsBytes(widget.imageBytes);
-      await Share.shareXFiles(
-        [XFile(file.path)],
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al compartir: $e')),
-      );
+      await LabMedia.shareImage(widget.imageBytes, context);
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo compartir la imagen: $error')),
+        );
     }
   }
 
@@ -144,8 +87,11 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
                     ),
                   )
                 : IconButton(
-                    icon: const Icon(Icons.download,
-                        color: Colors.white, size: 30),
+                    icon: const Icon(
+                      Icons.download,
+                      color: Colors.white,
+                      size: 30,
+                    ),
                     onPressed: _saveImage,
                   ),
           ),

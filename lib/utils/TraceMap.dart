@@ -1,110 +1,52 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
-import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:papigiras_app/dto/binnacle.dart';
-import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:papigiras_app/utils/page_navigation.dart';
+import 'package:papigiras_app/maps/trip_map_controller.dart';
+import 'package:papigiras_app/maps/trip_map_view.dart';
+import 'package:papigiras_app/pages/attorney/TraceMapFullScreen.dart';
 
 class TraceMap extends StatefulWidget {
+  const TraceMap({super.key, required this.tourCode, this.preview = false});
   final int tourCode;
-  const TraceMap({required this.tourCode, super.key});
-
+  final bool preview;
   @override
-  _TraceMapState createState() => _TraceMapState();
+  State<TraceMap> createState() => _TraceMapState();
 }
 
 class _TraceMapState extends State<TraceMap> {
-  final PopupController _popupController = PopupController();
-  List<ConsolidatedTourSalesDTO> _binnacleData = [];
-  bool _loading = true;
+  late TripMapController _controller;
+  void _createController() {
+    _controller = TripMapController(tourCode: widget.tourCode)..refresh();
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadBinnacle();
+    _createController();
   }
 
-  Future<void> _loadBinnacle() async {
-    try {
-      final service = CoordinatorProviders();
-      final data = await service.getBinnacle(widget.tourCode.toString());
-      setState(() {
-        _binnacleData = data;
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error cargando puntos: $e')));
+  @override
+  void didUpdateWidget(covariant TraceMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tourCode != widget.tourCode) {
+      _controller.dispose();
+      _createController();
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (_loading) {
-      return Container(height: 250, alignment: Alignment.center, child: CircularProgressIndicator());
-    }
-    final points = _binnacleData.map((e) => LatLng(double.parse(e.binnacleLatitud), double.parse(e.binnacleLongitud))).toList();
-    final markers = _binnacleData.asMap().entries.map((entry) {
-      final idx = entry.key;
-      final dto = entry.value;
-      final pt = points[idx];
-      return Marker(point: pt, width: 30.0, height: 30.0, child: Container(decoration: BoxDecoration(color: Colors.blue, shape: BoxShape.circle)));
-    }).toList();
-    final center = points.isNotEmpty ? points.first : LatLng(-33.45, -70.66);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        height: 250,
-        margin: EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey.shade300)),
-        child: FlutterMap(
-          options: MapOptions(initialCenter: center, initialZoom: 13.0, onTap: (_, __) => _popupController.hideAllPopups()),
-          children: [
-            TileLayer(urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', userAgentPackageName: 'com.papigiras'),
-            TileLayer(
-                urlTemplate: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-                userAgentPackageName: 'com.papigiras'),
-            if (points.length > 1)
-              PolylineLayer(
-                polylines: [Polyline(points: points, strokeWidth: 4.0, color: Colors.blue)],
-              ),
-            MarkerLayer(markers: markers),
-            PopupMarkerLayer(
-              options: PopupMarkerLayerOptions(
-                markers: markers,
-                popupController: _popupController,
-                markerTapBehavior: MarkerTapBehavior.togglePopup(),
-                popupDisplayOptions: PopupDisplayOptions(
-                  builder: (BuildContext context, Marker marker) {
-                    final idx = markers.indexOf(marker);
-                    final dto = _binnacleData[idx];
-                    return Card(
-                      margin: EdgeInsets.zero,
-                      child: Container(
-                        width: 200,
-                        padding: EdgeInsets.all(8),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(dto.binnacleTitulo, style: TextStyle(fontWeight: FontWeight.bold)),
-                            SizedBox(height: 4),
-                            Text(dto.binnacleDescripcion),
-                            Text(dto.binnacleFecha)
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                  snap: PopupSnap.markerTop,
-                ),
-              ),
-            ),
-            CurrentLocationLayer(),
-          ],
-        ),
-      ),
-    );
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
+
+  @override
+  Widget build(BuildContext context) => TripMapView(
+    controller: _controller,
+    preview: widget.preview,
+    onExpand: () => Navigator.of(context).push(
+      buildPapiRoute(
+        TraceMapFullScreen(tourCode: widget.tourCode, controller: _controller),
+      ),
+    ),
+  );
 }

@@ -1,127 +1,160 @@
 PODS:
-  - background_locator_2 (0.0.1):
+  - audioplayers_darwin (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - DKImagePickerController/Core (4.3.9):
+    - DKImagePickerController/ImageDataManager
+    - DKImagePickerController/Resource
+  - DKImagePickerController/ImageDataManager (4.3.9)
+  - DKImagePickerController/PhotoGallery (4.3.9):
+    - DKImagePickerController/Core
+    - DKPhotoGallery
+  - DKImagePickerController/Resource (4.3.9)
+  - DKPhotoGallery (0.0.19):
+    - DKPhotoGallery/Core (= 0.0.19)
+    - DKPhotoGallery/Model (= 0.0.19)
+    - DKPhotoGallery/Preview (= 0.0.19)
+    - DKPhotoGallery/Resource (= 0.0.19)
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Core (0.0.19):
+    - DKPhotoGallery/Model
+    - DKPhotoGallery/Preview
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Model (0.0.19):
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Preview (0.0.19):
+    - DKPhotoGallery/Model
+    - DKPhotoGallery/Resource
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Resource (0.0.19):
+    - SDWebImage
+    - SwiftyGif
+  - file_picker (0.0.1):
+    - DKImagePickerController/PhotoGallery
     - Flutter
   - Flutter (1.0.0)
-  - flutter_compass (0.0.1):
-    - Flutter
   - flutter_image_compress_common (1.0.0):
     - Flutter
-    - Mantle
     - SDWebImage
     - SDWebImageWebPCoder
-  - flutter_local_notifications (0.0.1):
-    - Flutter
   - flutter_pdfview (1.0.2):
     - Flutter
-  - geocoding_ios (1.0.5):
+  - gal (1.0.0):
     - Flutter
-  - geolocator_apple (1.2.0):
+    - FlutterMacOS
+  - image_picker_ios (0.0.1):
     - Flutter
-  - image_gallery_saver_plus (0.0.1):
+  - integration_test (0.0.1):
     - Flutter
-  - libwebp (1.5.0):
-    - libwebp/demux (= 1.5.0)
-    - libwebp/mux (= 1.5.0)
-    - libwebp/sharpyuv (= 1.5.0)
-    - libwebp/webp (= 1.5.0)
-  - libwebp/demux (1.5.0):
+  - libwebp (1.6.0):
+    - libwebp/demux (= 1.6.0)
+    - libwebp/mux (= 1.6.0)
+    - libwebp/sharpyuv (= 1.6.0)
+    - libwebp/webp (= 1.6.0)
+  - libwebp/demux (1.6.0):
     - libwebp/webp
-  - libwebp/mux (1.5.0):
+  - libwebp/mux (1.6.0):
     - libwebp/demux
-  - libwebp/sharpyuv (1.5.0)
-  - libwebp/webp (1.5.0):
+  - libwebp/sharpyuv (1.6.0)
+  - libwebp/webp (1.6.0):
     - libwebp/sharpyuv
-  - location (0.0.1):
+  - path_provider_foundation (0.0.1):
     - Flutter
-  - Mantle (2.2.0):
-    - Mantle/extobjc (= 2.2.0)
-  - Mantle/extobjc (2.2.0)
-  - MTBBarcodeScanner (5.0.11)
-  - open_file_ios (0.0.1):
-    - Flutter
-  - permission_handler_apple (9.3.0):
-    - Flutter
+    - FlutterMacOS
   - qr_code_scanner_plus (0.2.6):
     - Flutter
-    - MTBBarcodeScanner
-  - SDWebImage (5.21.2):
-    - SDWebImage/Core (= 5.21.2)
-  - SDWebImage/Core (5.21.2)
-  - SDWebImageWebPCoder (0.14.6):
+  - record_ios (1.2.1):
+    - Flutter
+  - SDWebImage (5.21.7):
+    - SDWebImage/Core (= 5.21.7)
+  - SDWebImage/Core (5.21.7)
+  - SDWebImageWebPCoder (0.15.0):
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
+  - share_plus (0.0.1):
+    - Flutter
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - SwiftyGif (5.4.5)
 
 DEPENDENCIES:
-  - background_locator_2 (from `.symlinks/plugins/background_locator_2/ios`)
+  - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
+  - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
-  - flutter_compass (from `.symlinks/plugins/flutter_compass/ios`)
   - flutter_image_compress_common (from `.symlinks/plugins/flutter_image_compress_common/ios`)
-  - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_pdfview (from `.symlinks/plugins/flutter_pdfview/ios`)
-  - geocoding_ios (from `.symlinks/plugins/geocoding_ios/ios`)
-  - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
-  - image_gallery_saver_plus (from `.symlinks/plugins/image_gallery_saver_plus/ios`)
-  - location (from `.symlinks/plugins/location/ios`)
-  - open_file_ios (from `.symlinks/plugins/open_file_ios/ios`)
-  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - gal (from `.symlinks/plugins/gal/darwin`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - integration_test (from `.symlinks/plugins/integration_test/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - qr_code_scanner_plus (from `.symlinks/plugins/qr_code_scanner_plus/ios`)
+  - record_ios (from `.symlinks/plugins/record_ios/ios`)
+  - share_plus (from `.symlinks/plugins/share_plus/ios`)
+  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
 
 SPEC REPOS:
   trunk:
+    - DKImagePickerController
+    - DKPhotoGallery
     - libwebp
-    - Mantle
-    - MTBBarcodeScanner
     - SDWebImage
     - SDWebImageWebPCoder
+    - SwiftyGif
 
 EXTERNAL SOURCES:
-  background_locator_2:
-    :path: ".symlinks/plugins/background_locator_2/ios"
+  audioplayers_darwin:
+    :path: ".symlinks/plugins/audioplayers_darwin/darwin"
+  file_picker:
+    :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
     :path: Flutter
-  flutter_compass:
-    :path: ".symlinks/plugins/flutter_compass/ios"
   flutter_image_compress_common:
     :path: ".symlinks/plugins/flutter_image_compress_common/ios"
-  flutter_local_notifications:
-    :path: ".symlinks/plugins/flutter_local_notifications/ios"
   flutter_pdfview:
     :path: ".symlinks/plugins/flutter_pdfview/ios"
-  geocoding_ios:
-    :path: ".symlinks/plugins/geocoding_ios/ios"
-  geolocator_apple:
-    :path: ".symlinks/plugins/geolocator_apple/ios"
-  image_gallery_saver_plus:
-    :path: ".symlinks/plugins/image_gallery_saver_plus/ios"
-  location:
-    :path: ".symlinks/plugins/location/ios"
-  open_file_ios:
-    :path: ".symlinks/plugins/open_file_ios/ios"
-  permission_handler_apple:
-    :path: ".symlinks/plugins/permission_handler_apple/ios"
+  gal:
+    :path: ".symlinks/plugins/gal/darwin"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
+  integration_test:
+    :path: ".symlinks/plugins/integration_test/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
   qr_code_scanner_plus:
     :path: ".symlinks/plugins/qr_code_scanner_plus/ios"
+  record_ios:
+    :path: ".symlinks/plugins/record_ios/ios"
+  share_plus:
+    :path: ".symlinks/plugins/share_plus/ios"
+  shared_preferences_foundation:
+    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
 
 SPEC CHECKSUMS:
-  background_locator_2: bee147151ed151802ee8f1cc02f55ee14f77a2e3
+  audioplayers_darwin: 835ced6edd4c9fc8ebb0a7cc9e294a91d99917d5
+  DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
+  DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
+  file_picker: a0560bc09d61de87f12d246fc47d2119e6ef37be
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_compass: b236ab69b61545cce89fd58527f401a7587d5cc1
-  flutter_image_compress_common: 1697a328fd72bfb335507c6bca1a65fa5ad87df1
-  flutter_local_notifications: ad39620c743ea4c15127860f4b5641649a988100
-  flutter_pdfview: 54e283d5851b0b247b3cc57877d35f1a05a204de
-  geocoding_ios: 86f1c479822f07a2f79f7094f2b753d1e9e20215
-  geolocator_apple: 1560c3c875af2a412242c7a923e15d0d401966ff
-  image_gallery_saver_plus: e597bf65a7846979417a3eae0763b71b6dfec6c3
-  libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
-  location: 155caecf9da4f280ab5fe4a55f94ceccfab838f8
-  Mantle: c5aa8794a29a022dfbbfc9799af95f477a69b62d
-  MTBBarcodeScanner: f453b33c4b7dfe545d8c6484ed744d55671788cb
-  open_file_ios: 5ff7526df64e4394b4fe207636b67a95e83078bb
-  permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
-  qr_code_scanner_plus: 7e087021bc69873140e0754750eb87d867bed755
-  SDWebImage: 9f177d83116802728e122410fb25ad88f5c7608a
-  SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
+  flutter_image_compress_common: 11d5dcfb36f4ded92320bfa896261813a073240e
+  flutter_pdfview: 4fbfbd0590f63153fbd492a54997c5e5be010458
+  gal: baecd024ebfd13c441269ca7404792a7152fde89
+  image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
+  integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
+  libwebp: af5937a13536ef73f3784d69cc342b98961acf33
+  path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
+  qr_code_scanner_plus: 1fb59fd4576edb53ec7560c3746f454dee54300c
+  record_ios: 980fd386a97a35987d0fce3dfda4b26a38c90f4c
+  SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
+  SDWebImageWebPCoder: 0e06e365080397465cc73a7a9b472d8a3bd0f377
+  share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
+  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
+  SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
 
-PODFILE CHECKSUM: dc3548ee68bbe6ef7e82b4d0978b4f28405890e6
+PODFILE CHECKSUM: e30f02f9d1c72c47bb6344a0a748c9d268180865
 
 COCOAPODS: 1.17.0

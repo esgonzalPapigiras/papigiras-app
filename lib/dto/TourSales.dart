@@ -1,3 +1,4 @@
+import 'json_fields.dart';
 import 'package:papigiras_app/dto/coordinator_session.dart';
 
 class TourSales {
@@ -17,43 +18,44 @@ class TourSales {
   final String status;
   final int assignmentId;
 
-  TourSales(
-      {required this.coordinatorId,
-      required this.tourSalesId,
-      required this.tourCode,
-      required this.tourSalesInit,
-      required this.tourSalesFinal,
-      required this.nameClient,
-      required this.courseClient,
-      required this.seasonClient,
-      required this.tourTripulationNameId,
-      required this.tourTripulationIdentificationId,
-      required this.passengerCountsBySex,
-      required this.tokenKey,
-      required this.studentCount,
-      required this.status,
-      required this.assignmentId});
+  TourSales({
+    required this.coordinatorId,
+    required this.tourSalesId,
+    required this.tourCode,
+    required this.tourSalesInit,
+    required this.tourSalesFinal,
+    required this.nameClient,
+    required this.courseClient,
+    required this.seasonClient,
+    required this.tourTripulationNameId,
+    required this.tourTripulationIdentificationId,
+    required this.passengerCountsBySex,
+    required this.tokenKey,
+    required this.studentCount,
+    required this.status,
+    required this.assignmentId,
+  });
 
   factory TourSales.fromJson(Map<String, dynamic> json) {
     return TourSales(
-        coordinatorId: (json['coordinatorId'] as num?)?.toInt() ?? 0,
-        tourSalesId: (json['tourSalesId'] as num).toInt(),
-        tourCode: json['tourCode'] ?? '',
-        tourSalesInit: json['tourSalesInit'] ?? '',
-        tourSalesFinal: json['tourSalesFinal'] ?? '',
-        nameClient: json['nameClient'] ?? '',
-        courseClient: json['courseClient'] ?? '',
-        seasonClient: (json['seasonClient'] as num?)?.toInt() ?? 0,
-        tourTripulationNameId: json['tourTripulationNameId'] ?? '',
-        tourTripulationIdentificationId:
-            json['tourTripulationIdentificationId'] ?? '',
-        passengerCountsBySex: _parsePassengerCounts(
-          json['passengerCountsBySex'],
-        ),
-        tokenKey: json['tokenKey'] ?? '',
-        studentCount: (json['studentCount'] as num?)?.toInt() ?? 0,
-        status: json['status'] ?? '',
-        assignmentId: (json['assignmentId'] as num?)?.toInt() ?? 0);
+      coordinatorId: JsonFields.integer(json['coordinatorId']),
+      tourSalesId: JsonFields.id(json['tourSalesId']),
+      tourCode: JsonFields.text(json['tourCode']),
+      tourSalesInit: JsonFields.dateText(json['tourSalesInit']),
+      tourSalesFinal: JsonFields.dateText(json['tourSalesFinal']),
+      nameClient: JsonFields.text(json['nameClient']),
+      courseClient: JsonFields.text(json['courseClient']),
+      seasonClient: JsonFields.integer(json['seasonClient']),
+      tourTripulationNameId: JsonFields.text(json['tourTripulationNameId']),
+      tourTripulationIdentificationId: JsonFields.text(
+        json['tourTripulationIdentificationId'],
+      ),
+      passengerCountsBySex: _parsePassengerCounts(json['passengerCountsBySex']),
+      tokenKey: JsonFields.text(json['tokenKey']),
+      studentCount: JsonFields.integer(json['studentCount']),
+      status: JsonFields.text(json['status']),
+      assignmentId: JsonFields.integer(json['assignmentId']),
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -72,7 +74,7 @@ class TourSales {
       'tokenKey': tokenKey,
       'studentCount': studentCount,
       'status': status,
-      'assignmentId': assignmentId
+      'assignmentId': assignmentId,
     };
   }
 
@@ -89,8 +91,8 @@ class TourSales {
       nameClient: tour.clientName,
       courseClient: tour.course,
       seasonClient: tour.season,
-      tourTripulationNameId:
-          '${coordinator.name} ${coordinator.lastname}'.trim(),
+      tourTripulationNameId: '${coordinator.name} ${coordinator.lastname}'
+          .trim(),
       tourTripulationIdentificationId: coordinator.rut,
       passengerCountsBySex: tour.passengerCountsBySex,
       tokenKey: coordinator.token,

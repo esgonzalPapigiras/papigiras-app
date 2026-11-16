@@ -1,24 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/design/pilo_family_theme.dart';
+import 'package:papigiras_app/design/trip_display_names.dart';
 import 'package:papigiras_app/dto/PassengerList.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/coordinator/medicalRecordScreenEditCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:quickalert/quickalert.dart';
 import 'package:papigiras_app/utils/coordinator_widgets.dart';
+import 'package:papigiras_app/utils/passenger_roster_data.dart';
 
 class MedicalCoordScreen extends StatefulWidget {
+  const MedicalCoordScreen({super.key, required this.login});
+
   final TourSales login;
-  MedicalCoordScreen({required this.login});
 
   @override
-  _MedicalCoordScreenState createState() => _MedicalCoordScreenState();
+  State<MedicalCoordScreen> createState() => _MedicalCoordScreenState();
 }
 
 class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final _coordinatorProvider = CoordinatorProviders();
-  List<Map<String, dynamic>> documents = [];
-  bool _isAscending = true;
+  List<PassengerList> _passengers = [];
+  bool _ascending = true;
+  bool _loading = false;
+  bool _hasError = false;
+
+  String get _tourId => widget.login.tourSalesId.toString();
 
   @override
   void initState() {
@@ -26,217 +33,317 @@ class _MedicalCoordScreenState extends State<MedicalCoordScreen> {
     _fetchMedicalRecords();
   }
 
-  Future<void> _fetchMedicalRecords() async {
-    final passengers = await _coordinatorProvider.getListPassenger(widget.login.tourSalesId.toString());
-    setState(() {
-      documents = passengers.map((passenger) {
-        return {
-          'name': passenger.passengerName,
-          'id': passenger.passengerIdentification,
-          'idPassenger': passenger.passengerId,
-          'passengerApellidos': passenger.passengerApellidos,
-          'countMedicalRecordOk': passenger.countMedicalRecordOk,
-          'countMedicalRecordNoOk': passenger.countMedicalRecordNoOk,
-          'statusMedicalRecord': passenger.statusMedicalRecord
-        };
-      }).toList();
-    });
+  @override
+  void dispose() {
+    _coordinatorProvider.dispose();
+    super.dispose();
   }
 
-  void _sortDocuments() {
+  Future<void> _fetchMedicalRecords() async {
+    if (_loading) return;
     setState(() {
-      documents.sort((a, b) {
-        final idA = (a['passengerApellidos'] ?? '').toString();
-        final idB = (b['passengerApellidos'] ?? '').toString();
-        return _isAscending ? idA.compareTo(idB) : idB.compareTo(idA);
-      });
-      _isAscending = !_isAscending;
+      _loading = true;
+      _hasError = false;
     });
+    try {
+      final passengers = await _coordinatorProvider.getListPassenger(_tourId);
+      if (!mounted) return;
+      setState(() => _passengers = passengers);
+    } catch (_) {
+      if (mounted) setState(() => _hasError = true);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Theme(
+    data: PiloFamilyTheme.theme(Theme.of(context)),
+    child: Scaffold(
       key: _scaffoldKey,
-      backgroundColor: kCoordinatorTeal,
       endDrawer: CoordinatorEndDrawer(login: widget.login),
-      body: Stack(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildBackground(),
-          Column(
-            children: [
-              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey),
-              Expanded(child: _buildContent()),
+          PiloSectionBar(
+            title: 'Fichas médicas',
+            compact: true,
+            padding: const EdgeInsets.fromLTRB(20, 6, 20, 8),
+            onBack: () => Navigator.of(context).maybePop(),
+            actions: [
+              IconButton(
+                tooltip: 'Actualizar fichas',
+                onPressed: _loading ? null : _fetchMedicalRecords,
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+              IconButton(
+                tooltip: 'Abrir menú',
+                onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+                icon: const Icon(Icons.menu_rounded),
+              ),
             ],
           ),
+          Expanded(child: _buildContent()),
         ],
       ),
-    );
-  }
-
-  Widget _buildBackground() {
-    return Container(decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
-  }
+    ),
+  );
 
   Widget _buildContent() {
-    return Container(
-      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [_buildHeader(), Expanded(child: ListView(children: _buildMedicalRecordCards()))],
-      ),
-    );
-  }
+    if (_passengers.isEmpty && _loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_passengers.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _hasError
+                    ? 'No se pudieron cargar las fichas médicas.'
+                    : 'Esta gira todavía no tiene pasajeros.',
+                textAlign: TextAlign.center,
+              ),
+              if (_hasError)
+                TextButton(
+                  onPressed: _fetchMedicalRecords,
+                  child: const Text('Reintentar'),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
 
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text('Fichas Médicas', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800])),
+    final ordered = [..._passengers]
+      ..sort((a, b) {
+        final lastA = (a.passengerApellidos ?? '').trim().toLowerCase();
+        final lastB = (b.passengerApellidos ?? '').trim().toLowerCase();
+        final byLastName = lastA.compareTo(lastB);
+        final order = byLastName == 0
+            ? rosterName(a).compareTo(rosterName(b))
+            : byLastName;
+        return _ascending ? order : -order;
+      });
+    final summary = _passengers.first;
+    return SafeArea(
+      top: false,
+      child: RefreshIndicator(
+        onRefresh: _fetchMedicalRecords,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 4),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _summary(summary),
+                    if (_hasError)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 10),
+                        child: Text('No se pudieron actualizar las fichas.'),
+                      ),
+                    TextButton.icon(
+                      onPressed: () => setState(() => _ascending = !_ascending),
+                      icon: Icon(
+                        _ascending
+                            ? Icons.arrow_downward_rounded
+                            : Icons.arrow_upward_rounded,
+                        size: 18,
+                      ),
+                      label: Text(_ascending ? 'Apellido A–Z' : 'Apellido Z–A'),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            GestureDetector(
-              onTap: _sortDocuments,
-              child: Row(
-                children: [
-                  Text('Ordenar por Apellido', style: TextStyle(fontSize: 8, color: Colors.teal, fontWeight: FontWeight.w600)),
-                  SizedBox(width: 4),
-                  Icon(_isAscending ? Icons.arrow_upward : Icons.arrow_downward, color: Colors.teal, size: 10),
-                ],
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              sliver: SliverList.builder(
+                itemCount: ordered.length,
+                itemBuilder: (context, index) => _record(ordered[index]),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        _buildCounter(),
-      ],
+      ),
     );
   }
 
-  Widget _buildCounter() {
-    if (documents.isEmpty) {
-      return Center(
-        child: Text('Sin datos de fichas', style: TextStyle(fontSize: 16, color: Colors.grey[500])),
-      );
-    }
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('Contador de fichas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
-          const SizedBox(height: 8),
-          RichText(
-            text: TextSpan(
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800]),
-              children: [
-                TextSpan(text: '${documents.first['countMedicalRecordOk']}', style: const TextStyle(color: Colors.green)),
-                const TextSpan(text: ' / '),
-                TextSpan(text: '${documents.first['countMedicalRecordNoOk']}', style: const TextStyle(color: Colors.red)),
-              ],
-            ),
+  Widget _summary(PassengerList passenger) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+    decoration: BoxDecoration(
+      color: PiloFamilyTheme.ink,
+      borderRadius: BorderRadius.circular(24),
+    ),
+    child: Wrap(
+      spacing: 16,
+      runSpacing: 4,
+      children: [
+        Text(
+          '${passenger.countMedicalRecordOk} guardadas',
+          style: const TextStyle(
+            color: PiloFamilyTheme.mint,
+            fontWeight: FontWeight.w700,
           ),
+        ),
+        Text(
+          '${passenger.countMedicalRecordNoOk} pendientes',
+          style: const TextStyle(color: PiloFamilyTheme.paper),
+        ),
+      ],
+    ),
+  );
+
+  Widget _record(PassengerList passenger) {
+    final saved = hasSavedMedicalRecord(passenger);
+    final name = formatStudentName(passenger.passengerName, null);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: PiloFamilyTheme.soft,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: saved
+                    ? PiloFamilyTheme.mint
+                    : PiloFamilyTheme.paper,
+                foregroundColor: PiloFamilyTheme.ink,
+                child: const Icon(Icons.medical_services_outlined, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name.isEmpty ? rosterName(passenger) : name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      passenger.passengerIdentification,
+                      style: const TextStyle(color: PiloFamilyTheme.secondary),
+                    ),
+                    Text(
+                      saved ? 'Ficha guardada' : 'Pendiente',
+                      style: TextStyle(
+                        color: saved
+                            ? PiloFamilyTheme.accentText
+                            : PiloFamilyTheme.secondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (saved) ...[const SizedBox(height: 8), _actions(passenger)],
         ],
       ),
     );
   }
 
-  List<Widget> _buildMedicalRecordCards() {
-    return documents.map((document) => _buildMedicalRecordCard(document)).toList();
-  }
-
-  Widget _buildMedicalRecordCard(Map<String, dynamic> document) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.medical_services, color: Colors.teal, size: 40),
-              title: Text(document['name'], style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-              subtitle: Text(document['id'], style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            ),
-            _buildMedicalRecordActions(document),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMedicalRecordActions(Map<String, dynamic> document) {
-    if (document['statusMedicalRecord'] != 'Lleno') {
-      return const SizedBox.shrink();
-    }
-    return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [_buildEditButton(document), _buildViewButton(document), _buildDownloadButton(document), _buildShareButton(document)],
-      ),
-    );
-  }
-
-  Widget _buildEditButton(Map<String, dynamic> document) {
-    return IconButton(
-      icon: const Icon(Icons.edit, color: Colors.teal),
-      onPressed: () async {
-        final wasUpdated = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => MedicalRecordScreenEditCoordinator(
-              login: widget.login,
-              idPassenger: document['idPassenger'].toString(),
-              idDocumento: document['id'].toString(),
-              nombrepassenger: document['name'].toString(),
-              passengerApellidos: document['passengerApellidos'].toString(),
-            ),
-          ),
-        );
-        if (wasUpdated == true && mounted) {
-          await _fetchMedicalRecords();
-        }
-      },
-    );
-  }
-
-  Widget _buildViewButton(Map<String, dynamic> document) {
-    return IconButton(
-      icon: const Icon(Icons.remove_red_eye, color: Colors.teal),
-      onPressed: () {
-        _coordinatorProvider.viewDocumentMedicalRecord(widget.login.tourSalesId.toString(), document['idPassenger'].toString(), context, document['id'].toString());
-      },
-    );
-  }
-
-  Widget _buildDownloadButton(Map<String, dynamic> document) {
-    return IconButton(
-      icon: const Icon(Icons.download, color: Colors.teal),
-      onPressed: () async {
-        await _coordinatorProvider.downloadDocumentMedicalRecord(widget.login.tourSalesId.toString(), document['idPassenger'].toString(), document['id'].toString());
-        QuickAlert.show(
-          context: context,
-          type: QuickAlertType.success,
-          title: 'Éxito',
-          text: 'Documento Descargado',
-          confirmBtnText: 'Continuar',
-          onConfirmBtnTap: () {
-            Navigator.of(context).pop();
+  Widget _actions(PassengerList passenger) {
+    final passengerId = passenger.passengerId.toString();
+    final identification = passenger.passengerIdentification;
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        _action(
+          tooltip: 'Editar ficha',
+          icon: Icons.edit_outlined,
+          onPressed: () async {
+            final wasUpdated = await Navigator.of(context).push<bool>(
+              MaterialPageRoute(
+                builder: (_) => MedicalRecordScreenEditCoordinator(
+                  login: widget.login,
+                  idPassenger: passengerId,
+                  idDocumento: identification,
+                  nombrepassenger: passenger.passengerName ?? '',
+                  passengerApellidos: passenger.passengerApellidos ?? '',
+                ),
+              ),
+            );
+            if (wasUpdated == true && mounted) await _fetchMedicalRecords();
           },
-        );
-      },
+        ),
+        _action(
+          tooltip: 'Ver ficha',
+          icon: Icons.visibility_outlined,
+          onPressed: () => _coordinatorProvider.viewDocumentMedicalRecord(
+            _tourId,
+            passengerId,
+            context,
+            identification,
+          ),
+        ),
+        _action(
+          tooltip: 'Descargar ficha',
+          icon: Icons.download_rounded,
+          onPressed: () => _runPdfAction(
+            () => _coordinatorProvider.downloadDocumentMedicalRecord(
+              _tourId,
+              passengerId,
+              identification,
+            ),
+            'No se pudo descargar la ficha.',
+          ),
+        ),
+        _action(
+          tooltip: 'Compartir ficha',
+          icon: Icons.share_outlined,
+          onPressed: () => _runPdfAction(
+            () => _coordinatorProvider.shareDocumentMedicalRecord(
+              _tourId,
+              passengerId,
+              identification,
+            ),
+            'No se pudo compartir la ficha.',
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildShareButton(Map<String, dynamic> document) {
-    return IconButton(
-      icon: const Icon(Icons.share, color: Colors.teal),
-      onPressed: () {
-        _coordinatorProvider.shareDocumentMedicalRecord(widget.login.tourSalesId.toString(), document['idPassenger'].toString(), document['id'].toString());
-      },
-    );
+  Future<void> _runPdfAction(
+    Future<void> Function() run,
+    String errorMessage,
+  ) async {
+    try {
+      await run();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
+    }
   }
+
+  Widget _action({
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) => IconButton(
+    tooltip: tooltip,
+    style: IconButton.styleFrom(backgroundColor: PiloFamilyTheme.paper),
+    onPressed: onPressed,
+    icon: Icon(icon, size: 22),
+  );
 }

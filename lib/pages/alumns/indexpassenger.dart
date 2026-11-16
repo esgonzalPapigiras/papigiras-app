@@ -1,214 +1,195 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
-import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
-import 'package:papigiras_app/dto/responseAttorney.dart';
-import 'package:papigiras_app/pages/welcome.dart';
-import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:papigiras_app/design/pilo_family_theme.dart';
+import 'package:papigiras_app/design/pilo_rut_input_formatter.dart';
+import 'package:papigiras_app/design/pilo_student_home.dart';
+import 'package:papigiras_app/design/pilo_student_medical_sheet.dart';
+import 'package:papigiras_app/design/trip_display_names.dart';
+import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
+import 'package:papigiras_app/dto/responseAttorney.dart';
+import 'package:papigiras_app/lab/api_http.dart';
+import 'package:papigiras_app/lab/session.dart';
+import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:papigiras_app/utils/app_drawer_father.dart';
+import 'package:papigiras_app/utils/profile_photo_avatar.dart';
 
 class TravelPassengerDashboard extends StatefulWidget {
+  const TravelPassengerDashboard({
+    super.key,
+    required this.login,
+    this.provider,
+  });
   final ResponseAttorney login;
-  TravelPassengerDashboard({required this.login});
+  @visibleForTesting
+  final CoordinatorProviders? provider;
+
   @override
-  _TravelPassengerDashboardState createState() => _TravelPassengerDashboardState();
+  State<TravelPassengerDashboard> createState() =>
+      _TravelPassengerDashboardState();
 }
 
-class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final usuarioProvider = new CoordinatorProviders();
-  String baseUrl = "https://stingray-app-9tqd9.ondigitalocean.app/app/services/get/information/passenger?tourPassenger=";
-  XFile? _image;
-  String? _imageUrl;
-
-  String formatDate(String date) {
-    DateTime parsedDate = DateTime.parse(date);
-    String formattedDate = DateFormat('dd-MM-yyyy').format(parsedDate);
-    return formattedDate;
-  }
-
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl = Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-    } else {
-      print('No se puede abrir WhatsApp');
-      final whatsappDirect = Uri.parse("whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(whatsappDirect, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
-      }
-    }
-  }
-
-  Future<void> _loadImage() async {
-    try {
-      Responseimagepassenger imageUrl = await usuarioProvider.getPicturePassenger(widget.login.passengerIdentificacion.toString(), widget.login.tourId.toString());
-      if (imageUrl.image.isNotEmpty) {
-        setState(() {
-          _imageUrl = imageUrl.image;
-        });
-      } else {
-        setState(() {
-          _imageUrl = null;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _imageUrl = null;
-      });
-    }
-  }
-
-  bool _isBase64(String data) {
-    try {
-      base64Decode(data.split(',').last);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
+class _TravelPassengerDashboardState extends State<TravelPassengerDashboard>
+    with WidgetsBindingObserver {
+  late CoordinatorProviders _provider;
+  PassengersMedicalRecordDTO? _record;
+  PiloStudentMedicalStatus _status = PiloStudentMedicalStatus.loading;
+  int _request = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadImage();
+    _provider = widget.provider ?? CoordinatorProviders();
+    WidgetsBinding.instance.addObserver(this);
+    LabSession.changed.addListener(_sessionChanged);
+    _loadMedical();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9),
-      endDrawer: AppDrawerFather(login: widget.login, imageFile: _image, imageUrl: _imageUrl),
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-              child: Row(
-                children: [
-                  Spacer(),
-                  Image.asset('assets/logo-letras-papigiras.png', height: 50),
-                  Spacer(),
-                  Builder(
-                    builder: (context) => IconButton(
-                      icon: Icon(Icons.menu, color: Colors.white, size: 30),
-                      onPressed: () {
-                        _scaffoldKey.currentState?.openEndDrawer();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40.0), topRight: Radius.circular(40.0))),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 20),
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundImage: _image != null
-                            ? FileImage(File(_image!.path)) as ImageProvider<Object>
-                            : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                                ? (_isBase64(_imageUrl!)
-                                    ? MemoryImage(base64Decode(_imageUrl!.split(',').last)) as ImageProvider<Object>
-                                    : NetworkImage(_imageUrl!) as ImageProvider<Object>)
-                                : AssetImage('assets/profile.jpg') as ImageProvider<Object>,
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
-                        style: TextStyle(fontSize: 14, color: Colors.black, fontWeight: FontWeight.bold),
-                      ),
-                      Text(widget.login.passengerIdentificacion!, style: TextStyle(fontSize: 14, color: Colors.black)),
-                      SizedBox(height: 8),
-                      Divider(),
-                      SizedBox(height: 100),
-                      Center(
-                        child: QrImageView(
-                          data: jsonEncode({"id": 20, "url": baseUrl + widget.login.passengerId.toString()}),
-                          size: 200,
-                          embeddedImageStyle: QrEmbeddedImageStyle(size: const Size(100, 100)),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Sección inferior de botones
-          ],
-        ),
+  void didUpdateWidget(covariant TravelPassengerDashboard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.provider != widget.provider) {
+      if (oldWidget.provider == null) _provider.dispose();
+      _provider = widget.provider ?? CoordinatorProviders();
+    }
+    if (oldWidget.login.passengerId != widget.login.passengerId ||
+        oldWidget.login.tourId != widget.login.tourId ||
+        oldWidget.provider != widget.provider) {
+      _loadMedical();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _loadMedical();
+  }
+
+  void _sessionChanged() {
+    // Health data is held only in this signed-in view, never preferences/disk.
+    ++_request;
+    if (mounted)
+      setState(() {
+        _record = null;
+        _status = PiloStudentMedicalStatus.failed;
+      });
+  }
+
+  @override
+  void dispose() {
+    ++_request;
+    LabSession.changed.removeListener(_sessionChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    if (widget.provider == null) _provider.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMedical() async {
+    final request = ++_request;
+    final generation = LabSession.generation;
+    final passenger = widget.login.passengerId;
+    final tour = widget.login.tourId;
+    setState(() {
+      _record = null;
+      _status = PiloStudentMedicalStatus.loading;
+    });
+    bool current() =>
+        mounted && request == _request && generation == LabSession.generation;
+    try {
+      if (passenger == null || passenger <= 0 || tour == null || tour <= 0) {
+        throw StateError('Missing medical identity');
+      }
+      final record = await _provider.getMedicalRecord('$tour', '$passenger');
+      if (!current()) return;
+      if (record.idPassengersMedicalRecord == null ||
+          record.passengerId != passenger ||
+          record.tourSalesId != tour) {
+        throw StateError('Medical identity mismatch');
+      }
+      setState(() {
+        _record = record;
+        _status = PiloStudentMedicalStatus.ready;
+      });
+    } on LabApiException catch (error) {
+      if (!current()) return;
+      setState(
+        () => _status = error.statusCode == 404
+            ? PiloStudentMedicalStatus.missing
+            : PiloStudentMedicalStatus.failed,
+      );
+    } catch (_) {
+      if (!current()) return;
+      setState(() => _status = PiloStudentMedicalStatus.failed);
+    }
+  }
+
+  String get _name => formatStudentName(
+    widget.login.passengerName,
+    widget.login.passengerApellidos,
+    short: true,
+  );
+
+  void _openMedical(BuildContext context) {
+    final record = _record;
+    if (_status != PiloStudentMedicalStatus.ready || record == null) return;
+    final provider = _provider;
+    final tour = record.tourSalesId;
+    final passenger = record.passengerId;
+    showPiloStudentMedicalSheet(
+      context,
+      studentName: formatStudentName(
+        widget.login.passengerName,
+        widget.login.passengerApellidos,
       ),
+      studentIdentification: widget.login.passengerIdentificacion ?? '',
+      loadPdf: () => provider.getMedicalRecordPdf('$tour', '$passenger'),
     );
   }
 
-  void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => WelcomeScreen()), (route) => false);
-  }
-
-  Widget buildBottomButton(IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            alignment: Alignment.topRight,
-            children: [
-              Icon(icon, size: 40, color: Colors.teal),
-              if (badge != null)
-                Positioned(
-                  top: -5,
-                  right: -5,
-                  child: Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
-                    child: Text(badge, style: TextStyle(color: Colors.white, fontSize: 12)),
-                  ),
-                ),
-            ],
+  @override
+  Widget build(BuildContext context) => Theme(
+    data: PiloFamilyTheme.theme(Theme.of(context)),
+    child: Builder(
+      builder: (context) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.dark.copyWith(
+          statusBarColor: Colors.transparent,
+        ),
+        child: Scaffold(
+          backgroundColor: PiloFamilyTheme.paper,
+          body: PiloStudentHome(
+            name: _name.isEmpty ? 'Estudiante' : _name,
+            rut: PiloRutInputFormatter.formatDisplay(
+              widget.login.passengerIdentificacion ?? '',
+            ),
+            avatar: ProfilePhotoAvatar(
+              radius: 30,
+              passenger: widget.login,
+              provider: widget.provider,
+            ),
+            qr: Semantics(
+              label: 'Código QR de identificación del estudiante',
+              image: true,
+              child: QrImageView(
+                data: jsonEncode({
+                  'id': 20,
+                  'url': 'papigiras-lab:passenger/${widget.login.passengerId}',
+                }),
+                size: 200,
+                padding: const EdgeInsets.all(12),
+                backgroundColor: Colors.white,
+              ),
+            ),
+            medicalStatus: _status,
+            onMedical: () => _openMedical(context),
+            onRetry: _loadMedical,
+            onMenu: () => AppDrawerFather.showPiloStudentProfileSheet(
+              context,
+              login: widget.login,
+              photoProvider: widget.provider,
+            ),
           ),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 14)),
-        ],
+        ),
       ),
-    );
-  }
-
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0); // Desde abajo
-        const end = Offset.zero;
-        const curve = Curves.ease;
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-        return SlideTransition(position: offsetAnimation, child: child);
-      },
-    );
-  }
+    ),
+  );
 }

@@ -1,3 +1,5 @@
+import 'json_fields.dart';
+
 class PositionCoordinator {
   final int coordinatorId;
   final String coordinatorName;
@@ -17,14 +19,14 @@ class PositionCoordinator {
 
   factory PositionCoordinator.fromJson(Map<String, dynamic> json) {
     return PositionCoordinator(
-      coordinatorId: (json['coordinatorId'] as num).toInt(),
-      coordinatorName: json['coordinatorName'] as String? ?? '',
-      coordinatorLastname: json['coordinatorLastname'] as String? ?? '',
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
+      coordinatorId: JsonFields.id(json['coordinatorId']),
+      coordinatorName: JsonFields.text(json['coordinatorName']),
+      coordinatorLastname: JsonFields.text(json['coordinatorLastname']),
+      latitude: JsonFields.decimal(json['latitude']),
+      longitude: JsonFields.decimal(json['longitude']),
       recordedAt: json['recordedAt'] == null
           ? null
-          : DateTime.tryParse(json['recordedAt'] as String),
+          : DateTime.tryParse(JsonFields.dateText(json['recordedAt'])),
     );
   }
 

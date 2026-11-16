@@ -1,115 +1,149 @@
 import 'dart:convert';
-
-import 'package:background_locator_2/location_dto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:papigiras_app/lab/api_http.dart';
+import 'package:papigiras_app/lab/mode.dart';
+import 'package:papigiras_app/lab/preferences.dart';
+import 'package:papigiras_app/lab/session.dart';
 
-const _pendingLocationsKey = 'pendingCoordinatorLocations';
-const _maximumPendingLocations = 200;
+// Same original serialized queue, tour context and recordedAt API contract.
+const pendingLocationsKey = 'pendingCoordinatorLocations';
+const maximumPendingLocations = 200;
 Future<void> _sendChain = Future<void>.value();
 
-@pragma('vm:entry-point')
-void locationCallback(LocationDto locationDto) async {
-  await sendCoordinatorLocation(
-    latitude: locationDto.latitude,
-    longitude: locationDto.longitude,
-  );
+@visibleForTesting
+LabApiClient? locationClientForTests;
+
+/// Exact local POST acknowledged by the existing API, without session secrets.
+class CoordinatorLocationReceipt {
+  const CoordinatorLocationReceipt({
+    required this.tourId,
+    required this.latitude,
+    required this.longitude,
+    required this.recordedAt,
+  });
+  final int tourId;
+  final double latitude, longitude;
+  final DateTime recordedAt;
 }
 
-Future<void> sendCoordinatorLocation({
+Future<CoordinatorLocationReceipt?> sendCoordinatorLocation({
   required double latitude,
   required double longitude,
+  bool Function()? canSend,
 }) {
-  final operation = _sendChain.then((_) => _sendCoordinatorLocation(
-        latitude: latitude,
-        longitude: longitude,
-      ));
-  _sendChain = operation.catchError((Object error) {
-    debugPrint('Location send queue error: $error');
-  });
+  final sessionGeneration = LabSession.generation;
+  final operation = _sendChain.then(
+    (_) => _sendCoordinatorLocation(
+      latitude: latitude,
+      longitude: longitude,
+      canSend: canSend,
+      sessionGeneration: sessionGeneration,
+    ),
+  );
+  _sendChain = operation.then<void>(
+    (_) {},
+    onError: (Object error, StackTrace stack) {
+      // Personal data and exception payloads are intentionally not logged.
+    },
+  );
   return operation;
 }
 
-Future<void> _sendCoordinatorLocation({
+Future<CoordinatorLocationReceipt?> _sendCoordinatorLocation({
   required double latitude,
   required double longitude,
+  bool Function()? canSend,
+  required int sessionGeneration,
 }) async {
+  if (sessionGeneration != LabSession.generation ||
+      (canSend != null && !canSend()))
+    return null;
   final prefs = await SharedPreferences.getInstance();
-  final userRole = prefs.getString('userRole');
-  if (userRole == null || userRole.toLowerCase() != 'coordinator') return;
-
+  if (sessionGeneration != LabSession.generation ||
+      (canSend != null && !canSend()))
+    return null;
+  if (prefs.getString('userRole') != 'coordinator') return null;
   final token = prefs.getString('token');
-  final selectedTourId = prefs.getInt('selectedTourId');
-  if (token == null || token.isEmpty || selectedTourId == null) return;
-
-  await _flushPendingLocations(prefs, token);
-
-  final location = <String, dynamic>{
-    'latitude': latitude,
-    'longitude': longitude,
-    'tourId': selectedTourId,
-    'recordedAt': DateTime.now().toUtc().toIso8601String(),
-  };
-
-  if (!await _postLocation(location, token)) {
-    await _queueLocation(prefs, location);
+  final tourId = prefs.getInt('selectedTourId');
+  if (token == null || token.isEmpty || tourId == null) return null;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    throw ArgumentError('Invalid synthetic coordinates');
   }
+  bool permitted() =>
+      sessionGeneration == LabSession.generation &&
+      (canSend?.call() ?? true) &&
+      prefs.getString('token') == token &&
+      prefs.getString('userRole') == 'coordinator';
+  final pending = prefs.getStringList(pendingLocationsKey) ?? <String>[];
+  CoordinatorLocationReceipt? receipt;
+  final remaining = <String>[];
+  for (var i = 0; i < pending.length; i++) {
+    if (!permitted()) {
+      remaining.addAll(pending.sublist(i));
+      break;
+    }
+    final encoded = pending[i];
+    try {
+      final location = jsonDecode(encoded) as Map<String, dynamic>;
+      if (!await _postLocation(location, token)) {
+        remaining.addAll(pending.sublist(i));
+        break;
+      }
+    } catch (_) {
+      // Preserve the original behavior of discarding invalid serialized queue entries.
+    }
+  }
+  if (permitted()) {
+    final recordedAt = DateTime.now().toUtc();
+    final location = <String, dynamic>{
+      'latitude': latitude,
+      'longitude': longitude,
+      'tourId': tourId,
+      'recordedAt': recordedAt.toIso8601String(),
+    };
+    if (!await _postLocation(location, token)) {
+      remaining.add(jsonEncode(location));
+    } else if (permitted() && prefs.getInt('selectedTourId') == tourId) {
+      receipt = CoordinatorLocationReceipt(
+        tourId: tourId,
+        latitude: latitude,
+        longitude: longitude,
+        recordedAt: recordedAt,
+      );
+    }
+  }
+  if (remaining.length > maximumPendingLocations) {
+    remaining.removeRange(0, remaining.length - maximumPendingLocations);
+  }
+  if (sessionGeneration == LabSession.generation &&
+      prefs.getString('token') == token &&
+      prefs.getString('userRole') == 'coordinator') {
+    await prefs.setStringList(pendingLocationsKey, remaining);
+  }
+  return permitted() && prefs.getInt('selectedTourId') == tourId
+      ? receipt
+      : null;
 }
 
 Future<bool> _postLocation(Map<String, dynamic> location, String token) async {
-  final url = Uri.https(
-    'stingray-app-9tqd9-djh6d.ondigitalocean.app',
-    '/app/services/add-position-coordinator',
-    {
-      'latitud': location['latitude'].toString(),
-      'longitud': location['longitude'].toString(),
-      'tourId': location['tourId'].toString(),
-      'recordedAt': location['recordedAt'].toString(),
-    },
-  );
-
+  if (LabMode.fixturesForTests && locationClientForTests == null) return true;
+  final client = locationClientForTests ?? LabApiClient();
+  final url = LabApi.uri('/app/services/add-position-coordinator', {
+    'latitud': location['latitude'].toString(),
+    'longitud': location['longitude'].toString(),
+    'tourId': location['tourId'].toString(),
+    'recordedAt': location['recordedAt'].toString(),
+  });
   try {
-    final response = await http.post(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token,
-    }).timeout(const Duration(seconds: 15));
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      debugPrint(
-          'Coordinator location saved: ${location['latitude']}, ${location['longitude']}');
-      return true;
-    }
-    debugPrint('Location upload failed (${response.statusCode})');
+    await client.post(
+      url,
+      headers: {'Content-Type': 'application/json', 'Authorization': token},
+    );
+    return true;
   } catch (error) {
-    debugPrint('Location upload exception: $error');
+    // Personal data and exception payloads are intentionally not logged.
+    return false;
+  } finally {
+    if (locationClientForTests == null) client.close();
   }
-  return false;
-}
-
-Future<void> _flushPendingLocations(
-    SharedPreferences prefs, String token) async {
-  final encoded = prefs.getStringList(_pendingLocationsKey) ?? const [];
-  if (encoded.isEmpty) return;
-
-  final remaining = <String>[];
-  for (final item in encoded) {
-    try {
-      final location = jsonDecode(item) as Map<String, dynamic>;
-      if (!await _postLocation(location, token)) remaining.add(item);
-    } catch (error) {
-      debugPrint('Discarding invalid queued location: $error');
-    }
-  }
-  await prefs.setStringList(_pendingLocationsKey, remaining);
-}
-
-Future<void> _queueLocation(
-    SharedPreferences prefs, Map<String, dynamic> location) async {
-  final pending = prefs.getStringList(_pendingLocationsKey) ?? <String>[];
-  pending.add(jsonEncode(location));
-  if (pending.length > _maximumPendingLocations) {
-    pending.removeRange(0, pending.length - _maximumPendingLocations);
-  }
-  await prefs.setStringList(_pendingLocationsKey, pending);
-  debugPrint('Location queued for retry (${pending.length} pending)');
 }

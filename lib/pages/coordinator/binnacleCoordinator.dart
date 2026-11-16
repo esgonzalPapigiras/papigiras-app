@@ -1,147 +1,129 @@
+import 'package:papigiras_app/utils/coordinator_location_toggle.dart';
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/design/pilo_family_theme.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
-import 'package:papigiras_app/dto/binnacle.dart';
+import 'package:papigiras_app/maps/trip_binnacle_timeline.dart';
+import 'package:papigiras_app/maps/trip_map_controller.dart';
+import 'package:papigiras_app/maps/trip_map_data.dart';
+import 'package:papigiras_app/navigation/family_navigation.dart';
+import 'package:papigiras_app/pages/attorney/TraceMapFullScreen.dart';
 import 'package:papigiras_app/pages/coordinator/detailbinnacleCoodinator.dart';
-import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:papigiras_app/utils/coordinator_widgets.dart';
+import 'package:papigiras_app/maps/hito_location_draft.dart';
+import 'package:papigiras_app/pages/coordinator/addHito.dart';
 
 class BitacoraCoordScreen extends StatefulWidget {
+  const BitacoraCoordScreen({
+    super.key,
+    required this.login,
+    this.controller,
+    this.onHitoChanged,
+  });
+
   final TourSales login;
-  BitacoraCoordScreen({required this.login});
+  final TripMapController? controller;
+  final VoidCallback? onHitoChanged;
 
   @override
-  _BitacoraCoordScreenState createState() => _BitacoraCoordScreenState();
+  State<BitacoraCoordScreen> createState() => _BitacoraCoordScreenState();
 }
 
 class _BitacoraCoordScreenState extends State<BitacoraCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _coordinatorProvider = CoordinatorProviders();
-  List<ConsolidatedTourSalesDTO> _itineraries = [];
 
   @override
-  void initState() {
-    super.initState();
-    _fetchItineraries();
-  }
+  Widget build(BuildContext context) => Theme(
+    data: PiloFamilyTheme.theme(Theme.of(context)),
+    child: Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: PiloFamilyTheme.paper,
+      endDrawer: CoordinatorEndDrawer(login: widget.login),
+      body: TripBinnacleTimeline(
+        tourId: widget.login.tourSalesId,
+        controller: widget.controller,
+        showAuthor: true,
+        onOpenMap: _openMap,
+        onOpenDetail: _openBinnacleDetail,
+        familyHeader: (onRefresh) => PiloSectionBar(
+          title: 'Bitácora',
+          compact: true,
+          padding: const EdgeInsets.fromLTRB(20, 6, 20, 4),
+          onBack: _back,
+          actions: [
+            IconButton(
+              onPressed: onRefresh,
+              tooltip: 'Actualizar bitácora',
+              icon: const Icon(Icons.refresh_rounded),
+            ),
+            IconButton(
+              onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+              tooltip: 'Abrir menú',
+              icon: const Icon(Icons.menu_rounded),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 
-  Future<void> _fetchItineraries() async {
-    try {
-      final itineraries = await _coordinatorProvider
-          .getBinnacle(widget.login.tourSalesId.toString());
-      setState(() => _itineraries = itineraries);
-      //print("Itinerarios cargados: $itineraries");
-    } catch (error) {
-      print("Error al cargar los itinerarios: $error");
+  void _back() {
+    final navigation = FamilyNavigationScope.maybeOf(context);
+    if (navigation != null) {
+      navigation.back();
+    } else {
+      Navigator.of(context).maybePop();
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: kCoordinatorTeal,
-      endDrawer: CoordinatorEndDrawer(login: widget.login),
-      body: Stack(
-        children: [
-          _buildBackground(),
-          Column(
-            children: [
-              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey),
-              Expanded(child: _buildContent()),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBackground() {
-    return Container(
-        decoration: BoxDecoration(
-            image: DecorationImage(
-                image: AssetImage('assets/background.png'),
-                fit: BoxFit.cover)));
-  }
-
-  Widget _buildContent() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(40), topRight: Radius.circular(40)),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: ListView(children: _buildBinnacleEntries())),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildBinnacleEntries() {
-    return _itineraries
-        .map((binnacle) => _buildBinnacleCard(binnacle))
-        .toList();
-  }
-
-  Widget _buildBinnacleCard(ConsolidatedTourSalesDTO binnacle) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildBinnacleDate(binnacle),
-            Text(binnacle.binnacleTitulo,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(
-              binnacle.author == null
-                  ? 'Autor: registro histórico'
-                  : 'Autor: ${binnacle.author!.fullName}',
-              style: const TextStyle(fontSize: 12, color: Colors.teal),
-            ),
-            const SizedBox(height: 4),
-            Text(binnacle.binnacleUbicacion,
-                style: const TextStyle(fontSize: 14, color: Colors.black54)),
-            const SizedBox(height: 10),
-            _buildViewMoreButton(binnacle),
-          ],
+  void _openMap(int id) {
+    final navigation = FamilyNavigationScope.maybeOf(context);
+    if (navigation != null) {
+      navigation.openMap(id);
+      return;
+    }
+    Navigator.of(context).push(
+      buildCoordinatorRoute(
+        TraceMapFullScreen(
+          locationControl: const CoordinatorLocationToggle(compact: true),
+          coordinatorId: widget.login.coordinatorId,
+          tourCode: widget.login.tourSalesId,
+          initialHitoId: id,
+          edgeToEdge: true,
+          onCreateHito: (location) async {
+            final created = await showPiloNewHitoSheet(
+              context,
+              login: widget.login,
+              initialLocation: location,
+            );
+            if (mounted && created == true) {
+              widget.controller?.refresh();
+              widget.onHitoChanged?.call();
+            }
+          },
+          onOpenHito: _openBinnacleDetail,
         ),
       ),
     );
   }
 
-  Widget _buildBinnacleDate(ConsolidatedTourSalesDTO binnacle) {
-    final shortDate = binnacle.binnacleFecha.split('/').sublist(0, 2).join('/');
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
-      child: Text('$shortDate • ${binnacle.binnacleHora}',
-          style: const TextStyle(fontSize: 11, color: Colors.teal)),
-    );
-  }
-
-  Widget _buildViewMoreButton(ConsolidatedTourSalesDTO binnacle) {
-    return Align(
-      alignment: Alignment.bottomRight,
-      child: TextButton(
-        onPressed: () => _openBinnacleDetail(binnacle),
-        child: const Text('Ver más', style: TextStyle(color: Colors.teal)),
-      ),
-    );
-  }
-
-  void _openBinnacleDetail(ConsolidatedTourSalesDTO binnacle) {
-    Navigator.of(context).push(
+  Future<void> _openBinnacleDetail(TripMapEntry entry) async {
+    await Navigator.of(context).push(
       buildCoordinatorRoute(
         DetalleBitacoraCoordScreen(
-          idHito: binnacle.binnacleDetailId.toString(),
+          idHito: entry.id.toString(),
           login: widget.login,
-          canModify: binnacle.canModify,
+          // Preserve the server's role/ownership decision, never infer it from
+          // the name of the author or from who opened this presentation.
+          canModify: entry.source.canModify,
+          initialLocation:
+              entry.position != null &&
+                  HitoLocationDraft.isValidPoint(entry.position!)
+              ? HitoLocationDraft(
+                  point: entry.position!,
+                  label: entry.source.binnacleUbicacion,
+                )
+              : null,
+          onHitoChanged: widget.onHitoChanged,
         ),
       ),
     );

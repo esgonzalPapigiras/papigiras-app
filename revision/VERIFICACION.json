@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-16",
+  "scope": "review packaging and documented upstream reconciliation",
+  "source_commit": "9d4cba964ab28803be84ac82c21a144dc28170df",
+  "unchanged_sources_match": true,
+  "changed_source_files": [
+    "scripts/check_isolation.py",
+    "third_party/qr_code_scanner_plus/README.md",
+    "third_party/qr_code_scanner_plus/android/src/main/kotlin/net/touchcapture/qr/flutterqrplus/QRView.kt"
+  ],
+  "isolation_check": "passed",
+  "secrets_and_private_artifacts_scan": "passed",
+  "new_product_tests": "not rerun; only documented whitespace/packaging changes, previous results in README",
+  "original_lab_and_running_beta_modified": false,
+  "remote_push_verified": "recorded separately after push",
+  "production_ready": false
+}

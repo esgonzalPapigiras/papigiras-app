@@ -1,79 +1,197 @@
+import 'package:papigiras_app/utils/page_navigation.dart';
+import 'package:papigiras_app/design/papigiras_design.dart';
+import 'lab/session.dart';
+import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:background_locator_2/background_locator.dart';
-import 'package:papigiras_app/pages/welcome.dart';
-import 'package:papigiras_app/utils/LocationService.dart';
-import 'package:papigiras_app/dto/TourSales.dart';
-import 'package:papigiras_app/dto/coordinator_session.dart';
-import 'package:papigiras_app/dto/responseAttorney.dart';
-import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/coordinatorTourSelection.dart';
-import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
-import 'package:papigiras_app/pages/attorney/indexFather.dart';
-import 'package:papigiras_app/utils/fcm_utils.dart';
-import 'firebase_options.dart';
-
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  debugPrint('========== BACKGROUND FCM ==========');
-  debugPrint('Message ID: ${message.messageId}');
-  debugPrint('Data: ${message.data}');
-}
+import 'lab/offline.dart';
+import 'lab/preferences.dart';
+import 'lab/location_controls.dart';
+import 'lab/synthetic_location.dart';
+import 'utils/fcm_utils.dart';
+import 'utils/session_utils.dart';
+import 'dto/TourSales.dart';
+import 'dto/coordinator_session.dart';
+import 'dto/responseAttorney.dart';
+import 'pages/coordinator/indexCoordinator.dart';
+import 'pages/coordinator/coordinatorTourSelection.dart';
+import 'pages/alumns/indexpassenger.dart';
+import 'pages/attorney/indexFather.dart';
+import 'pages/welcome.dart';
+import 'utils/LocationService.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-  const DarwinInitializationSettings iosInit = DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false);
-  const InitializationSettings initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
-  await flutterLocalNotificationsPlugin.initialize(initSettings);
-  const AndroidNotificationChannel channel = AndroidNotificationChannel('hito_channel', 'Hitos', description: 'Notificaciones de nuevos hitos', importance: Importance.high);
-  await flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(channel);
-  final settings = await FirebaseMessaging.instance.requestPermission(alert: true, badge: true, sound: true);
-  debugPrint('FCM permission: ${settings.authorizationStatus}');
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    debugPrint('========== FOREGROUND FCM ==========');
-    debugPrint('Title: ${message.notification?.title}');
-    debugPrint('Body: ${message.notification?.body}');
-    debugPrint('Data: ${message.data}');
-    final notification = message.notification;
-    if (notification != null) {
-      flutterLocalNotificationsPlugin.show(
-          0,
-          notification.title,
-          notification.body,
-          const NotificationDetails(
-              android: AndroidNotificationDetails('hito_channel', 'Hitos', importance: Importance.max, priority: Priority.high),
-              iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true)));
-    }
-  });
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    debugPrint('========== NOTIFICATION OPENED ==========');
-    print(message.data);
-  });
-  await BackgroundLocator.initialize();
-  Widget startScreen = await _determineStartScreen();
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => LocationService(),
-      child: MyApp(startScreen: startScreen),
+  HttpOverrides.global = LabOfflineHttpOverrides();
+  await LabSyntheticLocation.instance.restore();
+  final startScreen = await determineLabStartScreen();
+  runApp(PapigirasLab(startScreen: startScreen));
+}
+
+class PapigirasLab extends StatelessWidget {
+  final Widget? startScreen;
+  const PapigirasLab({super.key, this.startScreen});
+  static final navigatorKey = GlobalKey<NavigatorState>();
+  @override
+  Widget build(BuildContext context) => ChangeNotifierProvider(
+    create: (_) => LocationService(),
+    child: _SessionBoundary(
+      child: MaterialApp(
+        title: 'Papigiras LAB',
+        theme: ThemeData(pageTransitionsTheme: papiPageTransitions),
+        locale: papiLocale,
+        supportedLocales: papiSupportedLocales,
+        localizationsDelegates: papiLocalizationsDelegates,
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navigatorKey,
+        scaffoldMessengerKey: labMessengerKey,
+        home: startScreen ?? WelcomeScreen(),
+        routes: {
+          'welcome': (_) => WelcomeScreen(),
+          '/login': (_) => WelcomeScreen(),
+        },
+        builder:
+            const bool.fromEnvironment(
+              'PILO_HIDE_LAB_BANNER',
+              defaultValue: true,
+            )
+            ? (_, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+                value: SystemUiOverlayStyle.dark,
+                child: child ?? const SizedBox.shrink(),
+              )
+            : _buildLabBanner,
+      ),
+    ),
+  );
+
+  Widget _buildLabBanner(BuildContext context, Widget? child) => ColoredBox(
+    color: const Color(0xff173f38),
+    child: SafeArea(
+      bottom: false,
+      child: Column(
+        children: [
+          Material(
+            color: const Color(0xff173f38),
+            child: SizedBox(
+              height: 38,
+              child: Row(
+                children: [
+                  const SizedBox(width: 12),
+                  const Icon(
+                    Icons.science_outlined,
+                    size: 17,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 7),
+                  const Expanded(
+                    child: Text(
+                      'LAB · COPIA RECUPERADA · 03/11/2026',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.route,
+                      semanticLabel: 'Recorrido ficticio LAB',
+                      size: 19,
+                      color: Colors.white,
+                    ),
+                    onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (_) => const LabLocationControls(),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.home_outlined,
+                      semanticLabel: 'Volver al inicio LAB',
+                      size: 19,
+                      color: Colors.white,
+                    ),
+                    onPressed: () async {
+                      await context.read<LocationService>().stopTracking();
+                      await clearSession(await SharedPreferences.getInstance());
+                      navigatorKey.currentState?.pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => WelcomeScreen()),
+                        (_) => false,
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.restart_alt,
+                      semanticLabel: 'Reiniciar sesión LAB',
+                      size: 19,
+                      color: Colors.white,
+                    ),
+                    onPressed: () async {
+                      await context.read<LocationService>().stopTracking();
+                      await clearSession(await SharedPreferences.getInstance());
+                      navigatorKey.currentState?.pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => WelcomeScreen()),
+                        (_) => false,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(child: child ?? const SizedBox.shrink()),
+        ],
+      ),
     ),
   );
 }
 
-Future<Widget> _determineStartScreen() async {
+class _SessionBoundary extends StatefulWidget {
+  const _SessionBoundary({required this.child});
+  final Widget child;
+  @override
+  State<_SessionBoundary> createState() => _SessionBoundaryState();
+}
+
+class _SessionBoundaryState extends State<_SessionBoundary> {
+  @override
+  void initState() {
+    super.initState();
+    LabSession.expired.addListener(_expired);
+  }
+
+  @override
+  void dispose() {
+    LabSession.expired.removeListener(_expired);
+    super.dispose();
+  }
+
+  void _expired() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await context.read<LocationService>().stopTracking();
+      PapigirasLab.navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => WelcomeScreen()),
+        (_) => false,
+      );
+    });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+Future<Widget> determineLabStartScreen() async {
   final prefs = await SharedPreferences.getInstance();
+  if (prefs.getString('labSessionRevision') != LabSession.revision) {
+    await LabSession.clear(prefs);
+    return WelcomeScreen();
+  }
   final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
   final String? token = prefs.getString('token');
   final String? tokenExpiryStr = prefs.getString('tokenExpiry');
@@ -98,7 +216,9 @@ Future<Widget> _determineStartScreen() async {
         await _clearPrefsSession(prefs);
         return WelcomeScreen();
       }
-      final coordinator = CoordinatorLogin.fromJson(jsonDecode(coordinatorJson));
+      final coordinator = CoordinatorLogin.fromJson(
+        jsonDecode(coordinatorJson),
+      );
       final loginJson = prefs.getString('loginData');
       if (loginJson == null) {
         return CoordinatorTourSelectionScreen(coordinator: coordinator);
@@ -110,7 +230,9 @@ Future<Widget> _determineStartScreen() async {
       final loginJson = prefs.getString('loginData');
       if (loginJson == null) return WelcomeScreen();
       final loginMap = jsonDecode(loginJson);
-      return TravelPassengerDashboard(login: ResponseAttorney.fromJson(loginMap));
+      return TravelPassengerDashboard(
+        login: ResponseAttorney.fromJson(loginMap),
+      );
     } else if (role == 'father') {
       final loginJson = prefs.getString('loginData');
       if (loginJson == null) {
@@ -120,9 +242,11 @@ Future<Widget> _determineStartScreen() async {
       final passengerRut = login.passengerIdentificacion;
       if (passengerRut != null && passengerRut.isNotEmpty) {
         try {
-          await FcmUtils.startForFather(passengerRut).timeout(const Duration(seconds: 15));
+          await FcmUtils.startForFather(
+            passengerRut,
+          ).timeout(const Duration(seconds: 15));
         } catch (error) {
-          debugPrint('FCM session synchronization failed: $error');
+          // Personal data and exception payloads are intentionally not logged.
         }
       }
       return TravelFatherDashboard(login: login);
@@ -136,21 +260,5 @@ Future<Widget> _determineStartScreen() async {
   }
 }
 
-Future<void> _clearPrefsSession(SharedPreferences prefs) async {
-  await prefs.remove('token');
-  await prefs.remove('tokenExpiry');
-  await prefs.remove('loginData');
-  await prefs.remove('coordinatorData');
-  await prefs.remove('selectedTourId');
-  await prefs.remove('userRole');
-  await prefs.setBool('isLoggedIn', false);
-}
-
-class MyApp extends StatelessWidget {
-  final Widget startScreen;
-  const MyApp({super.key, required this.startScreen});
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: startScreen, routes: {'welcome': (context) => WelcomeScreen()});
-  }
-}
+Future<void> _clearPrefsSession(SharedPreferences prefs) =>
+    LabSession.clear(prefs);

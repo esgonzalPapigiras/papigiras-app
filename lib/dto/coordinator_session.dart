@@ -1,3 +1,5 @@
+import 'json_fields.dart';
+
 class CoordinatorLogin {
   final int coordinatorId;
   final String rut;
@@ -17,23 +19,23 @@ class CoordinatorLogin {
 
   factory CoordinatorLogin.fromJson(Map<String, dynamic> json) {
     return CoordinatorLogin(
-      coordinatorId: (json['coordinatorId'] as num).toInt(),
-      rut: json['rut'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      lastname: json['lastname'] as String? ?? '',
-      mustChangePassword: json['mustChangePassword'] as bool? ?? false,
-      token: json['token'] as String? ?? '',
+      coordinatorId: JsonFields.id(json['coordinatorId']),
+      rut: JsonFields.text(json['rut']),
+      name: JsonFields.text(json['name']),
+      lastname: JsonFields.text(json['lastname']),
+      mustChangePassword: JsonFields.boolean(json['mustChangePassword']),
+      token: JsonFields.text(json['token']),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'coordinatorId': coordinatorId,
-        'rut': rut,
-        'name': name,
-        'lastname': lastname,
-        'mustChangePassword': mustChangePassword,
-        'token': token,
-      };
+    'coordinatorId': coordinatorId,
+    'rut': rut,
+    'name': name,
+    'lastname': lastname,
+    'mustChangePassword': mustChangePassword,
+    'token': token,
+  };
 }
 
 class CoordinatorTour {
@@ -63,16 +65,16 @@ class CoordinatorTour {
 
   factory CoordinatorTour.fromJson(Map<String, dynamic> json) {
     return CoordinatorTour(
-      tourId: (json['tourId'] as num).toInt(),
-      tourCode: json['tourCode'] as String? ?? '',
-      startDate: json['startDate'] as String? ?? '',
-      endDate: json['endDate'] as String? ?? '',
-      status: json['status'] as String? ?? '',
-      clientId: (json['clientId'] as num?)?.toInt() ?? 0,
-      clientName: json['clientName'] as String? ?? '',
-      course: json['course'] as String? ?? '',
-      season: (json['season'] as num?)?.toInt() ?? 0,
-      assignmentId: (json['assignmentId'] as num).toInt(),
+      tourId: JsonFields.id(json['tourId']),
+      tourCode: JsonFields.text(json['tourCode']),
+      startDate: JsonFields.dateText(json['startDate']),
+      endDate: JsonFields.dateText(json['endDate']),
+      status: JsonFields.text(json['status']),
+      clientId: JsonFields.integer(json['clientId']),
+      clientName: JsonFields.text(json['clientName']),
+      course: JsonFields.text(json['course']),
+      season: JsonFields.integer(json['season']),
+      assignmentId: JsonFields.id(json['assignmentId']),
     );
   }
 }
@@ -93,6 +95,9 @@ class CoordinatorTourDetail {
   final int assignmentId;
   final Map<String, int> passengerCountsBySex;
 
+  /// Null means the server did not supply a valid count; {} is a real zero.
+  final Map<String, int>? specialDietCounts;
+
   const CoordinatorTourDetail({
     required this.tourId,
     required this.tourCode,
@@ -108,28 +113,42 @@ class CoordinatorTourDetail {
     required this.branchName,
     required this.assignmentId,
     required this.passengerCountsBySex,
+    this.specialDietCounts,
   });
 
   factory CoordinatorTourDetail.fromJson(Map<String, dynamic> json) {
     return CoordinatorTourDetail(
-      tourId: (json['tourId'] as num).toInt(),
-      tourCode: json['tourCode'] as String? ?? '',
-      startDate: json['startDate'] as String? ?? '',
-      endDate: json['endDate'] as String? ?? '',
-      status: json['status'] as String? ?? '',
-      studentCount: (json['studentCount'] as num?)?.toInt() ?? 0,
-      clientId: (json['clientId'] as num?)?.toInt() ?? 0,
-      clientName: json['clientName'] as String? ?? '',
-      course: json['course'] as String? ?? '',
-      season: (json['season'] as num?)?.toInt() ?? 0,
-      branchId: (json['branchId'] as num?)?.toInt() ?? 0,
-      branchName: json['branchName'] as String? ?? '',
-      assignmentId: (json['assignmentId'] as num).toInt(),
-      passengerCountsBySex: _parsePassengerCounts(
-        json['passengerCountsBySex'],
-      ),
+      tourId: JsonFields.id(json['tourId']),
+      tourCode: JsonFields.text(json['tourCode']),
+      startDate: JsonFields.dateText(json['startDate']),
+      endDate: JsonFields.dateText(json['endDate']),
+      status: JsonFields.text(json['status']),
+      studentCount: JsonFields.integer(json['studentCount']),
+      clientId: JsonFields.integer(json['clientId']),
+      clientName: JsonFields.text(json['clientName']),
+      course: JsonFields.text(json['course']),
+      season: JsonFields.integer(json['season']),
+      branchId: JsonFields.integer(json['branchId']),
+      branchName: JsonFields.text(json['branchName']),
+      assignmentId: JsonFields.id(json['assignmentId']),
+      passengerCountsBySex: _parsePassengerCounts(json['passengerCountsBySex']),
+      specialDietCounts: _parseSpecialDietCounts(json['specialDietCounts']),
     );
   }
+}
+
+Map<String, int>? _parseSpecialDietCounts(dynamic value) {
+  if (value is! Map) return null;
+  final result = <String, int>{};
+  for (final entry in value.entries) {
+    final key = entry.key;
+    final count = JsonFields.optionalInt(entry.value);
+    if (key is! String || key.trim().isEmpty || count == null || count < 0) {
+      return null; // Never turn an unavailable/invalid summary into zero.
+    }
+    result[key] = count;
+  }
+  return Map.unmodifiable(result);
 }
 
 Map<String, int> _parsePassengerCounts(dynamic value) {
@@ -169,16 +188,16 @@ class CoordinatorProfile {
 
   factory CoordinatorProfile.fromJson(Map<String, dynamic> json) {
     return CoordinatorProfile(
-      coordinatorId: (json['coordinatorId'] as num).toInt(),
-      rut: json['rut'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      lastname: json['lastname'] as String? ?? '',
-      phone: json['phone'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-      residence: json['residence'] as String? ?? '',
-      office: json['office'] as String? ?? '',
-      company: json['company'] as String? ?? '',
-      hasPicture: json['hasPicture'] as bool? ?? false,
+      coordinatorId: JsonFields.id(json['coordinatorId']),
+      rut: JsonFields.text(json['rut']),
+      name: JsonFields.text(json['name']),
+      lastname: JsonFields.text(json['lastname']),
+      phone: JsonFields.text(json['phone']),
+      email: JsonFields.text(json['email']),
+      residence: JsonFields.text(json['residence']),
+      office: JsonFields.text(json['office']),
+      company: JsonFields.text(json['company']),
+      hasPicture: JsonFields.boolean(json['hasPicture']),
     );
   }
 }

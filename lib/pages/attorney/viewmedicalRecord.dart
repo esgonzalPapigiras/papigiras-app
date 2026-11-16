@@ -1,560 +1,218 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:papigiras_app/design/medical_form_components.dart';
+import 'package:papigiras_app/design/pilo_family_theme.dart';
 import 'package:papigiras_app/dto/PassengersMedicalRecordDTO.dart';
-import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
-import 'package:papigiras_app/dto/requestMedicalRecord.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
-import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
-import 'package:papigiras_app/pages/attorney/indexFather.dart';
-import 'package:papigiras_app/pages/attorney/loginFather.dart';
-import 'package:papigiras_app/pages/attorney/medicalRecordScreenEdit.dart';
-import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
-import 'package:papigiras_app/pages/welcome.dart';
+import 'package:papigiras_app/lab/api_http.dart';
+import 'package:papigiras_app/pages/attorney/fatherMedicalFile.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:quickalert/quickalert.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:papigiras_app/utils/app_drawer_father.dart';
 
+/// PG-036: the saved record uses the exact same form as first entry.
 class ViewMedicalRecordScreen extends StatefulWidget {
+  const ViewMedicalRecordScreen({super.key, required this.login, this.provider})
+    : _inSheet = false;
+
+  const ViewMedicalRecordScreen._sheet({required this.login})
+    : provider = null,
+      _inSheet = true;
+
   final ResponseAttorney login;
-  ViewMedicalRecordScreen({required this.login});
+  final bool _inSheet;
+  @visibleForTesting
+  final CoordinatorProviders? provider;
+
+  static Future<void> showSheet(
+    BuildContext context, {
+    required ResponseAttorney login,
+  }) => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useRootNavigator: true,
+    useSafeArea: true,
+    // The built-in drag directly pops the route, bypassing PopScope. Route
+    // the header swipe through maybePop so edits and saves stay protected.
+    enableDrag: false,
+    showDragHandle: false,
+    backgroundColor: PiloFamilyTheme.paper,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(PiloFamilyTheme.cardRadius),
+      ),
+    ),
+    clipBehavior: Clip.antiAlias,
+    sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
+        ? AnimationStyle.noAnimation
+        : null,
+    builder: (context) {
+      final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final available = (constraints.maxHeight - keyboard).clamp(
+            0.0,
+            constraints.maxHeight,
+          );
+          return Padding(
+            padding: EdgeInsets.only(bottom: keyboard),
+            child: MediaQuery.removeViewInsets(
+              context: context,
+              removeBottom: true,
+              child: SizedBox(
+                height: (constraints.maxHeight * .82).clamp(0.0, available),
+                child: ViewMedicalRecordScreen._sheet(login: login),
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+
   @override
-  _ViewMedicalRecordScreenState createState() =>
+  State<ViewMedicalRecordScreen> createState() =>
       _ViewMedicalRecordScreenState();
 }
 
 class _ViewMedicalRecordScreenState extends State<ViewMedicalRecordScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  final usuarioProvider = new CoordinatorProviders();
-  final TextEditingController _alergiasController = TextEditingController();
-  final TextEditingController _enfermedadesController = TextEditingController();
-  final TextEditingController _medicamentosController = TextEditingController();
-  final TextEditingController _cuidadosEspecialesController =
-      TextEditingController();
-  Future<PassengersMedicalRecordDTO>? _hitoDetailFuture;
-  XFile? _image;
-  String? _imageUrl;
-
-  Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-
-    if (image != null) {
-      setState(() {
-        _image = image;
-      });
-      // Luego de seleccionar la imagen, se sube al servidor
-      await usuarioProvider.addHitoFotoPassenger(
-          widget.login.passengerId.toString(),
-          widget.login.tourId.toString(),
-          image); // 1 es un ejemplo de hitoId
-      _loadImage(); // Recargamos la imagen después de la subida
-    }
-  }
-
-  Future<void> _loadImage() async {
-    try {
-      Responseimagepassenger imageUrl =
-          await usuarioProvider.getPicturePassenger(
-        widget.login.passengerIdentificacion.toString(),
-        widget.login.tourId.toString(),
-      );
-
-      if (imageUrl.image.isNotEmpty) {
-        setState(() {
-          _imageUrl = imageUrl.image; // Si la imagen existe, la cargamos
-        });
-      } else {
-        setState(() {
-          _imageUrl = null; // Si no hay imagen, usar la predeterminada
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _imageUrl = null; // Si ocurre un error, usar la predeterminada
-      });
-    }
-  }
-
-  bool _isBase64(String data) {
-    try {
-      base64Decode(data
-          .split(',')
-          .last); // Intenta decodificar eliminando un posible prefijo
-      return true;
-    } catch (e) {
-      return false; // Si falla, no es Base64
-    }
-  }
-
+  late final _provider = widget.provider ?? CoordinatorProviders();
+  late Future<PassengersMedicalRecordDTO> _record;
+  double _dragStartY = 0;
   @override
   void initState() {
     super.initState();
-    // Inicia la llamada al servicio para obtener los detalles del hito
-    _hitoDetailFuture = usuarioProvider.getMedicalRecord(
-        widget.login.tourId.toString(), widget.login.passengerId.toString());
-    _loadImage();
+    _load();
   }
 
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl =
-        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
-
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(
-        whatsappUrl,
-        mode: LaunchMode.externalApplication,
-      );
-    } else {
-      print('No se puede abrir WhatsApp');
-      // Intenta con el esquema directo
-      final whatsappDirect = Uri.parse(
-          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(
-          whatsappDirect,
-          mode: LaunchMode.externalApplication,
-        );
-      } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
-      }
-    }
-  }
-
-  void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Borrar el estado de la sesión
-
-    // Redirigir al login o realizar otra acción
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => WelcomeScreen()),
-      (route) =>
-          false, // Esto elimina todas las rutas anteriores de la pila de navegación
+  void _load() {
+    _record = _provider.getMedicalRecord(
+      widget.login.tourId.toString(),
+      widget.login.passengerId.toString(),
     );
+  }
+
+  @override
+  void dispose() {
+    if (widget.provider == null) _provider.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9),
-      endDrawer: AppDrawerFather(
-        login: widget.login,
-        imageFile: _image, // remove if the screen has no image picker
-        imageUrl: _imageUrl, // remove if the screen has no image URL
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/background.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-              child: Row(
-                children: [
-                  Builder(
-                    builder: (context) => IconButton(
-                      icon: Icon(Icons.arrow_back,
-                          color: Colors.white, size: 30), // Flecha blanca
-                      onPressed: () {
-                        // Navegar a otra ruta cuando la flecha es presionada
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => TravelFatherDashboard(
-                                  login: widget
-                                      .login)), // Reemplaza con la ruta deseada
-                        );
-                      },
-                    ),
-                  ),
-                  Spacer(),
-                  Image.asset(
-                    'assets/logo-letras-papigiras.png', // Logo de la app
-                    height: 50,
-                  ),
-                  Spacer(),
-                  Builder(
-                    builder: (context) => IconButton(
-                      icon: Icon(Icons.menu, color: Colors.white, size: 30),
-                      onPressed: () {
-                        _scaffoldKey.currentState
-                            ?.openEndDrawer(); // Abre el Drawer desde la derecha
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: FutureBuilder<PassengersMedicalRecordDTO>(
-                future: _hitoDetailFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (snapshot.hasData) {
-                    final medicalRecord = snapshot.data;
-                    return SingleChildScrollView(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(40),
-                              topRight: Radius.circular(40)),
-                        ),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Ficha Médica',
-                                  style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[800]),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.teal,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: CircleAvatar(
-                                    radius: 60,
-                                    backgroundImage: _image != null
-                                        ? FileImage(File(_image!.path))
-                                            as ImageProvider<
-                                                Object> // Imagen seleccionada desde el dispositivo
-                                        : (_imageUrl != null &&
-                                                _imageUrl!.isNotEmpty)
-                                            ? (_isBase64(
-                                                    _imageUrl!) // Verifica si la URL es una imagen en Base64
-                                                ? MemoryImage(base64Decode(
-                                                    _imageUrl!
-                                                        .split(',')
-                                                        .last)) as ImageProvider<
-                                                    Object> // Decodifica y muestra imagen Base64
-                                                : NetworkImage(_imageUrl!)
-                                                    as ImageProvider<
-                                                        Object>) // Carga imagen desde el servidor
-                                            : AssetImage('assets/profile.jpg')
-                                                as ImageProvider<
-                                                    Object>, // Imagen predeterminada
-                                  ),
-                                ),
-                                SizedBox(width: 15),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      widget.login.passengerIdentificacion!,
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[600]),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 20),
-                            Divider(),
-                            SizedBox(height: 10),
-                            buildInfoSectionEmergencyContact(
-                                'Grupo Sanguineo',
-                                medicalRecord?.bloodType ??
-                                    "No hay alergias registradas"),
-                            buildInfoSection(
-                                'Contacto Emergencia',
-                                '${medicalRecord!.emergencyContactName}\n${medicalRecord.emergencyContactRelation}\n${medicalRecord.emergencyContactEmail}\n${medicalRecord.emergencyContactPhone}' ??
-                                    "No hay contacto de emergencia registrado"),
-                            SizedBox(height: 10),
-                            buildInfoSectionEnfermedades(
-                                'Medicamentos',
-                                medicalRecord?.medications ??
-                                    "No hay medicamentos registradas"),
-                            SizedBox(height: 10),
-                            buildInfoSectionMedicamentos(
-                                'Enfermedades',
-                                medicalRecord?.diseases ??
-                                    "No hay enfermedades registradas"),
-                            SizedBox(height: 10),
-                            buildInfoSectionMedicamentos(
-                                'Medicamentos Prohibidos',
-                                medicalRecord?.avoidMedications ??
-                                    "No hay medicamentos registrados"),
-                            SizedBox(height: 10),
-                            buildInfoSectionMedicamentos(
-                                'Cuidados Especiales',
-                                medicalRecord?.specialCareDetails ??
-                                    "No hay cuidados especiales"),
-                            Align(
-                              alignment: Alignment.center,
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          MedicalRecordScreenEdit(
-                                        login: widget.login,
-                                        record: medicalRecord!,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                icon: Icon(Icons.edit, color: Colors.white),
-                                label: Text(
-                                  'Editar',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 16),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.teal,
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 30.0,
-                                    vertical: 15.0,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20.0),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 20),
-                            SizedBox(height: 200),
-                          ],
-                        ),
-                      ),
-                    );
-                  } else {
-                    return Center(child: Text('No se encontraron datos'));
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildInfoSection(String title, String content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$title:',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-        SizedBox(height: 5),
-        Container(
-          constraints: BoxConstraints(
-            maxHeight: 100,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(10),
-          ),
-          padding: EdgeInsets.all(10),
-          child: SingleChildScrollView(
-            // Permite desplazamiento si el texto es largo
-            child: Text(
-              content, // Muestra el contenido con los saltos de línea
-              style: TextStyle(color: Colors.grey[800]),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget buildInfoSectionEmergencyContact(String title, String content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$title:',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-        SizedBox(height: 5),
-        Container(
-          constraints: BoxConstraints(
-            maxHeight: 80,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(10),
-          ),
-          padding: EdgeInsets.all(10),
-          child: SingleChildScrollView(
-            // Permite desplazamiento si el texto es largo
-            child: Text(
-              content, // Muestra el contenido con los saltos de línea
-              style: TextStyle(color: Colors.grey[800]),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget buildInfoSectionEnfermedades(String title, String content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$title:',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-        SizedBox(height: 5),
-        Container(
-          constraints: BoxConstraints(
-            maxHeight: 80,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(10),
-          ),
-          padding: EdgeInsets.all(10),
-          child: Text(
-            content, // Muestra el contenido con los saltos de línea
-            style: TextStyle(color: Colors.grey[800]),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget buildInfoSectionMedicamentos(String title, String content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$title:',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-        SizedBox(height: 5),
-        Container(
-          constraints: BoxConstraints(
-            maxHeight: 80,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(10),
-          ),
-          padding: EdgeInsets.all(10),
-          child: Text(
-            content, // Muestra el contenido con los saltos de línea
-            style: TextStyle(color: Colors.grey[800]),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget buildBottomButton(IconData icon, String label, String? badge) {
-    return GestureDetector(
-      onTap: () {
-        print('$label presionado');
-
-        if (label == 'Bitácora del Viaje') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) =>
-                    BitacoraFatherScreen(login: widget.login)),
+    final content = FutureBuilder<PassengersMedicalRecordDTO>(
+      future: _record,
+      builder: (context, snapshot) {
+        final missing =
+            snapshot.error is LabApiException &&
+            (snapshot.error as LabApiException).statusCode == 404;
+        if (snapshot.hasData || missing) {
+          return MedicalRecordScreen(
+            login: widget.login,
+            savedRecord: snapshot.data,
+            provider: _provider,
+            inSheet: widget._inSheet,
           );
         }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            alignment: Alignment.topRight,
-            children: [
-              Icon(
-                icon,
-                size: 40,
-                color: Colors.teal,
-              ),
-              if (badge != null)
-                Positioned(
-                  top: -5,
-                  right: -5,
-                  child: Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      shape: BoxShape.circle,
+        return MedicalFormScope(
+          child: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                if (!widget._inSheet)
+                  SliverToBoxAdapter(
+                    child: PiloSectionBar(
+                      title: 'Ficha médica',
+                      onBack: () => Navigator.maybePop(context),
                     ),
-                    child: Text(
-                      badge,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
+                  ),
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: snapshot.hasError
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'No se pudo cargar la ficha médica.',
+                                ),
+                                const SizedBox(height: 16),
+                                FilledButton(
+                                  onPressed: () => setState(_load),
+                                  child: const Text('Reintentar'),
+                                ),
+                              ],
+                            )
+                          : const CircularProgressIndicator(
+                              semanticsLabel: 'Cargando ficha médica',
+                            ),
                     ),
                   ),
                 ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.teal,
-              fontSize: 14,
+              ],
             ),
           ),
-        ],
-      ),
+        );
+      },
+    );
+    if (!widget._inSheet) return content;
+
+    return Column(
+      children: [
+        GestureDetector(
+          key: const ValueKey('medical-sheet-header'),
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragStart: (details) =>
+              _dragStartY = details.globalPosition.dy,
+          onVerticalDragEnd: (details) {
+            if (details.globalPosition.dy - _dragStartY >= 48 ||
+                (details.primaryVelocity ?? 0) >= 400) {
+              Navigator.maybePop(context);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 9, 16, 6),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 32,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: PiloFamilyTheme.connectorPast,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          'Ficha médica',
+                          style: PiloFamilyTheme.display(32),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Cerrar ficha médica',
+                      style: IconButton.styleFrom(
+                        backgroundColor: PiloFamilyTheme.soft,
+                        foregroundColor: PiloFamilyTheme.ink,
+                        minimumSize: const Size.square(48),
+                      ),
+                      onPressed: () => Navigator.maybePop(context),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(child: content),
+      ],
     );
   }
 }

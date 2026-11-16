@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Papigiras App</string>
+	<string>Papigiras LAB</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,45 +15,18 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>papigirasApp</string>
+	<string>Papigiras LAB</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1.0</string>
+	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2</string>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>whatsapp</string>
-		<string>https</string>
-	</array>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>Necesitamos acceso a la cámara para tomar una foto.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>La aplicación utiliza tu ubicación para compartir la posición del coordinador durante la gira, incluso cuando la app está en segundo plano.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Necesitamos acceso a tu ubicación para mostrar la dirección en tiempo real.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Necesitamos acceso a tu ubicación para mostrar la dirección en tiempo real.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Esta aplicación necesita permiso para guardar imágenes y videos en tu biblioteca de fotos.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Esta aplicación necesita acceso a la biblioteca de fotos para seleccionar imágenes y videos.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-		<string>remote-notification</string>
-		<string>fetch</string>
-	</array>
-	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -72,5 +45,19 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Usa Face ID para abrir tu contraseña de Papigiras guardada en este iPhone.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Papigiras LAB necesita el micrófono para grabar la nota de voz que decidas adjuntar a un hito.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Papigiras LAB usa la cámara para fotos de prueba y códigos QR ficticios.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Selecciona imágenes de prueba para Papigiras LAB.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Guarda las imágenes ficticias del laboratorio en Fotos.</string>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>

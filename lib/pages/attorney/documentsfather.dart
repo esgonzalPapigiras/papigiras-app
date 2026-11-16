@@ -1,408 +1,235 @@
+import '../../navigation/family_navigation.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
-import 'package:papigiras_app/dto/document.dart';
-import 'package:papigiras_app/dto/responseAttorney.dart';
-import 'package:papigiras_app/pages/attorney/indexFather.dart';
-import 'package:papigiras_app/pages/welcome.dart';
-import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:quickalert/quickalert.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:papigiras_app/utils/app_drawer_father.dart';
+import '../../design/pilo_family_theme.dart';
+import '../../documents/documents_ui.dart';
+import '../../dto/document.dart';
+import '../../dto/responseAttorney.dart';
+import '../../provider/coordinatorProvider.dart';
+import '../../utils/app_drawer_father.dart';
+import '../../utils/page_navigation.dart';
+import 'indexFather.dart';
 
 class DocumentFatherScreen extends StatefulWidget {
-  @override
-  _DocumentFatherScreenState createState() => _DocumentFatherScreenState();
+  const DocumentFatherScreen({super.key, required this.login, this.provider});
   final ResponseAttorney login;
-  DocumentFatherScreen({required this.login});
+  final CoordinatorProviders? provider;
+  @override
+  State<DocumentFatherScreen> createState() => _DocumentFatherScreenState();
 }
 
 class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  late CoordinatorProviders usuarioProvider =
+      widget.provider ?? CoordinatorProviders();
   late Future<List<Document>> _documentsFuture;
-  final usuarioProvider = new CoordinatorProviders();
-
-  XFile? _image;
   String? _imageUrl;
-
-  Future<void> _loadImage() async {
-    try {
-      Responseimagepassenger imageUrl =
-          await usuarioProvider.getPicturePassenger(
-        widget.login.passengerIdentificacion.toString(),
-        widget.login.tourId.toString(),
-      );
-
-      if (imageUrl.image.isNotEmpty) {
-        setState(() {
-          _imageUrl = imageUrl.image; // Si la imagen existe, la cargamos
-        });
-      } else {
-        setState(() {
-          _imageUrl = null; // Si no hay imagen, usar la predeterminada
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _imageUrl = null; // Si ocurre un error, usar la predeterminada
-      });
-    }
-  }
+  final _busy = <String>{};
+  int _generation = 0;
 
   @override
   void initState() {
     super.initState();
     _loadImage();
-    // Llama a fetchDocuments al iniciar el widget
-    _documentsFuture = fetchDocuments(widget.login.tourId.toString());
+    _documentsFuture = fetchDocuments('${widget.login.tourId}');
   }
 
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl =
-        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
-
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(
-        whatsappUrl,
-        mode: LaunchMode.externalApplication,
-      );
-    } else {
-      print('No se puede abrir WhatsApp');
-      // Intenta con el esquema directo
-      final whatsappDirect = Uri.parse(
-          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(
-          whatsappDirect,
-          mode: LaunchMode.externalApplication,
-        );
-      } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
-      }
+  @override
+  void didUpdateWidget(covariant DocumentFatherScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.login.tourId != widget.login.tourId ||
+        oldWidget.provider != widget.provider ||
+        oldWidget.login.passengerId != widget.login.passengerId) {
+      ++_generation;
+      if (oldWidget.provider == null) usuarioProvider.dispose();
+      usuarioProvider = widget.provider ?? CoordinatorProviders();
+      _imageUrl = null;
+      _busy.clear();
+      _loadImage();
+      _documentsFuture = fetchDocuments('${widget.login.tourId}');
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9), // Fondo turquesa
-      endDrawer: AppDrawerFather(
-        login: widget.login,
-        imageFile: _image, // remove if the screen has no image picker
-        imageUrl: _imageUrl, // remove if the screen has no image URL
-      ),
-      body: Stack(
-        children: [
-          _buildBackground(),
-          Column(
-            children: [
-              _buildAppBar(context),
-              Expanded(
-                child: _buildBinnacleContent(),
-              ),
-            ],
-          ),
-        ],
-      ),
-      //bottomNavigationBar: _buildCustomBottomNavigationBar(),
-    );
+  void dispose() {
+    ++_generation;
+    if (widget.provider == null) usuarioProvider.dispose();
+    super.dispose();
   }
 
-  void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Borrar el estado de la sesión
-
-    // Redirigir al login o realizar otra acción
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => WelcomeScreen()),
-      (route) =>
-          false, // Esto elimina todas las rutas anteriores de la pila de navegación
-    );
-  }
-
-  Widget _buildBackground() {
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/background.png'),
-          fit: BoxFit.cover,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-      child: Row(
-        children: [
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.arrow_back,
-                  color: Colors.white, size: 30), // Flecha blanca
-              onPressed: () {
-                // Navegar a otra ruta cuando la flecha es presionada
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => TravelFatherDashboard(
-                          login:
-                              widget.login)), // Reemplaza con la ruta deseada
-                );
-              },
-            ),
-          ),
-          Spacer(),
-          Image.asset(
-            'assets/logo-letras-papigiras.png',
-            height: 50,
-          ),
-          Spacer(),
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.menu, color: Colors.white, size: 30),
-              onPressed: () {
-                _scaffoldKey.currentState?.openEndDrawer();
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBinnacleContent() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(40),
-          topRight: Radius.circular(40),
-        ),
-      ),
-      padding: EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildFilterOptions(),
-          SizedBox(height: 20),
-          Expanded(
-            child: _buildBinnacleEntries(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterOptions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center, // Centra el texto
-      children: [
-        Text(
-          'Mis Documentos',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-      ],
-    );
+  Future<void> _loadImage() async {
+    final generation = _generation;
+    try {
+      final photo = await usuarioProvider.getPicturePassenger(
+        '${widget.login.passengerIdentificacion}',
+        '${widget.login.tourId}',
+      );
+      if (mounted && generation == _generation)
+        setState(() => _imageUrl = photo.image.isEmpty ? null : photo.image);
+    } catch (_) {
+      /* Existing drawer fallback; never display a different profile. */
+    }
   }
 
   Future<List<Document>> fetchDocuments(String tourCode) async {
+    final documents = await usuarioProvider.getDocument(tourCode);
+    // Preserve the existing family visibility rules. Never request internal docs.
+    return documents
+        .where((d) => d.documentType != 'Nomina alumnos' && d.visibleToAll)
+        .toList();
+  }
+
+  Future<void> _refresh() async {
+    final future = fetchDocuments('${widget.login.tourId}');
+    setState(() {
+      _documentsFuture = future;
+    });
     try {
-      List<Document> documents = await usuarioProvider.getDocument(tourCode);
-      // Business rule #1: parents never see this
-      documents.removeWhere(
-        (document) => document.documentType == 'Nomina alumnos',
-      );
-      // Business rule #2: parents only see visible documents
-
-      documents.removeWhere(
-        (document) => document.visibleToAll == false,
-      );
-      return documents; // Devuelve la lista de documentos
-    } catch (e) {
-      print('Error: $e');
-      return []; // Devuelve una lista vacía en caso de error
+      await future;
+    } catch (_) {
+      /* FutureBuilder presents the recovery state. */
     }
   }
 
-  Widget _buildBinnacleEntries() {
-    return FutureBuilder<List<Document>>(
-      future: _documentsFuture, // Usamos _documentsFuture aquí
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No documents found.'));
-        }
+  Future<void> _action(Document document, bool preview) async {
+    final key = '${document.tourSalesUuid}-${document.documentName}';
+    if (_busy.contains(key) || document.documentName?.trim().isNotEmpty != true)
+      return;
+    final generation = _generation;
+    setState(() => _busy.add(key));
+    try {
+      if (preview) {
+        await usuarioProvider.viewDocument(
+          document.tourSalesUuid,
+          document.documentName!,
+          '${widget.login.tourId}',
+          context,
+          'documentosextras',
+        );
+      } else {
+        await usuarioProvider.downloadDocument(
+          document.tourSalesUuid,
+          document.documentName!,
+          '${widget.login.tourId}',
+          'documentosextras',
+        );
+      }
+      // The native save sheet owns its result. Cancellation is not a success.
+    } catch (_) {
+      if (mounted && generation == _generation)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No pudimos abrir o guardar el documento. Inténtalo nuevamente.',
+            ),
+          ),
+        );
+    } finally {
+      if (mounted && generation == _generation)
+        setState(() => _busy.remove(key));
+    }
+  }
 
-        List<Document> documents = snapshot.data!;
+  void _back() {
+    final navigation = FamilyNavigationScope.maybeOf(context);
+    if (navigation != null) {
+      navigation.back();
+      return;
+    }
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacement(
+        buildPapiRoute(TravelFatherDashboard(login: widget.login)),
+      );
+    }
+  }
 
-        return ListView.builder(
-          itemCount: documents.length,
-          itemBuilder: (context, index) {
-            final document = documents[index];
-            return Card(
-              margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              child: ListTile(
-                leading: Icon(
-                  _getIconForDocumentType(document.documentType),
-                  color: Colors.teal,
-                  size: 40,
+  @override
+  Widget build(BuildContext context) => Theme(
+    data: PiloFamilyTheme.theme(Theme.of(context)),
+    child: Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: PiloFamilyTheme.paper,
+      endDrawer: AppDrawerFather(
+        login: widget.login,
+        imageFile: null,
+        imageUrl: _imageUrl,
+      ),
+      body: SafeArea(bottom: false, child: _content()),
+    ),
+  );
+
+  Widget _content() => FutureBuilder<List<Document>>(
+    future: _documentsFuture,
+    builder: (context, snapshot) {
+      final loading = snapshot.connectionState == ConnectionState.waiting;
+      final documents = snapshot.data ?? const <Document>[];
+      return RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView(
+          key: PageStorageKey('family-documents-${widget.login.tourId}'),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          children: [
+            PiloSectionBar(
+              title: 'Documentos',
+              subtitle: 'Archivos de la gira',
+              padding: const EdgeInsets.only(bottom: 16),
+              onBack: _back,
+              actions: [
+                IconButton(
+                  key: const ValueKey('documents-refresh'),
+                  tooltip: 'Actualizar documentos',
+                  onPressed: loading ? null : _refresh,
+                  icon: const Icon(Icons.refresh_rounded),
                 ),
-                title: Text(
-                  document.documentType ?? 'Sin nombre',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                IconButton(
+                  tooltip: 'Abrir menú',
+                  onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+                  icon: const Icon(Icons.menu_rounded),
                 ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                      onPressed: () {
-                        usuarioProvider.viewDocument(
-                            document.tourSalesUuid,
-                            document.documentName!,
-                            widget.login.tourId.toString(),
-                            context,
-                            "documentosextras");
-                        // Acción para descargar el documento
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.download, color: Colors.teal),
-                      onPressed: () async {
-                        await usuarioProvider.downloadDocument(
-                            document.tourSalesUuid,
-                            document.documentName!,
-                            widget.login.tourId.toString(),
-                            "documentosextras");
-                        QuickAlert.show(
-                          context: context,
-                          type: QuickAlertType.success,
-                          title: 'Éxito',
-                          text: 'Documento Descargado',
-                          confirmBtnText: 'Continuar',
-                          onConfirmBtnTap: () {
-                            Navigator.of(context).pop(); // Cierra el QuickAlert
-                          },
-                        );
-                        // Acción para descargar el documento
-                      },
-                    ),
-                  ],
-                ),
+              ],
+            ),
+            if (loading)
+              const LinearProgressIndicator(
+                minHeight: 2,
+                semanticsLabel: 'Cargando documentos',
               ),
-            );
-          },
-        );
-      },
-    );
-  }
+            if (snapshot.hasError)
+              DocumentListMessage(
+                title: 'No pudimos cargar los documentos.',
+                message: 'Vuelve a intentarlo.',
+                onRetry: _refresh,
+                large: true,
+              )
+            else if (!loading && documents.isEmpty)
+              const DocumentListMessage(
+                title: 'Aún no hay documentos',
+                message: 'Los documentos de la gira aparecerán aquí.',
+                large: true,
+              ),
+            for (final (index, document) in documents.indexed)
+              _documentTile(document, index),
+          ],
+        ),
+      );
+    },
+  );
 
-  IconData _getIconForDocumentType(String documentType) {
-    switch (documentType) {
-      case 'poliza':
-        return Icons.policy;
-      case 'gira':
-        return Icons.description;
-      case 'hotel':
-        return Icons.hotel;
-      case 'Programa gira':
-        return Icons.description;
-      case 'Nomina alumnos':
-        return Icons.people;
-      case 'extra':
-        return Icons.attach_file;
-      default:
-        return Icons.description;
-    }
-  }
-
-  Widget buildBottomButton(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 40,
-            color: Colors.teal,
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.teal,
-              fontSize: 8,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildBottomButtonHito(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 70,
-            color: Colors.teal,
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.teal,
-              fontSize: 8,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0); // Desde abajo
-        const end = Offset.zero;
-        const curve = Curves.ease;
-
-        var tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-
-        return SlideTransition(
-          position: offsetAnimation,
-          child: child,
-        );
-      },
+  Widget _documentTile(Document document, int index) {
+    final name = document.documentName?.trim() ?? '';
+    final available = name.isNotEmpty;
+    final actionKey = '${document.tourSalesUuid}-${document.documentName}';
+    return PapiDocumentTile(
+      key: ValueKey('public-$actionKey-${document.documentType}-$index'),
+      title: available ? name : publicDocumentTitle(document.documentType),
+      pilo: true,
+      subtitle: available
+          ? documentFormatLabel(document.documentName)
+          : 'Archivo no disponible',
+      busy: _busy.contains(actionKey),
+      onView: available ? () => _action(document, true) : null,
+      onSave: available ? () => _action(document, false) : null,
     );
   }
 }

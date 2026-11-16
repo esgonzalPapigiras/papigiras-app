@@ -1,30 +1,37 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:papigiras_app/design/pilo_family_theme.dart';
+import 'package:papigiras_app/design/trip_display_names.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/coordinator_session.dart';
-import 'package:papigiras_app/pages/coordinator/coordinatorTourSelection.dart';
+import 'package:papigiras_app/lab/offline.dart';
+import 'package:papigiras_app/lab/preferences.dart';
+import 'package:papigiras_app/lab/session.dart';
+import 'package:papigiras_app/navigation/family_navigation.dart';
 import 'package:papigiras_app/pages/coordinator/coordinatorProfile.dart';
+import 'package:papigiras_app/pages/coordinator/coordinatorTourSelection.dart';
 import 'package:papigiras_app/pages/welcome.dart';
+import 'package:papigiras_app/ranking/coordinator_ranking_screen.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
+import 'package:papigiras_app/utils/page_navigation.dart';
+import 'package:papigiras_app/utils/profile_photo_avatar.dart';
+import 'package:provider/provider.dart';
 
 const Color kCoordinatorTeal = Color(0xFF3AC5C9);
-const String kAgencyPhone = "+56932157564";
+const String kAgencyPhone = "LAB-CONTACTO";
 
-Future<void> sendWhatsAppMessage(
-    {required String phone, required String message}) async {
-  final whatsappUrl =
-      Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+Future<void> sendWhatsAppMessage({
+  required String phone,
+  required String message,
+}) async {
+  final whatsappUrl = Uri.parse("lab-contact:$phone");
   if (await canLaunchUrl(whatsappUrl)) {
     await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
     return;
   }
-  final whatsappDirect = Uri.parse(
-      "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
+  final whatsappDirect = Uri.parse("lab-contact:$phone");
   if (await canLaunchUrl(whatsappDirect)) {
     await launchUrl(whatsappDirect, mode: LaunchMode.externalApplication);
   } else {
@@ -33,194 +40,260 @@ Future<void> sendWhatsAppMessage(
 }
 
 Future<void> logoutCoordinator(BuildContext context) async {
-  final locationService = Provider.of<LocationService>(context, listen: false);
-  await locationService.stopTracking();
+  await context.read<LocationService>().stopTracking();
   final prefs = await SharedPreferences.getInstance();
+  await LabSession.clear(prefs);
   await prefs.clear();
   if (!context.mounted) return;
-  Navigator.pushAndRemoveUntil(context,
-      MaterialPageRoute(builder: (_) => WelcomeScreen()), (route) => false);
+  _sessionNavigator(context).pushAndRemoveUntil(
+    MaterialPageRoute(builder: (_) => WelcomeScreen()),
+    (route) => false,
+  );
+}
+
+NavigatorState _sessionNavigator(BuildContext context) =>
+    FamilyNavigationScope.maybeOf(context)?.sessionNavigator ??
+    Navigator.of(context);
+
+void backCoordinatorPage(BuildContext context) {
+  final navigation = FamilyNavigationScope.maybeOf(context);
+  if (navigation != null) {
+    navigation.back();
+  } else {
+    Navigator.of(context).maybePop();
+  }
 }
 
 class CoordinatorTopBar extends StatelessWidget {
+  const CoordinatorTopBar({
+    super.key,
+    required this.login,
+    required this.scaffoldKey,
+    this.showBackButton = true,
+    this.title,
+    this.subtitle,
+  });
+
   final TourSales login;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final bool showBackButton;
-  const CoordinatorTopBar(
-      {Key? key,
-      required this.login,
-      required this.scaffoldKey,
-      this.showBackButton = true})
-      : super(key: key);
+  final String? title;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-      child: Row(
-        children: [
-          showBackButton
-              ? _buildBackButton(context)
-              : const SizedBox(width: 48),
-          const Spacer(),
-          Image.asset('assets/logo-letras-papigiras.png', height: 50),
-          const Spacer(),
-          _buildMenuButton(),
-        ],
+    final back = showBackButton ? () => backCoordinatorPage(context) : null;
+    final menu = IconButton(
+      tooltip: 'Abrir menú',
+      onPressed: () => scaffoldKey.currentState?.openEndDrawer(),
+      icon: const Icon(Icons.menu_rounded, size: 24),
+    );
+    if (title case final sectionTitle?) {
+      return ColoredBox(
+        color: PiloFamilyTheme.paper,
+        child: PiloSectionBar(
+          title: sectionTitle,
+          subtitle: subtitle,
+          onBack: back,
+          actions: [menu],
+        ),
+      );
+    }
+    return ColoredBox(
+      color: PiloFamilyTheme.paper,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: Row(
+            children: [
+              if (back != null)
+                IconButton(
+                  tooltip: 'Volver',
+                  style: IconButton.styleFrom(
+                    backgroundColor: PiloFamilyTheme.soft,
+                    minimumSize: const Size.square(48),
+                  ),
+                  onPressed: back,
+                  icon: const Icon(Icons.arrow_back_rounded, size: 24),
+                ),
+              const Spacer(),
+              menu,
+            ],
+          ),
+        ),
       ),
     );
-  }
-
-  Widget _buildBackButton(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
-      onPressed: () {
-        Navigator.of(context).maybePop();
-      },
-    );
-  }
-
-  Widget _buildMenuButton() {
-    return IconButton(
-        icon: const Icon(Icons.menu, color: Colors.white, size: 30),
-        onPressed: () => scaffoldKey.currentState?.openEndDrawer());
   }
 }
 
 class CoordinatorEndDrawer extends StatelessWidget {
+  const CoordinatorEndDrawer({super.key, required this.login});
+
   final TourSales login;
-  const CoordinatorEndDrawer({Key? key, required this.login}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final locationService = Provider.of<LocationService>(context);
+    final locationService = context.watch<LocationService>();
+    final text = Theme.of(context).textTheme;
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          _buildHeader(),
-          _buildProfileTile(context),
-          _buildChangeTourTile(context),
-          _buildReportProblemTile(context),
-          _buildLocationToggleTile(context, locationService),
-          _buildLogoutTile(context, locationService),
-        ],
+      width: math.min(360.0, MediaQuery.sizeOf(context).width - 28),
+      backgroundColor: PiloFamilyTheme.paper,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(left: Radius.circular(36)),
       ),
-    );
-  }
-
-  Widget _buildProfileTile(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.person, color: Colors.teal),
-      title: Text('Mi perfil', style: TextStyle(color: Colors.grey[800])),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const CoordinatorProfileScreen()),
-      ),
-    );
-  }
-
-  Widget _buildChangeTourTile(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.swap_horiz, color: Colors.teal),
-      title: Text('Cambiar gira', style: TextStyle(color: Colors.grey[800])),
-      subtitle: Text(login.tourCode),
-      onTap: () async {
-        final prefs = await SharedPreferences.getInstance();
-        final coordinatorJson = prefs.getString('coordinatorData');
-        if (coordinatorJson == null || !context.mounted) return;
-        final coordinator =
-            CoordinatorLogin.fromJson(jsonDecode(coordinatorJson));
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => CoordinatorTourSelectionScreen(
-              coordinator: coordinator,
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ProfilePhotoAvatar(
+                  radius: 36,
+                  onOpenProfile: () => _openProfile(context),
+                ),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Cerrar menú',
+                  style: IconButton.styleFrom(
+                    backgroundColor: PiloFamilyTheme.soft,
+                  ),
+                  onPressed: () => Scaffold.of(context).closeEndDrawer(),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
             ),
-          ),
-          (route) => false,
-        );
-      },
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      child: Row(
-        children: [
-          Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                  color: Colors.teal, shape: BoxShape.circle),
-              child: const CircleAvatar(
-                  radius: 35,
-                  backgroundImage: AssetImage('assets/profile.jpg'))),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(login.tourTripulationNameId,
-                  style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold)),
-              Text(login.tourTripulationIdentificationId,
-                  style: const TextStyle(fontSize: 14, color: Colors.black)),
-            ],
-          ),
-        ],
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () => _openProfile(context),
+              borderRadius: BorderRadius.circular(14),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      formatStudentName(login.tourTripulationNameId, null),
+                      style: PiloFamilyTheme.display(30),
+                    ),
+                    Text(
+                      login.tourTripulationIdentificationId,
+                      style: text.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _item(
+              'Mi perfil',
+              Icons.person_outline_rounded,
+              () => _openProfile(context),
+            ),
+            const SizedBox(height: 8),
+            _item(
+              'Ranking de temporada',
+              Icons.emoji_events_outlined,
+              () => _openRanking(context),
+            ),
+            const SizedBox(height: 8),
+            _item(
+              'Cambiar gira',
+              Icons.swap_horiz_rounded,
+              () => _changeTour(context),
+              subtitle: login.tourCode,
+            ),
+            const SizedBox(height: 8),
+            _item(
+              'Reportar un problema',
+              Icons.help_outline_rounded,
+              () => sendWhatsAppMessage(
+                phone: kAgencyPhone,
+                message: 'Hola! Necesito ayuda',
+              ),
+            ),
+            const SizedBox(height: 14),
+            ListTile(
+              leading: const Icon(Icons.logout_rounded),
+              title: const Text('Cerrar sesión'),
+              iconColor: Theme.of(context).colorScheme.error,
+              textColor: Theme.of(context).colorScheme.error,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(26),
+              ),
+              onTap: locationService.isChangingMode
+                  ? null
+                  : () => logoutCoordinator(context),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildReportProblemTile(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.report_problem, color: Colors.teal),
-      title: Text('Reportar un Problema',
-          style: TextStyle(color: Colors.grey[800])),
-      trailing: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.teal),
-      onTap: () => sendWhatsAppMessage(
-          phone: kAgencyPhone, message: "Hola! Necesito ayuda"),
+  Widget _item(
+    String label,
+    IconData icon,
+    VoidCallback onTap, {
+    String? subtitle,
+  }) {
+    return Material(
+      color: PiloFamilyTheme.soft,
+      borderRadius: BorderRadius.circular(26),
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        leading: Icon(icon, color: PiloFamilyTheme.ink),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: subtitle == null || subtitle.isEmpty ? null : Text(subtitle),
+        trailing: const Icon(
+          Icons.arrow_forward_rounded,
+          size: 20,
+          color: PiloFamilyTheme.ink,
+        ),
+        onTap: onTap,
+      ),
     );
   }
 
-  Widget _buildLocationToggleTile(
-      BuildContext context, LocationService locationService) {
-    return SwitchListTile(
-      secondary: const Icon(Icons.location_on, color: Colors.teal),
-      title: Text('Ubicación en segundo plano',
-          style: TextStyle(color: Colors.grey[800])),
-      subtitle: const Text(
-          'Permite compartir tu ubicación aunque la app esté minimizada',
-          style: TextStyle(fontSize: 12)),
-      value: locationService.backgroundTrackingEnabled,
-      onChanged: locationService.isChangingMode
-          ? null
-          : (value) async {
-              if (value) {
-                await locationService.startTracking();
-              } else {
-                await locationService.enableForegroundOnlyTracking();
-              }
-              if (context.mounted && locationService.lastError != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(locationService.lastError!)),
-                );
-              }
-            },
+  void _openProfile(BuildContext context) {
+    final navigator = _sessionNavigator(context);
+    final profile = InheritedTheme.captureAll(
+      context,
+      const CoordinatorProfileScreen(),
     );
+    Scaffold.of(context).closeEndDrawer();
+    navigator.push(buildPapiRoute(profile));
   }
 
-  Widget _buildLogoutTile(
-      BuildContext context, LocationService locationService) {
-    return ListTile(
-        leading: const Icon(Icons.logout, color: Colors.teal),
-        title: Text('Cerrar Sesión', style: TextStyle(color: Colors.grey[800])),
-        onTap: locationService.isChangingMode
-            ? null
-            : () => logoutCoordinator(context));
+  void _openRanking(BuildContext context) {
+    final navigator = _sessionNavigator(context);
+    final ranking = InheritedTheme.captureAll(
+      context,
+      CoordinatorRankingScreen(
+        initialSeason: login.seasonClient > 0 ? login.seasonClient : null,
+        currentCoordinatorId: login.coordinatorId,
+      ),
+    );
+    Scaffold.of(context).closeEndDrawer();
+    navigator.push(buildPapiRoute(ranking));
+  }
+
+  Future<void> _changeTour(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final coordinatorJson = prefs.getString('coordinatorData');
+    if (coordinatorJson == null || !context.mounted) return;
+    final coordinator = CoordinatorLogin.fromJson(jsonDecode(coordinatorJson));
+    final navigator = _sessionNavigator(context);
+    Scaffold.of(context).closeEndDrawer();
+    navigator.pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) =>
+            CoordinatorTourSelectionScreen(coordinator: coordinator),
+      ),
+      (route) => false,
+    );
   }
 }
 
@@ -228,12 +301,12 @@ class CoordinatorBottomButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final Widget? destination;
-  const CoordinatorBottomButton(
-      {Key? key,
-      required this.icon,
-      required this.label,
-      required this.destination})
-      : super(key: key);
+  const CoordinatorBottomButton({
+    Key? key,
+    required this.icon,
+    required this.label,
+    required this.destination,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -248,7 +321,7 @@ class CoordinatorBottomButton extends StatelessWidget {
         children: [
           Icon(icon, size: 40, color: Colors.teal),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: Colors.teal, fontSize: 8))
+          Text(label, style: const TextStyle(color: Colors.teal, fontSize: 8)),
         ],
       ),
     );
@@ -259,12 +332,12 @@ class CoordinatorBottomButtonHito extends StatelessWidget {
   final IconData icon;
   final String label;
   final Widget? destination;
-  const CoordinatorBottomButtonHito(
-      {Key? key,
-      required this.icon,
-      required this.label,
-      required this.destination})
-      : super(key: key);
+  const CoordinatorBottomButtonHito({
+    Key? key,
+    required this.icon,
+    required this.label,
+    required this.destination,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -279,24 +352,11 @@ class CoordinatorBottomButtonHito extends StatelessWidget {
         children: [
           Icon(icon, size: 70, color: Colors.teal),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: Colors.teal, fontSize: 8))
+          Text(label, style: const TextStyle(color: Colors.teal, fontSize: 8)),
         ],
       ),
     );
   }
 }
 
-Route buildCoordinatorRoute(Widget destination) {
-  return PageRouteBuilder(
-    transitionDuration: const Duration(milliseconds: 1000),
-    pageBuilder: (context, animation, secondaryAnimation) => destination,
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      const begin = Offset(0.0, 1.0);
-      const end = Offset.zero;
-      const curve = Curves.ease;
-      final tween =
-          Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-      return SlideTransition(position: animation.drive(tween), child: child);
-    },
-  );
-}
+Route buildCoordinatorRoute(Widget destination) => buildPapiRoute(destination);

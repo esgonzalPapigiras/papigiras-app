@@ -1,340 +1,203 @@
-import 'dart:convert';
-import 'dart:io';
+import '../../navigation/family_journey.dart';
+import '../../navigation/family_navigation.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
-import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
+import 'package:papigiras_app/design/family_home.dart';
+import 'package:papigiras_app/design/pilo_family_theme.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
-import 'package:papigiras_app/pages/attorney/TraceMapFullScreen.dart';
-import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
-import 'package:papigiras_app/pages/attorney/documentsfather.dart';
-import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
-import 'package:papigiras_app/pages/attorney/viewmedicalRecord.dart';
-import 'package:papigiras_app/pages/welcome.dart';
-import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:papigiras_app/utils/TraceMap.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:papigiras_app/design/pilo_family_medical_preview.dart';
+import 'package:papigiras_app/design/pilo_family_trip_details.dart';
+import 'package:papigiras_app/design/pilo_family_gallery_preview.dart';
+import 'package:papigiras_app/design/trip_display_names.dart';
+import 'package:papigiras_app/maps/trip_map_controller.dart';
+import 'package:papigiras_app/maps/trip_map_view.dart';
 import 'package:papigiras_app/utils/app_drawer_father.dart';
+import 'package:papigiras_app/utils/profile_photo_avatar.dart';
 
 class TravelFatherDashboard extends StatefulWidget {
+  const TravelFatherDashboard({super.key, required this.login});
   final ResponseAttorney login;
-  TravelFatherDashboard({required this.login});
   @override
-  _TravelFatherDashboardState createState() => _TravelFatherDashboardState();
+  State<TravelFatherDashboard> createState() => _TravelFatherDashboardState();
 }
 
 class _TravelFatherDashboardState extends State<TravelFatherDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final usuarioProvider = new CoordinatorProviders();
-  XFile? _image;
-  String? _imageUrl;
-  String formatDate(String date) {
-    DateTime parsedDate = DateTime.parse(date);
-    String formattedDate = DateFormat('dd-MM-yyyy').format(parsedDate);
-    return formattedDate;
-  }
 
-  Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        _image = image;
-      });
-      // Luego de seleccionar la imagen, se sube al servidor
-      await usuarioProvider.addHitoFotoPassenger(widget.login.passengerId.toString(), widget.login.tourId.toString(), image); // 1 es un ejemplo de hitoId
-      _loadImage(); // Recargamos la imagen después de la subida
+  TripMapController? _mapController;
+  TripMapController get _map =>
+      _mapController ??= (TripMapController(tourCode: widget.login.tourId!)
+        ..refresh());
+
+  @override
+  void didUpdateWidget(covariant TravelFatherDashboard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.login.tourId != widget.login.tourId) {
+      _mapController?.dispose();
+      _mapController = null;
     }
   }
 
   @override
-  void initState() {
-    super.initState();
-    _loadImage(); // Cargar la imagen al inicio
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
   }
 
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl = Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(
-        whatsappUrl,
-        mode: LaunchMode.externalApplication,
-      );
-    } else {
-      print('No se puede abrir WhatsApp');
-      // Intenta con el esquema directo
-      final whatsappDirect = Uri.parse("whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(
-          whatsappDirect,
-          mode: LaunchMode.externalApplication,
-        );
-      } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
-      }
+  void _openMap(BuildContext context) {
+    if (widget.login.tourId == null) {
+      _noTour(context);
+      return;
     }
+    FamilyNavigationScope.maybeOf(context)?.select(FamilySection.map);
   }
 
-  void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    // Eliminar los datos de usuario
-    await prefs.remove('userRut');
-    await prefs.remove('userPassword');
-    await prefs.clear();
-    // Borrar el estado de la sesión
+  void _noTour(BuildContext context) => ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(const SnackBar(content: Text('No hay una gira asociada.')));
 
-    // Redirigir al login o realizar otra acción
-    Navigator.pushAndRemoveUntil(
+  @override
+  Widget build(BuildContext context) => FamilyJourney(
+    key: ValueKey((widget.login.tourId, widget.login.passengerIdentificacion)),
+    login: widget.login,
+    homeBuilder: _buildHome,
+  );
+
+  Widget _buildHome(BuildContext context) {
+    void documents() =>
+        FamilyNavigationScope.maybeOf(context)?.select(FamilySection.documents);
+    void crew() =>
+        FamilyNavigationScope.maybeOf(context)?.select(FamilySection.crew);
+    void gallery() =>
+        FamilyNavigationScope.maybeOf(context)?.select(FamilySection.gallery);
+    void medical() =>
+        showPiloFamilyMedicalPreview(context, login: widget.login);
+    void details() => showPiloFamilyTripDetails(
       context,
-      MaterialPageRoute(builder: (context) => WelcomeScreen()),
-      (route) => false, // Esto elimina todas las rutas anteriores de la pila de navegación
+      title: piloDestinationLabel(widget.login.tourSalesUuid ?? ''),
+      school: [
+        formatSchoolName(widget.login.tourName ?? ''),
+        widget.login.tourCourse ?? '',
+        widget.login.tourYear?.toString() ?? '',
+      ].where((v) => v.trim().isNotEmpty).join(' · '),
+      departure: widget.login.tourSalesdateInitial ?? '',
+      returnDate: widget.login.tourSalesdateFinal ?? '',
+      onDocuments: documents,
+      onCrew: crew,
     );
-  }
-
-  Future<void> _loadImage() async {
-    try {
-      Responseimagepassenger imageUrl = await usuarioProvider.getPicturePassenger(
-        widget.login.passengerIdentificacion.toString(),
-        widget.login.tourId.toString(),
-      );
-
-      if (imageUrl.image.isNotEmpty) {
-        setState(() {
-          _imageUrl = imageUrl.image; // Si la imagen existe, la cargamos
-        });
-      } else {
-        setState(() {
-          _imageUrl = null; // Si no hay imagen, usar la predeterminada
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _imageUrl = null; // Si ocurre un error, usar la predeterminada
-      });
-    }
-  }
-
-  bool _isBase64(String data) {
-    try {
-      base64Decode(data.split(',').last); // Intenta decodificar eliminando un posible prefijo
-      return true;
-    } catch (e) {
-      return false; // Si falla, no es Base64
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9),
-      endDrawer: AppDrawerFather(login: widget.login, imageFile: _image, imageUrl: _imageUrl),
-      body: Container(
-        decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-              child: Row(
-                children: [
-                  Spacer(),
-                  Image.asset('assets/logo-letras-papigiras.png', height: 50),
-                  Spacer(),
-                  Builder(
-                    builder: (context) => IconButton(
-                      icon: Icon(Icons.menu, color: Colors.white, size: 30),
-                      onPressed: () {
-                        _scaffoldKey.currentState?.openEndDrawer();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40.0), topRight: Radius.circular(40.0))),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 20),
-                      GestureDetector(
-                        onTap: _pickImage,
-                        child: CircleAvatar(
-                          radius: 100,
-                          backgroundImage: _image != null
-                              ? FileImage(File(_image!.path)) as ImageProvider<Object>
-                              : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                                  ? (_isBase64(_imageUrl!)
-                                      ? MemoryImage(base64Decode(_imageUrl!.split(',').last)) as ImageProvider<Object>
-                                      : NetworkImage(_imageUrl!) as ImageProvider<Object>)
-                                  : AssetImage('assets/profile.jpg') as ImageProvider<Object>,
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Center(
-                        child: Text(
-                          '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.grey[800]),
-                        ),
-                      ),
-                      Text(widget.login.passengerIdentificacion!, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-                      SizedBox(height: 8),
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => ViewMedicalRecordScreen(login: widget.login)));
-                        },
-                        icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                        label: Text('Ficha médica', style: TextStyle(color: Colors.teal, decoration: TextDecoration.underline)),
-                      ),
-                      SizedBox(height: 10),
-                      Divider(),
-                      Text(
-                        widget.login.tourName! + " " + widget.login.tourCourse! + " " + widget.login.tourYear.toString(),
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey[800]),
-                      ),
-                      Text('En Gira', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-                      SizedBox(height: 8),
-                      /*
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ViewProgramScreen(login: widget.login),
-                            ),
-                          );
-                        },
-                        icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                        label: Text(
-                          'Ver Programa',
-                          style: TextStyle(
-                            color: Colors.teal,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                      */
-                      SizedBox(height: 10),
-                      Divider(),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              children: [
-                                Text('Fecha Salida', style: TextStyle(color: Colors.grey[600])),
-                                SizedBox(height: 4),
-                                Text(formatDate(widget.login.tourSalesdateInitial!), style: TextStyle(color: Colors.teal, fontSize: 16, fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                Text('Fecha Regreso', style: TextStyle(color: Colors.grey[600])),
-                                SizedBox(height: 4),
-                                Text(formatDate(widget.login.tourSalesdateFinal!), style: TextStyle(color: Colors.teal, fontSize: 16, fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      TraceMap(tourCode: widget.login.tourId!),
-                      SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => TraceMapFullScreen(tourCode: widget.login.tourId!)));
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
-                          padding: EdgeInsets.symmetric(horizontal: 30.0, vertical: 15.0),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-                        ),
-                        child: Text('Ampliar Mapa', style: TextStyle(color: Colors.white, fontSize: 16)),
-                      ),
-                      SizedBox(height: 20),
-                    ],
-                  ),
+      backgroundColor: PiloFamilyTheme.paper,
+      endDrawer: AppDrawerFather(login: widget.login),
+      body: SafeArea(
+        bottom: false,
+        child: FamilyHome(
+          showNavigation: false,
+          latestHito: widget.login.tourId == null ? null : _map,
+          latestHitoTitle: () {
+            if (widget.login.tourId == null) return null;
+            final data = _map.data;
+            final id = data?.latestId;
+            return id == null
+                ? null
+                : data?.entryById(id)?.source.binnacleTitulo;
+          },
+          latestHitoDate: () {
+            if (widget.login.tourId == null) return null;
+            final data = _map.data;
+            final id = data?.latestId;
+            return id == null ? null : data?.entryById(id)?.occurredAt;
+          },
+          galleryPreview: widget.login.tourId == null
+              ? null
+              : PiloFamilyGalleryPreview(controller: _map, onOpen: gallery),
+          mapStatus: widget.login.tourId == null ? null : _mapStatus(),
+          onTripDetails: details,
+          onMenu: () => AppDrawerFather.showPiloSheet(
+            context,
+            login: widget.login,
+            onTripDetails: details,
+            onMedical: medical,
+            onDocuments: documents,
+            onCrew: crew,
+          ),
+          givenNames: widget.login.passengerName ?? '',
+          surnames: widget.login.passengerApellidos ?? '',
+          rut: widget.login.passengerIdentificacion ?? '',
+          school: widget.login.tourName ?? '',
+          course: widget.login.tourCourse ?? '',
+          year: widget.login.tourYear?.toString() ?? '',
+          departure: widget.login.tourSalesdateInitial ?? '',
+          returnDate: widget.login.tourSalesdateFinal ?? '',
+          tourCode: widget.login.tourSalesUuid ?? '',
+          avatar: ProfilePhotoAvatar(radius: 28, passenger: widget.login),
+          map: widget.login.tourId == null
+              ? const Center(child: Text('No hay una gira asociada.'))
+              : TripMapView(
+                  controller: _map,
+                  preview: true,
+                  onExpand: () => _openMap(context),
                 ),
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), spreadRadius: 5, blurRadius: 10, offset: Offset(0, -3))],
-              ),
-              child: Column(
-                children: [
-                  Divider(height: 1, color: Colors.grey[300]),
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 35),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        buildBottomButton(Icons.book, 'Bitácora del Viaje', null, BitacoraFatherScreen(login: widget.login)),
-                        buildBottomButton(Icons.directions_bus, 'Bus & Tripulación', null, BusCrewFatherScreen(login: widget.login)),
-                        buildBottomButton(Icons.folder_open, 'Mis Documentos', null, DocumentFatherScreen(login: widget.login)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          onMap: () => _openMap(context),
+          onGallery: gallery,
+          onMedical: medical,
+          onDiary: () => FamilyNavigationScope.maybeOf(
+            context,
+          )?.select(FamilySection.diary),
+          onCrew: crew,
+          onDocuments: documents,
         ),
       ),
     );
   }
 
-  Widget buildBottomButton(IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            alignment: Alignment.topRight,
-            children: [
-              Icon(icon, size: 40, color: Colors.teal),
-              if (badge != null)
-                Positioned(
-                  top: -5,
-                  right: -5,
-                  child: Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
-                    child: Text(badge, style: TextStyle(color: Colors.white, fontSize: 12)),
-                  ),
+  Widget _mapStatus() => ListenableBuilder(
+    listenable: _map.bus,
+    builder: (context, _) {
+      final bus = _map.bus;
+      final present = bus.position != null;
+      final label = present
+          ? (bus.isRecent ? 'Ubicación del bus' : 'Última ubicación del bus')
+          : 'Mapa de la gira';
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .96),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (present)
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: bus.isRecent
+                      ? PiloFamilyTheme.accentText
+                      : PiloFamilyTheme.secondary,
                 ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 14)),
-        ],
-      ),
-    );
-  }
-
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0);
-        const end = Offset.zero;
-        const curve = Curves.ease;
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-        return SlideTransition(position: offsetAnimation, child: child);
-      },
-    );
-  }
+              )
+            else
+              const Icon(
+                Icons.map_outlined,
+                size: 13,
+                color: PiloFamilyTheme.secondary,
+              ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 11,
+                  height: 1.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }

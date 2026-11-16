@@ -1,11 +1,12 @@
+import 'package:papigiras_app/utils/profile_photo_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:papigiras_app/lab/preferences.dart';
+import 'package:papigiras_app/lab/offline.dart';
 
 class AppDrawerCoordinator extends StatelessWidget {
   final TourSales login;
@@ -16,13 +17,13 @@ class AppDrawerCoordinator extends StatelessWidget {
 
   Future<void> _sendMessage(String phone, String message) async {
     final whatsappUrl =
-        Uri.parse('https://wa.me/$phone?text=${Uri.encodeComponent(message)}');
+        Uri.parse('lab-contact:$phone');
     if (await canLaunchUrl(whatsappUrl)) {
       await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
       return;
     }
     final direct = Uri.parse(
-        'whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}');
+        'lab-contact:$phone');
     if (await canLaunchUrl(direct)) {
       await launchUrl(direct, mode: LaunchMode.externalApplication);
     }
@@ -62,10 +63,7 @@ class AppDrawerCoordinator extends StatelessWidget {
                     color: Colors.teal,
                     shape: BoxShape.circle,
                   ),
-                  child: const CircleAvatar(
-                    radius: 35,
-                    backgroundImage: AssetImage('assets/profile.jpg'),
-                  ),
+                  child: const ProfilePhotoAvatar(radius: 35),
                 ),
                 const SizedBox(width: 16),
                 Column(
@@ -102,10 +100,10 @@ class AppDrawerCoordinator extends StatelessWidget {
               children: const [
                 Icon(Icons.phone, color: Colors.teal),
                 SizedBox(width: 10),
-                Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
+                FaIcon(FontAwesomeIcons.whatsapp, color: Colors.teal),
               ],
             ),
-            onTap: () => _sendMessage('+56932157564', 'Hola! Necesito ayuda'),
+            onTap: () => _sendMessage('LAB-CONTACTO', 'Hola! Necesito ayuda'),
           ),
           ListTile(
             leading: const Icon(Icons.report_problem, color: Colors.teal),
@@ -113,12 +111,12 @@ class AppDrawerCoordinator extends StatelessWidget {
               'Reportar un Problema',
               style: TextStyle(color: Colors.grey[800]),
             ),
-            onTap: () => _sendMessage('+56932157564', 'Hola! Necesito ayuda'),
+            onTap: () => _sendMessage('LAB-CONTACTO', 'Hola! Necesito ayuda'),
           ),
           SwitchListTile(
             secondary: const Icon(Icons.location_on, color: Colors.teal),
             title: Text(
-              'Ubicación en segundo plano',
+              'Simular ubicación en segundo plano',
               style: TextStyle(color: Colors.grey[800]),
             ),
             subtitle: const Text(
