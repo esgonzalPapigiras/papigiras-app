@@ -232,3 +232,6 @@ los servicios productivos por adaptadores LAB.
   identidad, radios, iconografía y espaciado Pilo.
 - Se conservan contacto por WhatsApp, cierre de sesión seguro y, para el
   coordinador, todos los controles productivos de ubicación en segundo plano.
+- El menú coordinador realmente compartido por las vistas también adopta hoja
+  lateral redondeada, cabecera Pilo y acciones en superficies suaves, sin
+  incorporar ranking ni navegación paralela del prototipo.

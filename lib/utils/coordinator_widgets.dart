@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -56,14 +58,14 @@ class CoordinatorTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: Row(
         children: [
           showBackButton
               ? _buildBackButton(context)
               : const SizedBox(width: 48),
           const Spacer(),
-          Image.asset('assets/logo-letras-papigiras.png', height: 50),
+          Image.asset('assets/logo-letras-papigiras.png', height: 36),
           const Spacer(),
           _buildMenuButton(),
         ],
@@ -73,7 +75,12 @@ class CoordinatorTopBar extends StatelessWidget {
 
   Widget _buildBackButton(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+      tooltip: 'Volver',
+      style: IconButton.styleFrom(
+        backgroundColor: PapigirasColors.soft,
+        minimumSize: const Size.square(48),
+      ),
+      icon: const Icon(Icons.arrow_back_rounded, size: 24),
       onPressed: () {
         Navigator.of(context).maybePop();
       },
@@ -82,8 +89,14 @@ class CoordinatorTopBar extends StatelessWidget {
 
   Widget _buildMenuButton() {
     return IconButton(
-        icon: const Icon(Icons.menu, color: Colors.white, size: 30),
-        onPressed: () => scaffoldKey.currentState?.openEndDrawer());
+      tooltip: 'Abrir menú',
+      style: IconButton.styleFrom(
+        backgroundColor: PapigirasColors.soft,
+        minimumSize: const Size.square(48),
+      ),
+      icon: const Icon(Icons.menu_rounded, size: 24),
+      onPressed: () => scaffoldKey.currentState?.openEndDrawer(),
+    );
   }
 }
 
@@ -95,24 +108,74 @@ class CoordinatorEndDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final locationService = Provider.of<LocationService>(context);
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          _buildHeader(),
-          _buildProfileTile(context),
-          _buildChangeTourTile(context),
-          _buildReportProblemTile(context),
-          _buildLocationToggleTile(context, locationService),
-          _buildLogoutTile(context, locationService),
-        ],
+      width: math.min(360.0, MediaQuery.sizeOf(context).width - 28),
+      backgroundColor: PapigirasColors.canvas,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(left: Radius.circular(36)),
+      ),
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const CircleAvatar(
+                  radius: 36,
+                  backgroundColor: PapigirasColors.soft,
+                  backgroundImage: AssetImage('assets/profile.jpg'),
+                ),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Cerrar menú',
+                  style: IconButton.styleFrom(
+                    backgroundColor: PapigirasColors.soft,
+                  ),
+                  onPressed: () => Scaffold.of(context).closeEndDrawer(),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              login.tourTripulationNameId,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              login.tourTripulationIdentificationId,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 16),
+            _buildProfileTile(context),
+            const SizedBox(height: 8),
+            _buildChangeTourTile(context),
+            const SizedBox(height: 8),
+            _buildReportProblemTile(context),
+            const SizedBox(height: 8),
+            _buildLocationToggleTile(context, locationService),
+            const SizedBox(height: 14),
+            _buildLogoutTile(context, locationService),
+          ],
+        ),
       ),
     );
   }
 
+  RoundedRectangleBorder get _tileShape =>
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(26));
+
   Widget _buildProfileTile(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.person, color: Colors.teal),
-      title: Text('Mi perfil', style: TextStyle(color: Colors.grey[800])),
+      tileColor: PapigirasColors.soft,
+      shape: _tileShape,
+      leading: const Icon(Icons.person_outline_rounded),
+      title: const Text(
+        'Mi perfil',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
+      trailing: const Icon(Icons.arrow_forward_rounded, size: 20),
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const CoordinatorProfileScreen()),
@@ -122,9 +185,15 @@ class CoordinatorEndDrawer extends StatelessWidget {
 
   Widget _buildChangeTourTile(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.swap_horiz, color: Colors.teal),
-      title: Text('Cambiar gira', style: TextStyle(color: Colors.grey[800])),
+      tileColor: PapigirasColors.soft,
+      shape: _tileShape,
+      leading: const Icon(Icons.swap_horiz_rounded),
+      title: const Text(
+        'Cambiar gira',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
       subtitle: Text(login.tourCode),
+      trailing: const Icon(Icons.arrow_forward_rounded, size: 20),
       onTap: () async {
         final prefs = await SharedPreferences.getInstance();
         final coordinatorJson = prefs.getString('coordinatorData');
@@ -144,43 +213,20 @@ class CoordinatorEndDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      child: Row(
-        children: [
-          Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                  color: Colors.teal, shape: BoxShape.circle),
-              child: const CircleAvatar(
-                  radius: 35,
-                  backgroundImage: AssetImage('assets/profile.jpg'))),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(login.tourTripulationNameId,
-                  style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold)),
-              Text(login.tourTripulationIdentificationId,
-                  style: const TextStyle(fontSize: 14, color: Colors.black)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildReportProblemTile(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.report_problem, color: Colors.teal),
-      title: Text('Reportar un Problema',
-          style: TextStyle(color: Colors.grey[800])),
-      trailing: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.teal),
+      tileColor: PapigirasColors.soft,
+      shape: _tileShape,
+      leading: const Icon(Icons.help_outline_rounded),
+      title: const Text(
+        'Reportar un problema',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
+      trailing: const FaIcon(
+        FontAwesomeIcons.whatsapp,
+        color: PapigirasColors.teal,
+        size: 20,
+      ),
       onTap: () => sendWhatsAppMessage(
           phone: kAgencyPhone, message: "Hola! Necesito ayuda"),
     );
@@ -189,9 +235,13 @@ class CoordinatorEndDrawer extends StatelessWidget {
   Widget _buildLocationToggleTile(
       BuildContext context, LocationService locationService) {
     return SwitchListTile(
-      secondary: const Icon(Icons.location_on, color: Colors.teal),
-      title: Text('Ubicación en segundo plano',
-          style: TextStyle(color: Colors.grey[800])),
+      tileColor: PapigirasColors.soft,
+      shape: _tileShape,
+      secondary: const Icon(Icons.location_on_outlined),
+      title: const Text(
+        'Ubicación en segundo plano',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
       subtitle: Text(
         locationService.isChangingMode
             ? 'Activando ubicación…'
@@ -231,11 +281,15 @@ class CoordinatorEndDrawer extends StatelessWidget {
   Widget _buildLogoutTile(
       BuildContext context, LocationService locationService) {
     return ListTile(
-        leading: const Icon(Icons.logout, color: Colors.teal),
-        title: Text('Cerrar Sesión', style: TextStyle(color: Colors.grey[800])),
-        onTap: locationService.isChangingMode
-            ? null
-            : () => logoutCoordinator(context));
+      shape: _tileShape,
+      leading: const Icon(Icons.logout_rounded),
+      title: const Text('Cerrar sesión'),
+      iconColor: Theme.of(context).colorScheme.error,
+      textColor: Theme.of(context).colorScheme.error,
+      onTap: locationService.isChangingMode
+          ? null
+          : () => logoutCoordinator(context),
+    );
   }
 }
 
