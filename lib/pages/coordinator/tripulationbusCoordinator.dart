@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/tourTripulation.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:papigiras_app/utils/coordinator_widgets.dart';
 
 class BusCrewCoorScreen extends StatefulWidget {
+  const BusCrewCoorScreen({super.key, required this.login});
+
   final TourSales login;
-  BusCrewCoorScreen({required this.login});
 
   @override
-  _BusCrewCoorScreenState createState() => _BusCrewCoorScreenState();
+  State<BusCrewCoorScreen> createState() => _BusCrewCoorScreenState();
 }
 
 class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _coordinatorProvider = CoordinatorProviders();
-  List<TourTripulation> _tripulations = [];
-  bool _isLoading = true;
+  final CoordinatorProviders _provider = CoordinatorProviders();
+  List<TourTripulation> _tripulations = const [];
+  bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -25,83 +28,242 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
   }
 
   Future<void> _loadTripulations() async {
-    try {
-      final tripulations = await _coordinatorProvider.getTripulation(widget.login.tourSalesId.toString());
-      setState(() => _tripulations = tripulations);
-    } catch (e) {
-      print('Error al cargar la tripulación: $e');
-    } finally {
+    if (mounted) {
       setState(() {
-        _isLoading = false;
+        _loading = true;
+        _error = null;
       });
     }
+    try {
+      final tripulations = await _provider.getTripulation(
+        widget.login.tourSalesId.toString(),
+      );
+      if (!mounted) return;
+      setState(() => _tripulations = tripulations);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = 'No pudimos cargar la tripulación.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _provider.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: kCoordinatorTeal,
       endDrawer: CoordinatorEndDrawer(login: widget.login),
-      body: Stack(
-        children: [
-          _buildBackground(),
-          Column(
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: _loadTripulations,
+          child: ListView(
+            key: PageStorageKey('crew-${widget.login.tourSalesId}'),
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
-              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey),
-              Expanded(child: _buildContent()),
+              _header(context),
+              const SizedBox(height: 16),
+              if (_loading && _tripulations.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      semanticsLabel: 'Cargando tripulación',
+                    ),
+                  ),
+                )
+              else ...[
+                if (_loading) const LinearProgressIndicator(minHeight: 2),
+                if (_error != null) _errorView(context),
+                if (_error == null) ..._content(context),
+              ],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _header(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            IconButton(
+              tooltip: 'Volver',
+              style: IconButton.styleFrom(
+                backgroundColor: PapigirasColors.soft,
+                minimumSize: const Size.square(48),
+              ),
+              onPressed: () => Navigator.maybePop(context),
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+            const Spacer(),
+            IconButton(
+              tooltip: 'Actualizar tripulación',
+              onPressed: _loading ? null : _loadTripulations,
+              icon: const Icon(Icons.refresh_rounded),
+            ),
+            IconButton(
+              tooltip: 'Abrir menú',
+              onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+              icon: const Icon(Icons.menu_rounded),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        Semantics(
+          header: true,
+          child: Text(
+            'Tripulación',
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Equipo a cargo de la gira',
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: PapigirasColors.muted),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _content(BuildContext context) {
+    final bus = _tripulations.isEmpty ? null : _tripulations.first;
+    final coordinators = _tripulations
+        .where((person) => person.tourTripulationTypeId == 32)
+        .toList();
+    final drivers = _tripulations
+        .where((person) => person.tourTripulationTypeId != 32)
+        .toList();
+    return [
+      if (bus == null)
+        const _EmptySection(
+          icon: Icons.directions_bus_outlined,
+          title: 'Bus por confirmar',
+          message: 'Los datos aparecerán cuando estén registrados.',
+        )
+      else
+        _BusCard(bus: bus),
+      const SizedBox(height: 24),
+      Text('Coordinación', style: Theme.of(context).textTheme.headlineMedium),
+      if (coordinators.isEmpty)
+        const _EmptyText('Aún no hay coordinadores asignados.'),
+      for (final person in coordinators) _PersonCard(person: person),
+      const SizedBox(height: 22),
+      Text(
+        drivers.length == 1 ? 'Conductor' : 'Conductores',
+        style: Theme.of(context).textTheme.headlineMedium,
+      ),
+      if (drivers.isEmpty)
+        const _EmptyText('Aún no hay conductores registrados.'),
+      for (final person in drivers) _PersonCard(person: person),
+    ];
+  }
+
+  Widget _errorView(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        children: [
+          Text(_error!, textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: _loadTripulations,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Reintentar'),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildBackground() {
-    return Container(decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
-  }
+class _BusCard extends StatelessWidget {
+  const _BusCard({required this.bus});
 
-  Widget _buildContent() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+  final TourTripulation bus;
+
+  String _value(String value) =>
+      value.trim().isEmpty ? 'Por confirmar' : value.trim();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40)),
+      decoration: BoxDecoration(
+        color: PapigirasColors.ink,
+        borderRadius: BorderRadius.circular(36),
       ),
       padding: const EdgeInsets.all(20),
-      child: SingleChildScrollView(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildBusInformation(), const Divider(height: 40, thickness: 1), ..._buildCrewMembers()]),
-      ),
-    );
-  }
-
-  Widget _buildBusInformation() {
-    final bus = _tripulations.isNotEmpty ? _tripulations.first : null;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Bus & Tripulación', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-          const SizedBox(height: 20),
+          const CircleAvatar(
+            radius: 26,
+            backgroundColor: PapigirasColors.mint,
+            foregroundColor: PapigirasColors.ink,
+            child: Icon(Icons.directions_bus_rounded, size: 26),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Bus de la gira',
+            style: TextStyle(
+              color: PapigirasColors.surface,
+              fontSize: 30,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Patente',
+            style: TextStyle(color: Color(0xFFBDC7C3), fontSize: 13),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            _value(bus.tourTripulationBusPatent),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: PapigirasColors.surface,
+                ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            [
+              bus.tourTripulationBusBrand,
+              bus.tourTripulationBusModel,
+            ].where((value) => value.trim().isNotEmpty).join(' · '),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFFBDC7C3),
+                ),
+          ),
+          const SizedBox(height: 14),
+          const Divider(color: Color(0xFF3B4441)),
+          const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Image.asset('assets/bus.jpg', width: 100, height: 100, fit: BoxFit.cover),
-              const SizedBox(width: 20),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildBusRow('Patente', bus?.tourTripulationBusPatent, 'Sin patente'),
-                    _buildBusRow('Marca', bus?.tourTripulationBusBrand, 'Sin marca'),
-                    _buildBusRow('Modelo', bus?.tourTripulationBusModel, 'Sin modelo'),
-                    _buildBusRow('Año', bus?.tourTripulationBusYear?.toString(), 'Año no disponible'),
-                    _buildBusRow('Empresa', bus?.tourTripulationBusEnterprise, 'Sin empresa'),
-                  ],
+                flex: 3,
+                child: _BusField(
+                  label: 'Empresa',
+                  value: _value(bus.tourTripulationBusEnterprise),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _BusField(
+                  label: 'Año',
+                  value: _value(bus.tourTripulationBusYear),
                 ),
               ),
             ],
@@ -110,58 +272,131 @@ class _BusCrewCoorScreenState extends State<BusCrewCoorScreen> {
       ),
     );
   }
+}
 
-  Widget _buildBusRow(String label, String? value, String defaultValue) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: RichText(
-        text: TextSpan(
-          children: [
-            TextSpan(text: '$label: ', style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold)),
-            TextSpan(text: value ?? defaultValue, style: TextStyle(color: Colors.grey[800])),
-          ],
-        ),
-      ),
-    );
-  }
+class _BusField extends StatelessWidget {
+  const _BusField({required this.label, required this.value});
+  final String label;
+  final String value;
 
-  List<Widget> _buildCrewMembers() {
-    return _tripulations.map((tripulation) => _buildCrewMemberCard(tripulation)).toList();
-  }
-
-  Widget _buildCrewMemberCard(TourTripulation tripulation) {
-    final isCoordinator = tripulation.tourTripulationTypeId == 32;
-    return _buildCrewMember(
-      role: isCoordinator ? 'Coordinador' : 'Conductor',
-      name: tripulation.tourTripulationNameId,
-      position: 'Licencia Clase A',
-      id: tripulation.tourTripulationIdentificationId,
-      imagePath: isCoordinator ? 'assets/conductor_one.jpg' : 'assets/conductor_two.jpg',
-    );
-  }
-
-  Widget _buildCrewMember({required String role, required String name, required String position, required String id, required String imagePath}) {
-    return ListTile(
-      contentPadding: EdgeInsets.symmetric(vertical: 20.0),
-      leading: Container(
-        padding: EdgeInsets.all(2),
-        decoration: BoxDecoration(color: Colors.teal, shape: BoxShape.circle),
-        child: Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(shape: BoxShape.circle, image: DecorationImage(image: AssetImage(imagePath), fit: BoxFit.fitHeight, alignment: Alignment.center)),
-        ),
-      ),
-      title: Text(role, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
-      subtitle: Column(
+  @override
+  Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(name, style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.bold)),
-          Text(position, style: TextStyle(color: Colors.grey[600])),
-          Text(id, style: TextStyle(color: Colors.grey[600])),
+          Text(label, style: const TextStyle(color: Color(0xFFBDC7C3))),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: PapigirasColors.surface,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+        ],
+      );
+}
+
+class _PersonCard extends StatelessWidget {
+  const _PersonCard({required this.person});
+
+  final TourTripulation person;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = person.tourTripulationNameId.trim();
+    final initials = name
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .map((part) => part.characters.first)
+        .join()
+        .toUpperCase();
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+      decoration: BoxDecoration(
+        color: PapigirasColors.soft,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: PapigirasColors.surface,
+            foregroundColor: PapigirasColors.teal,
+            child: Text(initials.isEmpty ? '—' : initials),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name.isEmpty ? 'Nombre pendiente' : name,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                if (person.tourTripulationIdentificationId.trim().isNotEmpty)
+                  Text(
+                    person.tourTripulationIdentificationId.trim(),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: PapigirasColors.muted,
+                        ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
-      onTap: () {},
     );
   }
+}
+
+class _EmptySection extends StatelessWidget {
+  const _EmptySection({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+  final IconData icon;
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 30, color: PapigirasColors.muted),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(message),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _EmptyText extends StatelessWidget {
+  const _EmptyText(this.message);
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Text(
+          message,
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: PapigirasColors.muted),
+        ),
+      );
 }

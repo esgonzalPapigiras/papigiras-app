@@ -1,158 +1,324 @@
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/document.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:quickalert/quickalert.dart';
 import 'package:papigiras_app/utils/coordinator_widgets.dart';
+import 'package:quickalert/quickalert.dart';
 
 class DocumentCoordScreen extends StatefulWidget {
+  const DocumentCoordScreen({super.key, required this.login});
+
   final TourSales login;
-  DocumentCoordScreen({required this.login});
 
   @override
-  _DocumentCoordScreenState createState() => _DocumentCoordScreenState();
+  State<DocumentCoordScreen> createState() => _DocumentCoordScreenState();
 }
 
 class _DocumentCoordScreenState extends State<DocumentCoordScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _coordinatorProvider = new CoordinatorProviders();
-  List<Document> _documents = [];
+  final CoordinatorProviders _provider = CoordinatorProviders();
+  List<Document> _documents = const [];
+  bool _loading = true;
+  String? _error;
+  final Set<String> _busyDocuments = {};
 
   @override
   void initState() {
     super.initState();
-    fetchDocuments();
+    _fetchDocuments();
   }
 
-  Future<void> fetchDocuments() async {
-    try {
-      final documents = await _coordinatorProvider.getDocument(widget.login.tourSalesId.toString());
-      setState(() => _documents = documents);
-      //print("Documentos cargados: $documents");
-    } catch (error) {
-      print("Error al cargar los documentos: $error");
+  Future<void> _fetchDocuments() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
     }
+    try {
+      final documents = await _provider.getDocument(
+        widget.login.tourSalesId.toString(),
+      );
+      if (!mounted) return;
+      setState(() => _documents = documents);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = 'No pudimos cargar los documentos de la gira.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _provider.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: kCoordinatorTeal,
       endDrawer: CoordinatorEndDrawer(login: widget.login),
-      body: Stack(
-        children: [
-          _buildBackground(),
-          Column(
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: _fetchDocuments,
+          child: ListView(
+            key: PageStorageKey('documents-${widget.login.tourSalesId}'),
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
-              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey),
-              Expanded(child: _buildContent()),
+              _header(context),
+              const SizedBox(height: 24),
+              Text(
+                'De la gira',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 10),
+              if (_loading && _documents.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      semanticsLabel: 'Cargando documentos',
+                    ),
+                  ),
+                )
+              else ...[
+                if (_loading) const LinearProgressIndicator(minHeight: 2),
+                if (_error != null)
+                  _DocumentMessage(
+                    title: _error!,
+                    onRetry: _fetchDocuments,
+                  )
+                else if (_documents.isEmpty)
+                  const _DocumentMessage(
+                    title: 'Aún no hay documentos de la gira.',
+                  )
+                else
+                  for (final document in _documents) _documentTile(document),
+              ],
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBackground() {
-    return Container(decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
-  }
-
-  Widget _buildContent() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40)),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTitle(),
-          const SizedBox(height: 20),
-          Expanded(child: ListView(children: _buildDocumentCards())),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTitle() {
-    return Center(
-      child: Text('Mis Documentos', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-    );
-  }
-
-  List<Widget> _buildDocumentCards() {
-    if (_documents.isEmpty) {
-      return const [
-        Padding(
-          padding: EdgeInsets.only(top: 40),
-          child: Center(child: Text("No documents found.")),
         ),
-      ];
-    }
-    return _documents.map((document) => _buildDocumentCard(document)).toList();
-  }
-
-  Widget _buildDocumentCard(Document document) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-      child: ListTile(
-        leading: Icon(_getIconForDocumentType(document.documentType), color: Colors.teal, size: 40),
-        title: Text(document.documentType ?? 'Sin nombre', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        trailing: _buildActions(document),
       ),
     );
   }
 
-  Widget _buildActions(Document document) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+  Widget _header(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        IconButton(
-          icon: const Icon(Icons.remove_red_eye, color: Colors.teal),
-          onPressed: () => _viewDocument(document),
+        Row(
+          children: [
+            IconButton(
+              tooltip: 'Volver',
+              style: IconButton.styleFrom(
+                backgroundColor: PapigirasColors.soft,
+                minimumSize: const Size.square(48),
+              ),
+              onPressed: () => Navigator.maybePop(context),
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+            const Spacer(),
+            IconButton(
+              tooltip: 'Actualizar documentos',
+              onPressed: _loading ? null : _fetchDocuments,
+              icon: const Icon(Icons.refresh_rounded),
+            ),
+            IconButton(
+              tooltip: 'Abrir menú',
+              onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+              icon: const Icon(Icons.menu_rounded),
+            ),
+          ],
         ),
-        IconButton(
-          icon: const Icon(Icons.download, color: Colors.teal),
-          onPressed: () => _downloadDocument(document),
+        const SizedBox(height: 18),
+        Semantics(
+          header: true,
+          child: Text(
+            'Documentos',
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Archivos disponibles para esta gira',
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: PapigirasColors.muted),
         ),
       ],
     );
   }
 
-  void _viewDocument(Document document) {
-    _coordinatorProvider.viewDocument(document.tourSalesUuid, document.documentName!, widget.login.tourSalesId.toString(), context, "documentosextras");
-  }
-
-  Future<void> _downloadDocument(Document document) async {
-    await _coordinatorProvider.downloadDocument(document.tourSalesUuid, document.documentName!, widget.login.tourSalesId.toString(), "documentosextras");
-    QuickAlert.show(
-      context: context,
-      type: QuickAlertType.success,
-      title: 'Éxito',
-      text: 'Documento Descargado',
-      confirmBtnText: 'Continuar',
-      onConfirmBtnTap: () {
-        Navigator.of(context).pop();
-      },
+  Widget _documentTile(Document document) {
+    final available = document.documentName?.trim().isNotEmpty == true;
+    final key = '${document.tourSalesUuid}-${document.documentName}';
+    final busy = _busyDocuments.contains(key);
+    final title = available
+        ? document.documentName!.trim()
+        : _documentTitle(document.documentType);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: PapigirasColors.soft,
+        borderRadius: BorderRadius.circular(26),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+        leading: CircleAvatar(
+          backgroundColor: PapigirasColors.surface,
+          foregroundColor: PapigirasColors.teal,
+          child: Icon(_iconForDocumentType(document.documentType)),
+        ),
+        title: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
+        subtitle: Text(
+          available ? _formatLabel(document.documentName!) : 'No disponible',
+        ),
+        trailing: busy
+            ? const Padding(
+                padding: EdgeInsets.all(12),
+                child: SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Ver documento',
+                    onPressed: available
+                        ? () => _perform(
+                              key,
+                              () => _provider.viewDocument(
+                                document.tourSalesUuid,
+                                document.documentName!,
+                                widget.login.tourSalesId.toString(),
+                                context,
+                                'documentosextras',
+                              ),
+                            )
+                        : null,
+                    icon: const Icon(Icons.visibility_outlined),
+                  ),
+                  IconButton(
+                    tooltip: 'Guardar documento',
+                    onPressed: available
+                        ? () => _downloadDocument(document, key)
+                        : null,
+                    icon: const Icon(Icons.download_outlined),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
-  IconData _getIconForDocumentType(String documentType) {
-    switch (documentType) {
-      case 'poliza':
-        return Icons.policy;
-      case 'gira':
-        return Icons.description;
-      case 'hotel':
-        return Icons.hotel;
-      case 'Programa gira':
-        return Icons.description;
-      case 'Nomina alumnos':
-        return Icons.people;
-      default:
-        return Icons.description;
+  Future<void> _perform(String key, Future<void> Function() action) async {
+    if (_busyDocuments.contains(key)) return;
+    setState(() => _busyDocuments.add(key));
+    try {
+      await action();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No pudimos abrir o guardar el documento.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busyDocuments.remove(key));
     }
   }
+
+  Future<void> _downloadDocument(Document document, String key) async {
+    var succeeded = false;
+    await _perform(key, () async {
+      await _provider.downloadDocument(
+        document.tourSalesUuid,
+        document.documentName!,
+        widget.login.tourSalesId.toString(),
+        'documentosextras',
+      );
+      succeeded = true;
+    });
+    if (!mounted || !succeeded) return;
+    await QuickAlert.show(
+      context: context,
+      type: QuickAlertType.success,
+      title: 'Éxito',
+      text: 'Documento descargado',
+      confirmBtnText: 'Continuar',
+    );
+  }
+
+  String _formatLabel(String name) {
+    final extension = name.contains('.') ? name.split('.').last : '';
+    return extension.isEmpty ? 'Documento' : extension.toUpperCase();
+  }
+
+  String _documentTitle(String type) {
+    switch (type) {
+      case 'poliza':
+        return 'Póliza';
+      case 'gira':
+        return 'Documento de la gira';
+      case 'hotel':
+        return 'Hotel';
+      case 'Programa gira':
+        return 'Programa de la gira';
+      case 'Nomina alumnos':
+        return 'Nómina de alumnos';
+      default:
+        return type.trim().isEmpty ? 'Documento' : type;
+    }
+  }
+
+  IconData _iconForDocumentType(String type) {
+    switch (type) {
+      case 'poliza':
+        return Icons.policy_outlined;
+      case 'hotel':
+        return Icons.hotel_outlined;
+      case 'Nomina alumnos':
+        return Icons.people_outline;
+      default:
+        return Icons.description_outlined;
+    }
+  }
+}
+
+class _DocumentMessage extends StatelessWidget {
+  const _DocumentMessage({required this.title, this.onRetry});
+  final String title;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.folder_open_rounded,
+              color: PapigirasColors.teal,
+              size: 34,
+            ),
+            const SizedBox(height: 12),
+            Text(title, textAlign: TextAlign.center),
+            if (onRetry != null) ...[
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Reintentar'),
+              ),
+            ],
+          ],
+        ),
+      );
 }
