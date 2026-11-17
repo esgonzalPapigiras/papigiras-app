@@ -151,3 +151,12 @@ los servicios productivos por adaptadores LAB.
   la pantalla completa y la foto del menú familiar.
 - La nota de audio del prototipo no se incorporó porque requiere almacenamiento
   y endpoints que aún no forman parte de `main`.
+
+### Programa del apoderado
+
+- Programa adopta tarjeta del pasajero, secciones Pilo de curso, fechas y
+  actividades, encabezado compacto y estado recuperable de error.
+- Se conservan `getviewProgram`, la gira real y el menú familiar completo con
+  contacto y cierre de sesión.
+- No se importaron adaptadores de laboratorio del prototipo para imágenes,
+  preferencias o contacto.
