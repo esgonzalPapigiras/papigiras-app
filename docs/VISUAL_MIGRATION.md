@@ -178,3 +178,12 @@ los servicios productivos por adaptadores LAB.
   cuidados especiales y `sendMedicalDataEdit`.
 - No se reemplazó por el formulario unificado del prototipo para evitar cambiar
   el contrato y flujo productivos durante la migración visual.
+
+### Creación inicial de ficha médica
+
+- El formulario inicial adopta encabezado, tarjeta del pasajero, superficie y
+  acción principal Pilo, manteniendo desplazamiento al primer error.
+- Se conservan todos los campos, validaciones, autorización médica previa y
+  `createMedicalRecord`, además de la carga de foto usada por el menú.
+- No se incorporaron guardado local, exportación ni formulario en hoja del
+  prototipo porque implican comportamiento nuevo.
