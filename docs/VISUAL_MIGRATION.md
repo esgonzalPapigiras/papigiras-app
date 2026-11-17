@@ -70,3 +70,12 @@ los servicios productivos por adaptadores LAB.
   servidor.
 - No se incorporaron edición de hitos, audio ni ubicación/mapa del prototipo:
   son funcionalidades nuevas que requieren una etapa posterior.
+
+### Bitácora del coordinador
+
+- El listado adopta la línea de tiempo, tarjetas Pilo, recarga por gesto y
+  estados de carga/error/vacío, manteniendo autor, fecha, hora y ubicación.
+- Se conserva `getBinnacle`, el permiso de modificación entregado por cada
+  registro y la navegación al detalle productivo.
+- No se incorporaron mapa embebido ni creación georreferenciada de hitos; son
+  funcionalidades nuevas del prototipo y no simples cambios visuales.
