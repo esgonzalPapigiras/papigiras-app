@@ -196,3 +196,13 @@ los servicios productivos por adaptadores LAB.
   bitácora, programa, tripulación, documentos, ficha médica y mapa continúan.
 - Se conservan la actualización productiva de foto, `TraceMap`, la pantalla de
   mapa completa y el menú familiar.
+
+### Bienvenida del apoderado
+
+- La bienvenida adopta la composición Pilo, con marca compacta, título amplio,
+  tarjeta del pasajero y acción principal adaptable.
+- Se conservan la foto obtenida desde el servicio productivo (base64 o URL), la
+  validación real de ficha médica y la derivación original al formulario o al
+  dashboard.
+- Se agregó estado de espera y recuperación ante error sin copiar el adaptador
+  local de imágenes del prototipo.

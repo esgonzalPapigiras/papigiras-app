@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/fatherMedicalFile.dart';
@@ -9,44 +9,18 @@ import 'package:papigiras_app/pages/attorney/indexFather.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
 class WelcomeFatherScreen extends StatefulWidget {
+  const WelcomeFatherScreen({super.key, required this.login});
+
   final ResponseAttorney login;
-  WelcomeFatherScreen({required this.login});
+
   @override
-  _WelcomeFatherScreenState createState() => _WelcomeFatherScreenState();
+  State<WelcomeFatherScreen> createState() => _WelcomeFatherScreenState();
 }
 
 class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
-  final usuarioProvider = new CoordinatorProviders();
-  XFile? _image;
+  final CoordinatorProviders _provider = CoordinatorProviders();
   String? _imageUrl;
-
-  Future<void> _loadImage() async {
-    try {
-      Responseimagepassenger imageUrl = await usuarioProvider.getPicturePassenger(widget.login.passengerIdentificacion.toString(), widget.login.tourId.toString());
-      if (imageUrl.image.isNotEmpty) {
-        setState(() {
-          _imageUrl = imageUrl.image;
-        });
-      } else {
-        setState(() {
-          _imageUrl = null;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _imageUrl = null;
-      });
-    }
-  }
-
-  bool _isBase64(String data) {
-    try {
-      base64Decode(data.split(',').last);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
+  bool _checkingRecord = false;
 
   @override
   void initState() {
@@ -54,74 +28,143 @@ class _WelcomeFatherScreenState extends State<WelcomeFatherScreen> {
     _loadImage();
   }
 
+  Future<void> _loadImage() async {
+    try {
+      final Responseimagepassenger result = await _provider.getPicturePassenger(
+        widget.login.passengerIdentificacion.toString(),
+        widget.login.tourId.toString(),
+      );
+      if (mounted && result.image.isNotEmpty) {
+        setState(() => _imageUrl = result.image);
+      }
+    } catch (_) {
+      // The default avatar remains visible when the passenger has no photo.
+    }
+  }
+
+  ImageProvider<Object> _passengerImage() {
+    final image = _imageUrl;
+    if (image == null || image.isEmpty) {
+      return const AssetImage('assets/profile.jpg');
+    }
+    try {
+      return MemoryImage(base64Decode(image.split(',').last));
+    } catch (_) {
+      return NetworkImage(image);
+    }
+  }
+
+  Future<void> _continue() async {
+    if (_checkingRecord) return;
+    setState(() => _checkingRecord = true);
+    try {
+      final complete = await _provider.validateMedicalRecord(
+        widget.login.passengerId.toString(),
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(
+          builder: (_) => complete
+              ? TravelFatherDashboard(login: widget.login)
+              : MedicalRecordScreen(login: widget.login),
+        ),
+        (_) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No pudimos verificar la ficha médica. Intenta nuevamente.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _checkingRecord = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final passengerName = widget.login.passengerName ?? '';
+    final passengerLastName = widget.login.passengerApellidos ?? '';
+    final tourName = widget.login.tourName ?? '';
+    final fullName = [
+      passengerName,
+      passengerLastName,
+    ].where((part) => part.trim().isNotEmpty).join(' ');
+
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(child: Image.asset('assets/background.png', fit: BoxFit.cover)),
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight, minWidth: constraints.maxWidth),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(height: 20),
-                        Image.asset('assets/logo-papigiras.png', height: 350),
-                        SizedBox(height: 20),
-                        Text('Bienvenidos a bordo junto a:', style: TextStyle(fontSize: 16, color: Colors.white)),
-                        SizedBox(height: 10),
-                        Text(
-                          '${widget.login.passengerName} ${widget.login.passengerApellidos}',
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 20),
-                        Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                          child: CircleAvatar(
-                            radius: 40,
-                            backgroundImage: _image != null
-                                ? FileImage(File(_image!.path)) as ImageProvider<Object>
-                                : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                                    ? (_isBase64(_imageUrl!)
-                                        ? MemoryImage(base64Decode(_imageUrl!.split(',').last)) as ImageProvider<Object>
-                                        : NetworkImage(_imageUrl!) as ImageProvider<Object>)
-                                    : AssetImage('assets/profile.jpg') as ImageProvider<Object>,
-                          ),
-                        ),
-                        SizedBox(height: 20),
-                        Text('¡Emprenderemos este viaje inolvidable!', style: TextStyle(fontSize: 16, color: Colors.white)),
-                        SizedBox(height: 40),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (await usuarioProvider.validateMedicalRecord(widget.login.passengerId.toString())) {
-                              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => TravelFatherDashboard(login: widget.login)), (route) => false);
-                            } else {
-                              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => MedicalRecordScreen(login: widget.login)), (route) => false);
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.teal,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-                            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                          ),
-                          child: Text('Continuar', style: TextStyle(fontSize: 18.0, color: Colors.white)),
-                        ),
-                        SizedBox(height: 20),
-                      ],
-                    ),
+      body: SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Image.asset(
+                    'assets/logo-letras-papigiras.png',
+                    width: 148,
+                    semanticLabel: 'PapiGiras',
                   ),
-                );
-              },
+                ),
+                const SizedBox(height: 28),
+                Text(
+                  'Bienvenidos a bordo',
+                  style: theme.textTheme.displaySmall,
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: PapigirasColors.soft,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundColor: PapigirasColors.surface,
+                        backgroundImage: _passengerImage(),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        fullName.isEmpty ? 'Estudiante' : fullName,
+                        style: theme.textTheme.titleLarge,
+                      ),
+                      if (tourName.trim().isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          tourName,
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: _checkingRecord ? null : _continue,
+                  icon: _checkingRecord
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.arrow_forward_rounded, size: 20),
+                  iconAlignment: IconAlignment.end,
+                  label: Text(
+                    _checkingRecord ? 'Verificando ficha médica…' : 'Continuar',
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
