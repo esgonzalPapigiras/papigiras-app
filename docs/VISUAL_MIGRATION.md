@@ -98,3 +98,12 @@ los servicios productivos por adaptadores LAB.
 - El reinicio ahora pide confirmación. No se importó la sesión temporal ni el
   contador rápido en hoja del prototipo porque cambian el comportamiento y no
   persisten asistencia en el backend actual.
+
+### Creación de hitos
+
+- El formulario adopta encabezado, grupos, campos, selector fotográfico y
+  acción principal Pilo, mostrando ubicación y progreso de publicación.
+- Se conservan GPS/geocodificación, permisos reales de cámara y galería,
+  `addHito`, `addHitoFoto` y los datos productivos enviados por `RequestHito`.
+- No se incorporaron audio, ajuste manual en mapa ni renovación de sesión del
+  prototipo porque requieren servicios y contratos adicionales.

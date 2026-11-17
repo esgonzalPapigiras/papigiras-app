@@ -8,10 +8,10 @@ import 'package:papigiras_app/dto/TourSales.dart';
 import 'dart:async';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:papigiras_app/dto/requestHito.dart';
-import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 
 class HitoAddCoordScreen extends StatefulWidget {
   @override
@@ -47,6 +47,14 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    tituloController.dispose();
+    descripcionController.dispose();
+    ubicacionController.dispose();
+    notaCierreController.dispose();
+    latitudController.dispose();
+    longitudController.dispose();
+    horaController.dispose();
+    usuarioProvider.dispose();
     super.dispose();
   }
 
@@ -113,9 +121,8 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
               .where((part) => part != null && part.trim().isNotEmpty)
               .join(', ');
           setState(() {
-            _location = address.isNotEmpty
-                ? address
-                : _coordinateFallback(position);
+            _location =
+                address.isNotEmpty ? address : _coordinateFallback(position);
           });
         } else {
           setState(() {
@@ -148,14 +155,15 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
     if (Platform.isAndroid) {
       final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
       final AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-      int sdkInt = androidInfo.version.sdkInt ?? 0;
+      int sdkInt = androidInfo.version.sdkInt;
       if (sdkInt < 33) {
         PermissionStatus status = await Permission.storage.status;
         if (status.isDenied || status.isLimited) {
           PermissionStatus newStatus = await Permission.storage.request();
           if (!newStatus.isGranted) {
             if (newStatus.isPermanentlyDenied) {
-              print("Permiso permanentemente denegado, solicita al usuario ir a configuración");
+              print(
+                  "Permiso permanentemente denegado, solicita al usuario ir a configuración");
               openAppSettings();
             }
             return;
@@ -180,7 +188,8 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
 
   Future<void> pickImage() async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? pickedFile =
+          await _picker.pickImage(source: ImageSource.gallery);
       if (pickedFile != null) {
         setState(() {
           _imageFiles.add(pickedFile);
@@ -230,139 +239,214 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Agregar Hito')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTextField('Título', 'Escribe un Título', controller: tituloController),
-              SizedBox(height: 16),
-              _buildTextField('Descripción', 'Escribe una Descripción', controller: descripcionController, maxLength: 140),
-              SizedBox(height: 16),
-              Text('Agregar Fotos', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [_buildCameraButton(), _buildMultiSelectButton(), ...List.generate(10, (index) => _buildAddPhotoButton(index))],
-              ),
-              SizedBox(height: 15),
-              Text('Ubicación', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Text(_location, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-              SizedBox(height: 16),
-              _buildTextField('Nota al cierre', 'Escribe una Nota al Cierre', controller: notaCierreController),
-              SizedBox(height: 24),
-              Center(
-                child: ElevatedButton(
-                  onPressed: _isLoading
-                      ? null
-                      : () async {
-                          setState(() {
-                            _isLoading = true;
-                          });
-                          QuickAlert.show(context: context, type: QuickAlertType.loading, title: 'Estamos cargando', text: 'Por favor espere un momento');
-                          if (tituloController.text.isEmpty || descripcionController.text.isEmpty) {
-                            Navigator.of(context).pop();
-                            QuickAlert.show(
-                                context: context,
-                                type: QuickAlertType.error,
-                                title: 'Error',
-                                text: 'Por favor complete todos los campos',
-                                confirmBtnText: 'OK',
-                                onConfirmBtnTap: () {
-                                  Navigator.of(context).pop();
-                                });
-                            setState(() {
-                              _isLoading = false;
-                            });
-                            return;
-                          }
-                          final currentPosition = _position;
-                          if (currentPosition == null) {
-                            Navigator.of(context).pop();
-                            QuickAlert.show(
-                                context: context,
-                                type: QuickAlertType.error,
-                                title: 'Ubicación no disponible',
-                                text: 'No se pudo obtener la ubicación. Activa el GPS e inténtalo nuevamente.',
-                                confirmBtnText: 'OK',
-                                onConfirmBtnTap: () {
-                                  Navigator.of(context).pop();
-                                });
-                            setState(() {
-                              _isLoading = false;
-                            });
-                            return;
-                          }
-                          DateTime now = DateTime.now();
-                          String formattedDate = DateFormat('dd/MM/yyyy').format(now);
-                          RequestHito hito = RequestHito(
-                              titulo: tituloController.text,
-                              descripcion: descripcionController.text,
-                              ubicacion: _location,
-                              notaCierre: notaCierreController.text.isEmpty ? "." : notaCierreController.text,
-                              latitud: currentPosition.latitude.toString(),
-                              longitud: currentPosition.longitude.toString(),
-                              hora: _formattedTime,
-                              idTour: widget.login.tourSalesId,
-                              fecha: formattedDate);
-                          await Future.delayed(Duration(seconds: 5));
-                          var consolidate = await usuarioProvider.addHito(hito);
-                          if (consolidate != null) {
-                            await usuarioProvider.addHitoFoto(consolidate.binnacleDetailId, widget.login.tourSalesId.toString(), _imageFiles);
-                            Navigator.of(context).pop();
-                            QuickAlert.show(
-                              context: context,
-                              type: QuickAlertType.success,
-                              title: 'Éxito',
-                              text: 'Hito agregado con éxito',
-                              confirmBtnText: 'Continuar',
-                              onConfirmBtnTap: () {
-                                Navigator.of(context).pop();
-                                Navigator.of(context).pop();
-                              },
-                            );
-                          } else {
-                            Navigator.of(context).pop();
-                            QuickAlert.show(
-                                context: context,
-                                type: QuickAlertType.error,
-                                title: 'Error',
-                                text: 'No se pudo agregar el hito, intente nuevamente',
-                                confirmBtnText: 'OK',
-                                onConfirmBtnTap: () {
-                                  Navigator.of(context).pop();
-                                });
-                          }
-                          setState(() {
-                            _isLoading = false;
-                          });
-                        },
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF3AC5C9),
-                      padding: EdgeInsets.symmetric(horizontal: 60, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
-                  child: _isLoading
-                      ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : Text('Agregar', style: TextStyle(fontSize: 18, color: Colors.white)),
+      backgroundColor: PapigirasColors.canvas,
+      appBar: AppBar(
+        title: const Text('Nuevo hito'),
+        actions: [
+          IconButton(
+            tooltip: 'Actualizar ubicación',
+            onPressed: _isLoading ? null : _checkLocationService,
+            icon: const Icon(Icons.my_location_rounded),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildGroup(
+                  children: [
+                    _buildTextField('Título', 'Escribe un título',
+                        controller: tituloController),
+                    const SizedBox(height: 16),
+                    _buildTextField('Descripción', 'Cuenta qué está pasando',
+                        controller: descripcionController, maxLength: 140),
+                  ],
                 ),
-              ),
-              SizedBox(height: 30),
-            ],
+                const SizedBox(height: 14),
+                _buildGroup(
+                  children: [
+                    Text('Fotografías',
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        _buildCameraButton(),
+                        _buildMultiSelectButton(),
+                        ...List.generate(
+                            _imageFiles.length + 1, _buildAddPhotoButton),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _buildGroup(
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.place_outlined,
+                            color: PapigirasColors.teal),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(_location)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                        'Nota al cierre', 'Agrega una nota opcional',
+                        controller: notaCierreController),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _isLoading
+                        ? null
+                        : () async {
+                            setState(() {
+                              _isLoading = true;
+                            });
+                            QuickAlert.show(
+                                context: context,
+                                type: QuickAlertType.loading,
+                                title: 'Estamos cargando',
+                                text: 'Por favor espere un momento');
+                            if (tituloController.text.isEmpty ||
+                                descripcionController.text.isEmpty) {
+                              Navigator.of(context).pop();
+                              QuickAlert.show(
+                                  context: context,
+                                  type: QuickAlertType.error,
+                                  title: 'Error',
+                                  text: 'Por favor complete todos los campos',
+                                  confirmBtnText: 'OK',
+                                  onConfirmBtnTap: () {
+                                    Navigator.of(context).pop();
+                                  });
+                              setState(() {
+                                _isLoading = false;
+                              });
+                              return;
+                            }
+                            final currentPosition = _position;
+                            if (currentPosition == null) {
+                              Navigator.of(context).pop();
+                              QuickAlert.show(
+                                  context: context,
+                                  type: QuickAlertType.error,
+                                  title: 'Ubicación no disponible',
+                                  text:
+                                      'No se pudo obtener la ubicación. Activa el GPS e inténtalo nuevamente.',
+                                  confirmBtnText: 'OK',
+                                  onConfirmBtnTap: () {
+                                    Navigator.of(context).pop();
+                                  });
+                              setState(() {
+                                _isLoading = false;
+                              });
+                              return;
+                            }
+                            DateTime now = DateTime.now();
+                            String formattedDate =
+                                DateFormat('dd/MM/yyyy').format(now);
+                            RequestHito hito = RequestHito(
+                                titulo: tituloController.text,
+                                descripcion: descripcionController.text,
+                                ubicacion: _location,
+                                notaCierre: notaCierreController.text.isEmpty
+                                    ? "."
+                                    : notaCierreController.text,
+                                latitud: currentPosition.latitude.toString(),
+                                longitud: currentPosition.longitude.toString(),
+                                hora: _formattedTime,
+                                idTour: widget.login.tourSalesId,
+                                fecha: formattedDate);
+                            await Future.delayed(Duration(seconds: 5));
+                            var consolidate =
+                                await usuarioProvider.addHito(hito);
+                            if (consolidate != null) {
+                              await usuarioProvider.addHitoFoto(
+                                  consolidate.binnacleDetailId,
+                                  widget.login.tourSalesId.toString(),
+                                  _imageFiles);
+                              Navigator.of(context).pop();
+                              QuickAlert.show(
+                                context: context,
+                                type: QuickAlertType.success,
+                                title: 'Éxito',
+                                text: 'Hito agregado con éxito',
+                                confirmBtnText: 'Continuar',
+                                onConfirmBtnTap: () {
+                                  Navigator.of(context).pop();
+                                  Navigator.of(context).pop();
+                                },
+                              );
+                            } else {
+                              Navigator.of(context).pop();
+                              QuickAlert.show(
+                                  context: context,
+                                  type: QuickAlertType.error,
+                                  title: 'Error',
+                                  text:
+                                      'No se pudo agregar el hito, intente nuevamente',
+                                  confirmBtnText: 'OK',
+                                  onConfirmBtnTap: () {
+                                    Navigator.of(context).pop();
+                                  });
+                            }
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          },
+                    icon: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.publish_rounded),
+                    label: _isLoading
+                        ? const Text('Publicando…')
+                        : const Text('Publicar hito'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField(String label, String hint, {TextEditingController? controller, int maxLength = 1}) {
+  Widget _buildGroup({required List<Widget> children}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: PapigirasColors.soft,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, String hint,
+      {TextEditingController? controller, int maxLength = 1}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(label,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -370,7 +454,9 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
           maxLength: maxLength > 1 ? maxLength : null,
           decoration: InputDecoration(
             hintText: hint,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[300]!)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!)),
             filled: true,
             fillColor: Colors.grey[100],
             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -386,11 +472,17 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
       child: GestureDetector(
         onTap: requestPermissions, // Al hacer clic, abre la galería
         child: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
-          child:
-              _imageFiles.isNotEmpty && index < _imageFiles.length ? Image.file(File(_imageFiles[index].path), fit: BoxFit.cover) : Icon(Icons.add, color: Colors.grey[500]),
+          width: 72,
+          height: 72,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: PapigirasColors.surface,
+            border: Border.all(color: PapigirasColors.line),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: _imageFiles.isNotEmpty && index < _imageFiles.length
+              ? Image.file(File(_imageFiles[index].path), fit: BoxFit.cover)
+              : Icon(Icons.add, color: Colors.grey[500]),
         ),
       ),
     );
@@ -400,10 +492,15 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
     return GestureDetector(
       onTap: pickMultipleImages,
       child: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(border: Border.all(color: Colors.green), borderRadius: BorderRadius.circular(8)),
-        child: Icon(Icons.collections, color: Colors.green),
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          color: PapigirasColors.surface,
+          border: Border.all(color: PapigirasColors.line),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child:
+            const Icon(Icons.collections_outlined, color: PapigirasColors.teal),
       ),
     );
   }
@@ -412,10 +509,14 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
     return GestureDetector(
       onTap: requestCameraPermission,
       child: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(border: Border.all(color: Colors.blue), borderRadius: BorderRadius.circular(8)),
-        child: Icon(Icons.camera_alt, color: Colors.blue),
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          color: PapigirasColors.mint,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: const Icon(Icons.camera_alt_outlined,
+            color: PapigirasColors.onMint),
       ),
     );
   }
