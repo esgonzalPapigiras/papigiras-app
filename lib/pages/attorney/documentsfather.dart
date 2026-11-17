@@ -1,85 +1,109 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/document.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
-import 'package:papigiras_app/pages/attorney/indexFather.dart';
-import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:quickalert/quickalert.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:papigiras_app/utils/app_drawer_father.dart';
 
 class DocumentFatherScreen extends StatefulWidget {
-  @override
-  _DocumentFatherScreenState createState() => _DocumentFatherScreenState();
+  const DocumentFatherScreen({super.key, required this.login});
+
   final ResponseAttorney login;
-  DocumentFatherScreen({required this.login});
+
+  @override
+  State<DocumentFatherScreen> createState() => _DocumentFatherScreenState();
 }
 
 class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late Future<List<Document>> _documentsFuture;
-  final usuarioProvider = new CoordinatorProviders();
-
-  XFile? _image;
-  String? _imageUrl;
-
-  Future<void> _loadImage() async {
-    try {
-      Responseimagepassenger imageUrl =
-          await usuarioProvider.getPicturePassenger(
-        widget.login.passengerIdentificacion.toString(),
-        widget.login.tourId.toString(),
-      );
-
-      if (imageUrl.image.isNotEmpty) {
-        setState(() {
-          _imageUrl = imageUrl.image; // Si la imagen existe, la cargamos
-        });
-      } else {
-        setState(() {
-          _imageUrl = null; // Si no hay imagen, usar la predeterminada
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _imageUrl = null; // Si ocurre un error, usar la predeterminada
-      });
-    }
-  }
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _provider = CoordinatorProviders();
+  late Future<List<Document>> _documents;
+  final _busy = <String>{};
+  String? _drawerImage;
 
   @override
   void initState() {
     super.initState();
     _loadImage();
-    // Llama a fetchDocuments al iniciar el widget
-    _documentsFuture = fetchDocuments(widget.login.tourId.toString());
+    _documents = _fetchDocuments();
   }
 
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl =
-        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+  @override
+  void dispose() {
+    _provider.dispose();
+    super.dispose();
+  }
 
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(
-        whatsappUrl,
-        mode: LaunchMode.externalApplication,
+  Future<void> _loadImage() async {
+    try {
+      final photo = await _provider.getPicturePassenger(
+        widget.login.passengerIdentificacion.toString(),
+        widget.login.tourId.toString(),
       );
-    } else {
-      print('No se puede abrir WhatsApp');
-      // Intenta con el esquema directo
-      final whatsappDirect = Uri.parse(
-          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(
-          whatsappDirect,
-          mode: LaunchMode.externalApplication,
+      if (mounted) {
+        setState(() => _drawerImage = photo.image.isEmpty ? null : photo.image);
+      }
+    } catch (_) {}
+  }
+
+  Future<List<Document>> _fetchDocuments() async {
+    final documents =
+        await _provider.getDocument(widget.login.tourId.toString());
+    return documents
+        .where(
+          (document) =>
+              document.documentType != 'Nomina alumnos' &&
+              document.visibleToAll,
+        )
+        .toList();
+  }
+
+  Future<void> _refresh() async {
+    final future = _fetchDocuments();
+    setState(() => _documents = future);
+    try {
+      await future;
+    } catch (_) {}
+  }
+
+  Future<void> _runAction(Document document, {required bool preview}) async {
+    final name = document.documentName?.trim() ?? '';
+    if (name.isEmpty) return;
+    final key = '${document.tourSalesUuid}-$name';
+    if (_busy.contains(key)) return;
+    setState(() => _busy.add(key));
+    try {
+      if (preview) {
+        await _provider.viewDocument(
+          document.tourSalesUuid,
+          name,
+          widget.login.tourId.toString(),
+          context,
+          'documentosextras',
         );
       } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
+        await _provider.downloadDocument(
+          document.tourSalesUuid,
+          name,
+          widget.login.tourId.toString(),
+          'documentosextras',
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Documento descargado.')),
+          );
+        }
       }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No pudimos abrir o guardar el documento.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy.remove(key));
     }
   }
 
@@ -87,322 +111,193 @@ class _DocumentFatherScreenState extends State<DocumentFatherScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9), // Fondo turquesa
+      backgroundColor: PapigirasColors.canvas,
       endDrawer: AppDrawerFather(
         login: widget.login,
-        imageFile: _image, // remove if the screen has no image picker
-        imageUrl: _imageUrl, // remove if the screen has no image URL
+        imageFile: null,
+        imageUrl: _drawerImage,
       ),
-      body: Stack(
-        children: [
-          _buildBackground(),
-          Column(
-            children: [
-              _buildAppBar(context),
-              Expanded(
-                child: _buildBinnacleContent(),
-              ),
-            ],
-          ),
-        ],
-      ),
-      //bottomNavigationBar: _buildCustomBottomNavigationBar(),
-    );
-  }
-
-  void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Borrar el estado de la sesión
-
-    // Redirigir al login o realizar otra acción
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => WelcomeScreen()),
-      (route) =>
-          false, // Esto elimina todas las rutas anteriores de la pila de navegación
-    );
-  }
-
-  Widget _buildBackground() {
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/background.png'),
-          fit: BoxFit.cover,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-      child: Row(
-        children: [
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.arrow_back,
-                  color: Colors.white, size: 30), // Flecha blanca
-              onPressed: () {
-                // Navegar a otra ruta cuando la flecha es presionada
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => TravelFatherDashboard(
-                          login:
-                              widget.login)), // Reemplaza con la ruta deseada
-                );
-              },
-            ),
-          ),
-          Spacer(),
-          Image.asset(
-            'assets/logo-letras-papigiras.png',
-            height: 50,
-          ),
-          Spacer(),
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.menu, color: Colors.white, size: 30),
-              onPressed: () {
-                _scaffoldKey.currentState?.openEndDrawer();
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBinnacleContent() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(40),
-          topRight: Radius.circular(40),
-        ),
-      ),
-      padding: EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildFilterOptions(),
-          SizedBox(height: 20),
-          Expanded(
-            child: _buildBinnacleEntries(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterOptions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center, // Centra el texto
-      children: [
-        Text(
-          'Mis Documentos',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<List<Document>> fetchDocuments(String tourCode) async {
-    try {
-      List<Document> documents = await usuarioProvider.getDocument(tourCode);
-      // Business rule #1: parents never see this
-      documents.removeWhere(
-        (document) => document.documentType == 'Nomina alumnos',
-      );
-      // Business rule #2: parents only see visible documents
-
-      documents.removeWhere(
-        (document) => document.visibleToAll == false,
-      );
-      return documents; // Devuelve la lista de documentos
-    } catch (e) {
-      print('Error: $e');
-      return []; // Devuelve una lista vacía en caso de error
-    }
-  }
-
-  Widget _buildBinnacleEntries() {
-    return FutureBuilder<List<Document>>(
-      future: _documentsFuture, // Usamos _documentsFuture aquí
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No documents found.'));
-        }
-
-        List<Document> documents = snapshot.data!;
-
-        return ListView.builder(
-          itemCount: documents.length,
-          itemBuilder: (context, index) {
-            final document = documents[index];
-            return Card(
-              margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              child: ListTile(
-                leading: Icon(
-                  _getIconForDocumentType(document.documentType),
-                  color: Colors.teal,
-                  size: 40,
-                ),
-                title: Text(
-                  document.documentType ?? 'Sin nombre',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.remove_red_eye, color: Colors.teal),
-                      onPressed: () {
-                        usuarioProvider.viewDocument(
-                            document.tourSalesUuid,
-                            document.documentName!,
-                            widget.login.tourId.toString(),
-                            context,
-                            "documentosextras");
-                        // Acción para descargar el documento
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.download, color: Colors.teal),
-                      onPressed: () async {
-                        await usuarioProvider.downloadDocument(
-                            document.tourSalesUuid,
-                            document.documentName!,
-                            widget.login.tourId.toString(),
-                            "documentosextras");
-                        QuickAlert.show(
-                          context: context,
-                          type: QuickAlertType.success,
-                          title: 'Éxito',
-                          text: 'Documento Descargado',
-                          confirmBtnText: 'Continuar',
-                          onConfirmBtnTap: () {
-                            Navigator.of(context).pop(); // Cierra el QuickAlert
-                          },
-                        );
-                        // Acción para descargar el documento
-                      },
-                    ),
-                  ],
-                ),
+      body: SafeArea(
+        child: FutureBuilder<List<Document>>(
+          future: _documents,
+          builder: (context, snapshot) {
+            final loading = snapshot.connectionState == ConnectionState.waiting;
+            final documents = snapshot.data ?? const <Document>[];
+            return RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                children: [
+                  _buildHeader(loading),
+                  if (loading)
+                    const LinearProgressIndicator(minHeight: 2)
+                  else if (snapshot.hasError)
+                    _MessageState(
+                      icon: Icons.cloud_off_outlined,
+                      message: 'No pudimos cargar los documentos.',
+                      onRetry: _refresh,
+                    )
+                  else if (documents.isEmpty)
+                    const _MessageState(
+                      icon: Icons.folder_open_outlined,
+                      message: 'Aún no hay documentos para esta gira.',
+                    )
+                  else
+                    for (final document in documents) _documentCard(document),
+                ],
               ),
             );
           },
-        );
-      },
+        ),
+      ),
     );
   }
 
-  IconData _getIconForDocumentType(String documentType) {
-    switch (documentType) {
+  Widget _buildHeader(bool loading) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'Volver',
+            onPressed: () => Navigator.of(context).maybePop(),
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Documentos',
+                    style: Theme.of(context).textTheme.headlineMedium),
+                Text('Archivos de la gira',
+                    style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Actualizar documentos',
+            onPressed: loading ? null : _refresh,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+          IconButton(
+            tooltip: 'Abrir menú',
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+            icon: const Icon(Icons.menu_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _documentCard(Document document) {
+    final name = document.documentName?.trim() ?? '';
+    final available = name.isNotEmpty;
+    final key = '${document.tourSalesUuid}-$name';
+    final busy = _busy.contains(key);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: PapigirasColors.soft,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: PapigirasColors.surface,
+            foregroundColor: PapigirasColors.teal,
+            child: Icon(_iconFor(document.documentType)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  available ? name : document.documentType,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  available ? _formatLabel(name) : 'Archivo no disponible',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          if (busy)
+            const Padding(
+              padding: EdgeInsets.all(12),
+              child: SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else ...[
+            IconButton(
+              tooltip: 'Ver documento',
+              onPressed:
+                  available ? () => _runAction(document, preview: true) : null,
+              icon: const Icon(Icons.visibility_outlined),
+            ),
+            IconButton(
+              tooltip: 'Descargar documento',
+              onPressed:
+                  available ? () => _runAction(document, preview: false) : null,
+              icon: const Icon(Icons.download_rounded),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  IconData _iconFor(String type) {
+    switch (type) {
       case 'poliza':
-        return Icons.policy;
-      case 'gira':
-        return Icons.description;
+        return Icons.policy_outlined;
       case 'hotel':
-        return Icons.hotel;
-      case 'Programa gira':
-        return Icons.description;
+        return Icons.hotel_outlined;
       case 'Nomina alumnos':
-        return Icons.people;
+        return Icons.groups_outlined;
       case 'extra':
-        return Icons.attach_file;
+        return Icons.attach_file_rounded;
       default:
-        return Icons.description;
+        return Icons.description_outlined;
     }
   }
 
-  Widget buildBottomButton(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
+  String _formatLabel(String name) {
+    final extension =
+        name.contains('.') ? name.split('.').last.toUpperCase() : '';
+    return extension.isEmpty ? 'Documento de la gira' : 'Archivo $extension';
+  }
+}
+
+class _MessageState extends StatelessWidget {
+  const _MessageState(
+      {required this.icon, required this.message, this.onRetry});
+  final IconData icon;
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 40,
-            color: Colors.teal,
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.teal,
-              fontSize: 8,
-            ),
-          ),
+          Icon(icon, size: 48, color: PapigirasColors.teal),
+          const SizedBox(height: 14),
+          Text(message, textAlign: TextAlign.center),
+          if (onRetry != null) ...[
+            const SizedBox(height: 12),
+            TextButton(onPressed: onRetry, child: const Text('Reintentar')),
+          ],
         ],
       ),
-    );
-  }
-
-  Widget buildBottomButtonHito(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 70,
-            color: Colors.teal,
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.teal,
-              fontSize: 8,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0); // Desde abajo
-        const end = Offset.zero;
-        const curve = Curves.ease;
-
-        var tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-
-        return SlideTransition(
-          position: offsetAnimation,
-          child: child,
-        );
-      },
     );
   }
 }

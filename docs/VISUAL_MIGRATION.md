@@ -125,3 +125,12 @@ los servicios productivos por adaptadores LAB.
   pasajero usada por el menú del apoderado.
 - No se importó `TripCrewView` ni la navegación paralela del prototipo; la vista
   sigue utilizando los servicios y rutas productivos de `main`.
+
+### Documentos del apoderado
+
+- Se incorporaron encabezado, tarjetas, estados, actualización por gesto y
+  acciones Pilo para ver y descargar archivos.
+- Se conservaron `getDocument`, `viewDocument`, `downloadDocument`, la foto del
+  menú y las reglas productivas que excluyen nóminas y archivos no públicos.
+- No se importaron repositorios de documentos privados ni adaptadores del
+  prototipo.
