@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/binnacle.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:papigiras_app/utils/tour_map_style.dart';
@@ -110,77 +111,89 @@ class _TraceMapFullScreenState extends State<TraceMapFullScreen> {
       );
     }).toList();
     if (points.isEmpty) {
-      return Scaffold(
-        appBar: _buildAppBar(context),
-        body: _buildEmptyState(),
-      );
+      return Scaffold(appBar: _buildAppBar(context), body: _buildEmptyState());
     }
     final center = points.first;
     return Scaffold(
       appBar: _buildAppBar(context),
-      body: FlutterMap(
-        options: MapOptions(
-            initialCenter: center,
-            initialZoom: 13.0,
-            onTap: (_, __) => _popupController.hideAllPopups()),
-        children: [
-          ...buildTourMapTileLayers(_mapStyle),
-          if (points.length > 1)
-            PolylineLayer(
-              polylines: [
-                Polyline(points: points, strokeWidth: 4.0, color: Colors.blue),
-              ],
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: FlutterMap(
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: 13.0,
+              onTap: (_, __) => _popupController.hideAllPopups(),
             ),
-          MarkerLayer(markers: markers),
-          PopupMarkerLayer(
-            options: PopupMarkerLayerOptions(
-              markers: markers,
-              popupController: _popupController,
-              markerTapBehavior: MarkerTapBehavior.togglePopup(),
-              popupDisplayOptions: PopupDisplayOptions(
-                builder: (BuildContext context, Marker marker) {
-                  final idx = markers.indexOf(marker);
-                  final dto = entries[idx].key;
-                  return Card(
-                    margin: EdgeInsets.zero,
-                    child: Container(
-                      width: 200,
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(dto.binnacleTitulo,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          Text(dto.binnacleDescripcion),
-                          Text(dto.binnacleFecha),
-                        ],
-                      ),
+            children: [
+              ...buildTourMapTileLayers(_mapStyle),
+              if (points.length > 1)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: points,
+                      strokeWidth: 4.0,
+                      color: PapigirasColors.teal,
                     ),
-                  );
-                },
-                snap: PopupSnap.markerTop,
+                  ],
+                ),
+              MarkerLayer(markers: markers),
+              PopupMarkerLayer(
+                options: PopupMarkerLayerOptions(
+                  markers: markers,
+                  popupController: _popupController,
+                  markerTapBehavior: MarkerTapBehavior.togglePopup(),
+                  popupDisplayOptions: PopupDisplayOptions(
+                    builder: (BuildContext context, Marker marker) {
+                      final idx = markers.indexOf(marker);
+                      final dto = entries[idx].key;
+                      return Card(
+                        child: Container(
+                          width: 220,
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                dto.binnacleTitulo,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(dto.binnacleDescripcion),
+                              const SizedBox(height: 6),
+                              Text(
+                                dto.binnacleFecha,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    snap: PopupSnap.markerTop,
+                  ),
+                ),
               ),
-            ),
+              TourMapStyleControl(
+                value: _mapStyle,
+                onChanged: _changeMapStyle,
+              ),
+              TourMapAttribution(style: _mapStyle),
+            ],
           ),
-          TourMapStyleControl(
-            value: _mapStyle,
-            onChanged: _changeMapStyle,
-          ),
-          TourMapAttribution(style: _mapStyle),
-        ],
+        ),
       ),
     );
   }
 
   AppBar _buildAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.teal,
-      title: const Text('Mapa del Recorrido',
-          style: TextStyle(color: Colors.white)),
+      title: const Text('Mapa del viaje'),
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        tooltip: 'Volver',
+        icon: const Icon(Icons.arrow_back_rounded),
         onPressed: () => Navigator.pop(context),
       ),
     );
@@ -198,7 +211,7 @@ class _TraceMapFullScreenState extends State<TraceMapFullScreen> {
                   ? Icons.location_off_outlined
                   : Icons.error_outline,
               size: 56,
-              color: Colors.teal,
+              color: PapigirasColors.teal,
             ),
             const SizedBox(height: 16),
             Text(

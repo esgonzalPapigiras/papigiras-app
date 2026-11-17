@@ -206,3 +206,12 @@ los servicios productivos por adaptadores LAB.
   dashboard.
 - Se agregó estado de espera y recuperación ante error sin copiar el adaptador
   local de imágenes del prototipo.
+
+### Mapas familiares
+
+- Las vistas de recorrido y ubicación real adoptan encabezados, bordes,
+  superficies, trazado y tarjetas de hito Pilo.
+- Se conservan `getBinnacle`, `uniqueID`, permisos de ubicación, marcadores,
+  estilos cartográficos y actualización periódica productivos.
+- No se copió `LabMap`, ubicación sintética ni la nueva arquitectura de mapas
+  del prototipo porque sustituyen integraciones reales y agregan funcionalidad.

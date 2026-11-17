@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/PositionCoordinator.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
@@ -90,19 +91,21 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.teal,
-        title: const Text('Ubicación en tiempo real',
-            style: TextStyle(color: Colors.white)),
+        title: const Text('Ubicación en tiempo real'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          tooltip: 'Volver',
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: ColoredBox(
+            color: PapigirasColors.soft,
             child: FlutterMap(
               mapController: _mapController,
               options: MapOptions(
@@ -160,7 +163,7 @@ class _MapScreenState extends State<MapScreen> {
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
