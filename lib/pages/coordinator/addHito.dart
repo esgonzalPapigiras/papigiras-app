@@ -31,7 +31,7 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
   String _formattedTime = '';
   String _location = 'Obteniendo ubicación...';
   Timer? _timer;
-  late Position position;
+  Position? _position;
   final usuarioProvider = new CoordinatorProviders();
   List<XFile> _imageFiles = [];
   final ImagePicker _picker = ImagePicker();
@@ -96,25 +96,52 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
 
   Future<void> _getCurrentLocation() async {
     try {
-      position = await Geolocator.getCurrentPosition(
+      final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
+      _position = position;
+
+      try {
+        final placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+        if (!mounted) return;
+        if (placemarks.isNotEmpty) {
+          final place = placemarks.first;
+          final address = [place.street, place.locality, place.country]
+              .where((part) => part != null && part.trim().isNotEmpty)
+              .join(', ');
+          setState(() {
+            _location = address.isNotEmpty
+                ? address
+                : _coordinateFallback(position);
+          });
+        } else {
+          setState(() {
+            _location = _coordinateFallback(position);
+          });
+        }
+      } catch (error) {
+        debugPrint('No se pudo obtener la dirección: $error');
+        if (!mounted) return;
         setState(() {
-          _location = '${place.street}, ${place.locality}, ${place.country}';
-        });
-      } else {
-        setState(() {
-          _location = 'No se pudo obtener la dirección';
+          _location = _coordinateFallback(position);
         });
       }
     } catch (e) {
+      _position = null;
+      if (!mounted) return;
       setState(() {
-        _location = 'Error al obtener la posición: $e';
+        _location = 'No se pudo obtener la ubicación del dispositivo.';
       });
     }
+  }
+
+  String _coordinateFallback(Position position) {
+    return 'Ubicación aproximada '
+        '(${position.latitude.toStringAsFixed(6)}, '
+        '${position.longitude.toStringAsFixed(6)})';
   }
 
   Future<void> requestPermissions() async {
@@ -253,6 +280,23 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                             });
                             return;
                           }
+                          final currentPosition = _position;
+                          if (currentPosition == null) {
+                            Navigator.of(context).pop();
+                            QuickAlert.show(
+                                context: context,
+                                type: QuickAlertType.error,
+                                title: 'Ubicación no disponible',
+                                text: 'No se pudo obtener la ubicación. Activa el GPS e inténtalo nuevamente.',
+                                confirmBtnText: 'OK',
+                                onConfirmBtnTap: () {
+                                  Navigator.of(context).pop();
+                                });
+                            setState(() {
+                              _isLoading = false;
+                            });
+                            return;
+                          }
                           DateTime now = DateTime.now();
                           String formattedDate = DateFormat('dd/MM/yyyy').format(now);
                           RequestHito hito = RequestHito(
@@ -260,8 +304,8 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                               descripcion: descripcionController.text,
                               ubicacion: _location,
                               notaCierre: notaCierreController.text.isEmpty ? "." : notaCierreController.text,
-                              latitud: position.latitude.toString(),
-                              longitud: position.longitude.toString(),
+                              latitud: currentPosition.latitude.toString(),
+                              longitud: currentPosition.longitude.toString(),
                               hora: _formattedTime,
                               idTour: widget.login.tourSalesId,
                               fecha: formattedDate);

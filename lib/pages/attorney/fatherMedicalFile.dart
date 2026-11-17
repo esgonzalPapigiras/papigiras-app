@@ -163,10 +163,11 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
   }
 
   String? _validateTelefono(String? value) {
-    if (value == null || value.isEmpty) return 'El teléfono es obligatorio';
-    final normalized = value.trim().replaceAll(RegExp(r'\s+'), '');
-    final phoneRegex = RegExp(r'^[0-9]{9,12}$');
-    if (!phoneRegex.hasMatch(normalized)) return 'Ingresa un teléfono válido';
+    if (value == null || value.trim().isEmpty) return null;
+    final normalized = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (normalized.length < 8 || normalized.length > 12) {
+      return 'Usa un teléfono válido, por ejemplo +56 9 1234 5678';
+    }
     return null;
   }
 
@@ -892,7 +893,7 @@ class _MedicalRecordScreenState extends State<MedicalRecordScreen> {
           keyboardType: keyboardType,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
-            hintText: '995930960',
+            hintText: '+56 9 1234 5678 (opcional)',
           ),
         ),
         SizedBox(height: 15),

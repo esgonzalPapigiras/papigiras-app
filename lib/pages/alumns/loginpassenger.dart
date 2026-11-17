@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/design/papigiras_login_layout.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/alumns/indexpassenger.dart';
@@ -63,13 +64,24 @@ class _LoginPassengerState extends State<LoginPassenger> {
         try {
           if (role == 'coordinator') {
             TourSales login = TourSales.fromJson(loginMap);
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => TravelCoordinatorDashboard(login: login)));
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        TravelCoordinatorDashboard(login: login)));
           } else if (role == 'passenger') {
             ResponseAttorney login = ResponseAttorney.fromJson(loginMap);
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => TravelPassengerDashboard(login: login)));
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        TravelPassengerDashboard(login: login)));
           } else if (role == 'father') {
             ResponseAttorney login = ResponseAttorney.fromJson(loginMap);
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => TravelFatherDashboard(login: login)));
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => TravelFatherDashboard(login: login)));
           } else {
             await _clearSession(prefs);
           }
@@ -133,150 +145,124 @@ class _LoginPassengerState extends State<LoginPassenger> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30.0),
-                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10.0, offset: Offset(0, 5))],
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 30.0, horizontal: 20.0),
-                  width: double.infinity,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Image.asset('assets/logo-letras-papigiras.png', height: 60.0),
-                      SizedBox(height: 10.0),
-                      Text('Bienvenido(s)', style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.w600, color: Colors.grey[800])),
-                      Text('Alumno(s)', style: TextStyle(fontSize: 16.0, color: Colors.grey[600])),
-                      SizedBox(height: 30.0),
-                      TextField(
-                        controller: _userController,
-                        maxLength: 12,
-                        decoration: InputDecoration(
-                          labelText: 'Rut Alumno',
-                          labelStyle: TextStyle(color: Colors.grey),
-                          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: _showError ? Colors.red : Colors.grey), borderRadius: BorderRadius.circular(10.0)),
-                          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: _showError ? Colors.red : Colors.teal), borderRadius: BorderRadius.circular(10.0)),
-                        ),
-                        keyboardType: TextInputType.text,
-                        onChanged: (value) {
-                          setState(() {
-                            _userController.text = _formatRut(value);
-                            _userController.selection = TextSelection.fromPosition(TextPosition(offset: _userController.text.length));
-                            _showError = false;
-                          });
-                        },
-                      ),
-                      if (_showError)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 5.0),
-                          child: Text('Debes ingresar un rut de alumno', style: TextStyle(color: Colors.red, fontSize: 12.0)),
-                        ),
-                      SizedBox(height: 20.0),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: _isPasswordHidden,
-                        decoration: InputDecoration(
-                          labelText: 'Contraseña',
-                          labelStyle: TextStyle(color: Colors.grey),
-                          enabledBorder:
-                              OutlineInputBorder(borderSide: BorderSide(color: _showErrorTwo ? Colors.red : Colors.grey), borderRadius: BorderRadius.circular(10.0)),
-                          focusedBorder:
-                              OutlineInputBorder(borderSide: BorderSide(color: _showErrorTwo ? Colors.red : Colors.teal), borderRadius: BorderRadius.circular(10.0)),
-                          suffixIcon: IconButton(
-                            icon: Icon(_isPasswordHidden ? Icons.visibility : Icons.visibility_off),
-                            onPressed: () {
-                              setState(() {
-                                _isPasswordHidden = !_isPasswordHidden;
-                              });
-                            },
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            _showErrorTwo = false;
-                          });
-                        },
-                      ),
-                      SizedBox(height: 30.0),
-                      ElevatedButton(
-                        onPressed: () async {
-                          if (_userController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
-                            setState(() {
-                              _showError = false;
-                              _showErrorTwo = false;
-                            });
-                            final login = await usuarioProvider.validateLoginUserPassenger(_userController.text, _passwordController.text);
-                            if (login != null && login.isActive!) {
-                              SharedPreferences prefs = await SharedPreferences.getInstance();
-                              await prefs.setString('token', login.tokenKey!);
-                              final now = DateTime.now();
-                              final expiryDate = now.add(Duration(days: 3));
-                              await prefs.setString('tokenExpiry', expiryDate.toIso8601String());
-                              await prefs.setString('userRole', 'passenger');
-                              await prefs.setBool('isLoggedIn', true);
-                              String loginJson = jsonEncode(login.toJson());
-                              await prefs.setString('loginData', loginJson);
-                              QuickAlert.show(
-                                context: context,
-                                type: QuickAlertType.success,
-                                title: 'Éxito',
-                                text: 'Bienvenido',
-                                confirmBtnText: 'Continuar',
-                                onConfirmBtnTap: () async {
-                                  Navigator.of(context).pop();
-                                  Navigator.push(context, MaterialPageRoute(builder: (context) => TravelPassengerDashboard(login: login)));
-                                },
-                              );
-                            } else {
-                              QuickAlert.show(
-                                context: context,
-                                type: QuickAlertType.error,
-                                title: 'Error',
-                                text: 'Usuario no encontrado o desactivado',
-                                confirmBtnText: 'Aceptar',
-                                onConfirmBtnTap: () {
-                                  Navigator.of(context).pop();
-                                },
-                              );
-                            }
-                          } else {
-                            QuickAlert.show(
-                              context: context,
-                              type: QuickAlertType.error,
-                              title: 'Error',
-                              text: 'Ingresar usuario y contraseña',
-                              confirmBtnText: 'Aceptar',
-                              onConfirmBtnTap: () {
-                                Navigator.of(context).pop();
-                              },
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(horizontal: 50.0, vertical: 15.0),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-                          backgroundColor: Colors.teal,
-                        ),
-                        child: Text('Ingresar', style: TextStyle(fontSize: 18.0, color: Colors.white)),
-                      ),
-                    ],
-                  ),
-                ),
+    return PapigirasLoginLayout(
+      role: PapigirasLoginRole.passenger,
+      footer: const PapigirasLoginHint(),
+      children: [
+        TextField(
+          controller: _userController,
+          maxLength: 12,
+          keyboardType: TextInputType.text,
+          textInputAction: TextInputAction.next,
+          decoration: papigirasLoginField(
+            label: 'RUT del alumno',
+            hint: '12.345.678-9',
+            errorText: _showError ? 'Debes ingresar un RUT de alumno' : null,
+          ),
+          onChanged: (value) {
+            setState(() {
+              _userController.text = _formatRut(value);
+              _userController.selection = TextSelection.fromPosition(
+                TextPosition(offset: _userController.text.length),
+              );
+              _showError = false;
+            });
+          },
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _passwordController,
+          obscureText: _isPasswordHidden,
+          textInputAction: TextInputAction.done,
+          decoration: papigirasLoginField(
+            label: 'Contraseña',
+            errorText: _showErrorTwo ? 'Debes ingresar la contraseña' : null,
+            suffixIcon: IconButton(
+              tooltip: _isPasswordHidden
+                  ? 'Mostrar contraseña'
+                  : 'Ocultar contraseña',
+              icon: Icon(
+                _isPasswordHidden ? Icons.visibility : Icons.visibility_off,
               ),
-            ],
+              onPressed: () {
+                setState(() => _isPasswordHidden = !_isPasswordHidden);
+              },
+            ),
+          ),
+          onChanged: (_) => setState(() => _showErrorTwo = false),
+        ),
+        const SizedBox(height: 18),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () async {
+              if (_userController.text.isNotEmpty &&
+                  _passwordController.text.isNotEmpty) {
+                setState(() {
+                  _showError = false;
+                  _showErrorTwo = false;
+                });
+                final login = await usuarioProvider.validateLoginUserPassenger(
+                    _userController.text, _passwordController.text);
+                if (login != null && login.isActive!) {
+                  SharedPreferences prefs =
+                      await SharedPreferences.getInstance();
+                  await prefs.setString('token', login.tokenKey!);
+                  final now = DateTime.now();
+                  final expiryDate = now.add(Duration(days: 3));
+                  await prefs.setString(
+                      'tokenExpiry', expiryDate.toIso8601String());
+                  await prefs.setString('userRole', 'passenger');
+                  await prefs.setBool('isLoggedIn', true);
+                  String loginJson = jsonEncode(login.toJson());
+                  await prefs.setString('loginData', loginJson);
+                  QuickAlert.show(
+                    context: context,
+                    type: QuickAlertType.success,
+                    title: 'Éxito',
+                    text: 'Bienvenido',
+                    confirmBtnText: 'Continuar',
+                    onConfirmBtnTap: () async {
+                      Navigator.of(context).pop();
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  TravelPassengerDashboard(login: login)));
+                    },
+                  );
+                } else {
+                  QuickAlert.show(
+                    context: context,
+                    type: QuickAlertType.error,
+                    title: 'Error',
+                    text: 'Usuario no encontrado o desactivado',
+                    confirmBtnText: 'Aceptar',
+                    onConfirmBtnTap: () {
+                      Navigator.of(context).pop();
+                    },
+                  );
+                }
+              } else {
+                QuickAlert.show(
+                  context: context,
+                  type: QuickAlertType.error,
+                  title: 'Error',
+                  text: 'Ingresar usuario y contraseña',
+                  confirmBtnText: 'Aceptar',
+                  onConfirmBtnTap: () {
+                    Navigator.of(context).pop();
+                  },
+                );
+              }
+            },
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 6),
+              child: Text('Ingresar'),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

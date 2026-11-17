@@ -48,15 +48,16 @@ class ConsolidatedTourSalesDTO {
 
   factory ConsolidatedTourSalesDTO.fromJson(Map<String, dynamic> json) {
     return ConsolidatedTourSalesDTO(
-      binnacleDetailId: json['binnacleDetailId'],
-      binnacleTitulo: json['binnacleTitulo'],
-      binnacleDescripcion: json['binnacleDescripcion'],
-      binnacleUbicacion: json['binnacleUbicacion'],
-      binnacleNotaCierre: json['binnacleNotaCierre'],
-      binnacleLatitud: json['binnacleLatitud'],
-      binnacleLongitud: json['binnacleLongitud'],
-      binnacleHora: json['binnacleHora'],
-      binnacleFecha: json['binnacleFecha'] ?? json['binnaclefecha'] ?? '',
+      binnacleDetailId: (json['binnacleDetailId'] as num).toInt(),
+      binnacleTitulo: json['binnacleTitulo']?.toString() ?? '',
+      binnacleDescripcion: json['binnacleDescripcion']?.toString() ?? '',
+      binnacleUbicacion: json['binnacleUbicacion']?.toString() ?? '',
+      binnacleNotaCierre: json['binnacleNotaCierre']?.toString() ?? '',
+      binnacleLatitud: json['binnacleLatitud']?.toString() ?? '',
+      binnacleLongitud: json['binnacleLongitud']?.toString() ?? '',
+      binnacleHora: json['binnacleHora']?.toString() ?? '',
+      binnacleFecha:
+          (json['binnacleFecha'] ?? json['binnaclefecha'])?.toString() ?? '',
       author: json['author'] == null
           ? null
           : HitoAuthor.fromJson(json['author'] as Map<String, dynamic>),

@@ -9,6 +9,8 @@ const _pendingLocationsKey = 'pendingCoordinatorLocations';
 const _maximumPendingLocations = 200;
 Future<void> _sendChain = Future<void>.value();
 
+enum _LocationPostResult { success, retry, rejected }
+
 @pragma('vm:entry-point')
 void locationCallback(LocationDto locationDto) async {
   await sendCoordinatorLocation(
@@ -49,15 +51,17 @@ Future<void> _sendCoordinatorLocation({
     'latitude': latitude,
     'longitude': longitude,
     'tourId': selectedTourId,
-    'recordedAt': DateTime.now().toUtc().toIso8601String(),
   };
 
-  if (!await _postLocation(location, token)) {
+  if (await _postLocation(location, token) == _LocationPostResult.retry) {
     await _queueLocation(prefs, location);
   }
 }
 
-Future<bool> _postLocation(Map<String, dynamic> location, String token) async {
+Future<_LocationPostResult> _postLocation(
+  Map<String, dynamic> location,
+  String token,
+) async {
   final url = Uri.https(
     'stingray-app-9tqd9-djh6d.ondigitalocean.app',
     '/app/services/add-position-coordinator',
@@ -65,7 +69,6 @@ Future<bool> _postLocation(Map<String, dynamic> location, String token) async {
       'latitud': location['latitude'].toString(),
       'longitud': location['longitude'].toString(),
       'tourId': location['tourId'].toString(),
-      'recordedAt': location['recordedAt'].toString(),
     },
   );
 
@@ -77,13 +80,23 @@ Future<bool> _postLocation(Map<String, dynamic> location, String token) async {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       debugPrint(
           'Coordinator location saved: ${location['latitude']}, ${location['longitude']}');
-      return true;
+      return _LocationPostResult.success;
     }
-    debugPrint('Location upload failed (${response.statusCode})');
+    final responseBody = response.body.trim();
+    debugPrint(
+      'Location upload failed (${response.statusCode})'
+      '${responseBody.isEmpty ? '' : ': $responseBody'}',
+    );
+    if (response.statusCode == 408 ||
+        response.statusCode == 429 ||
+        response.statusCode >= 500) {
+      return _LocationPostResult.retry;
+    }
+    return _LocationPostResult.rejected;
   } catch (error) {
     debugPrint('Location upload exception: $error');
+    return _LocationPostResult.retry;
   }
-  return false;
 }
 
 Future<void> _flushPendingLocations(
@@ -95,7 +108,11 @@ Future<void> _flushPendingLocations(
   for (final item in encoded) {
     try {
       final location = jsonDecode(item) as Map<String, dynamic>;
-      if (!await _postLocation(location, token)) remaining.add(item);
+      final result = await _postLocation(location, token);
+      if (result == _LocationPostResult.retry) remaining.add(item);
+      if (result == _LocationPostResult.rejected) {
+        debugPrint('Discarding rejected queued location');
+      }
     } catch (error) {
       debugPrint('Discarding invalid queued location: $error');
     }

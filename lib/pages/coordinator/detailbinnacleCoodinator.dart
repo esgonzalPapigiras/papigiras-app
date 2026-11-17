@@ -37,6 +37,46 @@ class _DetalleBitacoraCoordScreenState
         widget.idHito, widget.login.tourSalesId.toString());
   }
 
+  Future<void> _openHitoPhoto(int? photoId, String previewBase64) async {
+    if (photoId == null) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FullscreenImagePage(
+            imageBytes: base64Decode(previewBase64.split(',').last),
+          ),
+        ),
+      );
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      final bytes = await _coordinatorProvider.getHitoPhoto(
+        photoId,
+        widget.login.tourSalesId.toString(),
+      );
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FullscreenImagePage(imageBytes: bytes),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo cargar la foto: $error')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,7 +176,9 @@ class _DetalleBitacoraCoordScreenState
         'time': hitoDetail.hora ?? 'Sin hora',
         'activity': hitoDetail.titulo ?? 'Actividad no disponible',
         'description': hitoDetail.descripcion ?? 'Descripción no disponible',
-        'images': hitoDetail.images,
+        'images': hitoDetail.images ?? const <String>[],
+        'thumbnails': hitoDetail.thumbnails ?? const <String>[],
+        'photoIds': hitoDetail.photoIds ?? const <int>[],
       }
     ];
 
@@ -170,18 +212,21 @@ class _DetalleBitacoraCoordScreenState
               const SizedBox(height: 16),
               Column(
                 children: [
-                  for (var imageBase64 in entry['images'] as List)
+                  for (var index = 0;
+                      index < (entry['images'] as List).length;
+                      index++)
                     GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => FullscreenImagePage(
-                                    imageBytes: base64Decode(
-                                        imageBase64.split(',').last))));
-                      },
+                      onTap: () => _openHitoPhoto(
+                        index < (entry['photoIds'] as List).length
+                            ? (entry['photoIds'] as List)[index] as int
+                            : null,
+                        (entry['images'] as List)[index] as String,
+                      ),
                       child: Image.memory(
-                          base64Decode(imageBase64.split(',').last),
+                          base64Decode(((entry['thumbnails'] as List?) ??
+                                  entry['images'] as List)[index]
+                              .split(',')
+                              .last),
                           height: 200,
                           width: 200,
                           fit: BoxFit.cover),

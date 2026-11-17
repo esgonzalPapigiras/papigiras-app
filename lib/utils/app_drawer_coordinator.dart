@@ -29,7 +29,8 @@ class AppDrawerCoordinator extends StatelessWidget {
   }
 
   Future<void> _logout(BuildContext context) async {
-    final locationService = Provider.of<LocationService>(context, listen: false);
+    final locationService =
+        Provider.of<LocationService>(context, listen: false);
     await locationService.stopTracking();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('codigoGira');
@@ -102,7 +103,7 @@ class AppDrawerCoordinator extends StatelessWidget {
               children: const [
                 Icon(Icons.phone, color: Colors.teal),
                 SizedBox(width: 10),
-                Icon(FontAwesomeIcons.whatsapp, color: Colors.teal),
+                FaIcon(FontAwesomeIcons.whatsapp, color: Colors.teal),
               ],
             ),
             onTap: () => _sendMessage('+56932157564', 'Hola! Necesito ayuda'),
@@ -121,9 +122,16 @@ class AppDrawerCoordinator extends StatelessWidget {
               'Ubicación en segundo plano',
               style: TextStyle(color: Colors.grey[800]),
             ),
-            subtitle: const Text(
-              'Permite compartir tu ubicación aunque la app esté minimizada',
-              style: TextStyle(fontSize: 12),
+            subtitle: Text(
+              locationService.isChangingMode
+                  ? 'Activando ubicación…'
+                  : locationService.backgroundTrackingEnabled &&
+                          locationService.backgroundServiceRunning
+                      ? 'Activa: compartiendo el recorrido con los apoderados'
+                      : locationService.backgroundTrackingEnabled
+                          ? 'Verificando el servicio de ubicación…'
+                          : 'Solo se comparte mientras la app está abierta',
+              style: const TextStyle(fontSize: 12),
             ),
             value: locationService.backgroundTrackingEnabled,
             onChanged: locationService.isChangingMode
@@ -136,7 +144,15 @@ class AppDrawerCoordinator extends StatelessWidget {
                     }
                     if (context.mounted && locationService.lastError != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(locationService.lastError!)),
+                        SnackBar(
+                          content: Text(locationService.lastError!),
+                          duration: const Duration(seconds: 8),
+                          action: SnackBarAction(
+                            label: 'CONFIGURACIÓN',
+                            onPressed:
+                                locationService.openRequiredLocationSettings,
+                          ),
+                        ),
                       );
                     }
                   },
@@ -147,7 +163,8 @@ class AppDrawerCoordinator extends StatelessWidget {
               'Cerrar Sesión',
               style: TextStyle(color: Colors.grey[800]),
             ),
-            onTap: locationService.isChangingMode ? null : () => _logout(context),
+            onTap:
+                locationService.isChangingMode ? null : () => _logout(context),
           ),
         ],
       ),

@@ -14,13 +14,15 @@ import 'package:papigiras_app/utils/app_drawer_father.dart';
 
 class DetalleBitacoraFatherScreen extends StatefulWidget {
   @override
-  _DetalleBitacoraFatherScreenState createState() => _DetalleBitacoraFatherScreenState();
+  _DetalleBitacoraFatherScreenState createState() =>
+      _DetalleBitacoraFatherScreenState();
   final ResponseAttorney login;
   final String idHito;
   DetalleBitacoraFatherScreen({required this.idHito, required this.login});
 }
 
-class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScreen> {
+class _DetalleBitacoraFatherScreenState
+    extends State<DetalleBitacoraFatherScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final usuarioProvider = new CoordinatorProviders();
   Future<DetailHitoList>? _hitoDetailFuture;
@@ -29,7 +31,10 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
 
   Future<void> _loadImage() async {
     try {
-      Responseimagepassenger imageUrl = await usuarioProvider.getPicturePassenger(widget.login.passengerIdentificacion.toString(), widget.login.tourId.toString());
+      Responseimagepassenger imageUrl =
+          await usuarioProvider.getPicturePassenger(
+              widget.login.passengerIdentificacion.toString(),
+              widget.login.tourId.toString());
       if (imageUrl.image.isNotEmpty) {
         setState(() {
           _imageUrl = imageUrl.image;
@@ -47,12 +52,14 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
   }
 
   void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl = Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+    final whatsappUrl =
+        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
     if (await canLaunchUrl(whatsappUrl)) {
       await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
     } else {
       print('No se puede abrir WhatsApp');
-      final whatsappDirect = Uri.parse("whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
+      final whatsappDirect = Uri.parse(
+          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
       if (await canLaunchUrl(whatsappDirect)) {
         await launchUrl(whatsappDirect, mode: LaunchMode.externalApplication);
       } else {
@@ -65,7 +72,48 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
   void initState() {
     super.initState();
     _loadImage();
-    _hitoDetailFuture = usuarioProvider.getHitoComplete(widget.idHito.toString(), widget.login.tourId.toString());
+    _hitoDetailFuture = usuarioProvider.getHitoComplete(
+        widget.idHito.toString(), widget.login.tourId.toString());
+  }
+
+  Future<void> _openHitoPhoto(int? photoId, String previewBase64) async {
+    if (photoId == null) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FullscreenImagePage(
+            imageBytes: base64Decode(previewBase64.split(',').last),
+          ),
+        ),
+      );
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      final bytes = await usuarioProvider.getHitoPhoto(
+        photoId,
+        widget.login.tourId.toString(),
+      );
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FullscreenImagePage(imageBytes: bytes),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo cargar la foto: $error')),
+      );
+    }
   }
 
   @override
@@ -73,7 +121,8 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Color(0xFF3AC5C9),
-      endDrawer: AppDrawerFather(login: widget.login, imageFile: _image, imageUrl: _imageUrl),
+      endDrawer: AppDrawerFather(
+          login: widget.login, imageFile: _image, imageUrl: _imageUrl),
       body: Stack(
         children: [
           _buildBackground(),
@@ -107,11 +156,18 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
   void logoutUser(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => WelcomeScreen()), (route) => false);
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => WelcomeScreen()),
+        (route) => false);
   }
 
   Widget _buildBackground() {
-    return Container(decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
+    return Container(
+        decoration: BoxDecoration(
+            image: DecorationImage(
+                image: AssetImage('assets/background.png'),
+                fit: BoxFit.cover)));
   }
 
   Widget _buildAppBar(BuildContext context) {
@@ -123,7 +179,11 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
             builder: (context) => IconButton(
               icon: Icon(Icons.arrow_back, color: Colors.white, size: 30),
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => BitacoraFatherScreen(login: widget.login)));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            BitacoraFatherScreen(login: widget.login)));
               },
             ),
           ),
@@ -145,24 +205,34 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
 
   Widget _buildBinnacleContent(DetailHitoList hitoDetail) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(40), topRight: Radius.circular(40))),
       padding: EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [SizedBox(height: 20), Expanded(child: ListView(children: _buildBinnacleEntries(hitoDetail)))],
+        children: [
+          SizedBox(height: 20),
+          Expanded(child: ListView(children: _buildBinnacleEntries(hitoDetail)))
+        ],
       ),
     );
   }
 
   List<Widget> _buildBinnacleEntries(DetailHitoList hitoDetail) {
     List<Map<String, dynamic>> entries = [];
-    for (var i = 0; i < hitoDetail.images!.length; i++) {
-      String base64Image = hitoDetail.images![i];
-    }
     String time = hitoDetail.fecha ?? 'Sin hora';
     String activity = hitoDetail.titulo ?? 'Actividad no disponible';
     String description = hitoDetail.descripcion ?? 'Descripción no disponible';
-    entries.add({'time': time, 'activity': activity, 'description': description, 'images': hitoDetail.images});
+    entries.add({
+      'time': time,
+      'activity': activity,
+      'description': description,
+      'images': hitoDetail.images ?? const <String>[],
+      'thumbnails': hitoDetail.thumbnails ?? const <String>[],
+      'photoIds': hitoDetail.photoIds ?? const <int>[],
+    });
     return entries.map((entry) {
       return Card(
         margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -175,22 +245,39 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
                 children: [
                   Icon(Icons.place, color: Colors.teal),
                   SizedBox(width: 8),
-                  Text(entry['time']!, style: TextStyle(color: Colors.teal, fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(entry['time']!,
+                      style: TextStyle(
+                          color: Colors.teal,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
                   SizedBox(width: 8),
-                  Text(entry['activity']!, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(entry['activity']!,
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 ],
               ),
               SizedBox(height: 8),
-              Text(entry['description']!, style: TextStyle(color: Colors.grey, fontSize: 14)),
+              Text(entry['description']!,
+                  style: TextStyle(color: Colors.grey, fontSize: 14)),
               SizedBox(height: 16),
               Column(
                 children: [
-                  for (var imageBase64 in entry['images'])
+                  for (var index = 0; index < entry['images'].length; index++)
                     GestureDetector(
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => FullscreenImagePage(imageBytes: base64Decode(imageBase64.split(',').last))));
-                      },
-                      child: Image.memory(base64Decode(imageBase64.split(',').last), height: 200, width: 200, fit: BoxFit.cover),
+                      onTap: () => _openHitoPhoto(
+                        index < entry['photoIds'].length
+                            ? entry['photoIds'][index] as int
+                            : null,
+                        entry['images'][index] as String,
+                      ),
+                      child: Image.memory(
+                          base64Decode(
+                              (entry['thumbnails'] ?? entry['images'])[index]
+                                  .split(',')
+                                  .last),
+                          height: 200,
+                          width: 200,
+                          fit: BoxFit.cover),
                     ),
                 ],
               )
@@ -201,7 +288,8 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
     }).toList();
   }
 
-  Widget buildBottomButton(IconData icon, String label, String? badge, Widget? destination) {
+  Widget buildBottomButton(
+      IconData icon, String label, String? badge, Widget? destination) {
     return GestureDetector(
       onTap: () {
         if (destination != null) {
@@ -210,12 +298,17 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 40, color: Colors.teal), SizedBox(height: 8), Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))],
+        children: [
+          Icon(icon, size: 40, color: Colors.teal),
+          SizedBox(height: 8),
+          Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))
+        ],
       ),
     );
   }
 
-  Widget buildBottomButtonHito(IconData icon, String label, String? badge, Widget? destination) {
+  Widget buildBottomButtonHito(
+      IconData icon, String label, String? badge, Widget? destination) {
     return GestureDetector(
       onTap: () {
         if (destination != null) {
@@ -224,7 +317,11 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 70, color: Colors.teal), SizedBox(height: 8), Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))],
+        children: [
+          Icon(icon, size: 70, color: Colors.teal),
+          SizedBox(height: 8),
+          Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))
+        ],
       ),
     );
   }
@@ -237,7 +334,8 @@ class _DetalleBitacoraFatherScreenState extends State<DetalleBitacoraFatherScree
         const begin = Offset(0.0, 1.0);
         const end = Offset.zero;
         const curve = Curves.ease;
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var tween =
+            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
         var offsetAnimation = animation.drive(tween);
         return SlideTransition(position: offsetAnimation, child: child);
       },

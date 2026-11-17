@@ -122,9 +122,11 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
   }
 
   String? _validateTelefono(String? value) {
-    if (value == null || value.isEmpty) return 'El teléfono es obligatorio';
-    final phoneRegex = RegExp(r'^[0-9]{9,12}$');
-    if (!phoneRegex.hasMatch(value)) return 'Ingresa un teléfono válido';
+    if (value == null || value.trim().isEmpty) return null;
+    final normalized = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (normalized.length < 8 || normalized.length > 12) {
+      return 'Usa un teléfono válido, por ejemplo +56 9 1234 5678';
+    }
     return null;
   }
 
@@ -337,10 +339,19 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold)),
-                              buildInfoSectionCuidados(
-                                  '',
-                                  widget.record?.specialCareDetails ??
-                                      "No hay cuidados especiales"),
+                              SwitchListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text('¿Requiere cuidados especiales?'),
+                                value: _requiereCuidadosEspeciales,
+                                onChanged: (value) => setState(() {
+                                  _requiereCuidadosEspeciales = value;
+                                }),
+                              ),
+                              if (_requiereCuidadosEspeciales)
+                                buildInfoSectionCuidados(
+                                    '',
+                                    widget.record.specialCareDetails ??
+                                        "No hay cuidados especiales"),
                               Divider(),
                               SizedBox(height: 10),
 
@@ -348,6 +359,10 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                               Center(
                                 child: ElevatedButton(
                                   onPressed: () {
+                                    if (!(_formKey.currentState?.validate() ??
+                                        false)) {
+                                      return;
+                                    }
                                     handleMedicamentos();
                                     handleEnfermedades();
                                     handleMedicamentosEvitar();
@@ -549,31 +564,22 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
   }
 
   void handleEnfermedades() {
-    if (enfermedades.isEmpty) {
-      enfermedades = _especificarEnfermedadesController.text
-          .split('\n')
-          .where((element) => element.isNotEmpty)
-          .toList();
-    } else {}
+    enfermedades = _splitLines(_especificarEnfermedadesController.text);
   }
 
   void handleMedicamentos() {
-    if (medicamentos.isEmpty) {
-      medicamentos = _medicamentosController.text
-          .split('\n')
-          .where((element) => element.isNotEmpty)
-          .toList();
-    } else {}
+    medicamentos = _splitLines(_medicamentosController.text);
   }
 
   void handleMedicamentosEvitar() {
-    if (medicamentosEvitar.isEmpty) {
-      medicamentosEvitar = _medicamentosEvitarController.text
-          .split('\n')
-          .where((element) => element.isNotEmpty)
-          .toList();
-    } else {}
+    medicamentosEvitar = _splitLines(_medicamentosEvitarController.text);
   }
+
+  List<String> _splitLines(String value) => value
+      .split('\n')
+      .map((line) => line.trim().replaceFirst(RegExp(r'^-\s*'), ''))
+      .where((line) => line.isNotEmpty)
+      .toList();
 
   Widget buildInfoSectionMedicamentos(String title, String content) {
     // Reemplazar los guiones con saltos de línea para mostrar correctamente
@@ -750,7 +756,7 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
           keyboardType: keyboardType,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
-            hintText: '923223212 ejemplo',
+            hintText: '+56 9 1234 5678 (opcional)',
           ),
         ),
         SizedBox(height: 15),

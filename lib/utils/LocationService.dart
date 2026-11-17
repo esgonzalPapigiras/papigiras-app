@@ -19,14 +19,18 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   bool _backgroundTrackingEnabled = false;
   bool _initialized = false;
   bool _isChangingMode = false;
+  bool _backgroundServiceRunning = false;
+  bool _isCheckingBackgroundService = false;
   StreamSubscription<geo.Position>? _foregroundPositionSubscription;
   Timer? _foregroundHeartbeatTimer;
+  Timer? _backgroundHealthTimer;
   String? _lastError;
 
   bool get isTracking => _isTracking;
   bool get backgroundTrackingEnabled => _backgroundTrackingEnabled;
   bool get initialized => _initialized;
   bool get isChangingMode => _isChangingMode;
+  bool get backgroundServiceRunning => _backgroundServiceRunning;
   String? get lastError => _lastError;
 
   LocationService() {
@@ -135,6 +139,14 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  Future<void> openRequiredLocationSettings() async {
+    if (!await geo.Geolocator.isLocationServiceEnabled()) {
+      await geo.Geolocator.openLocationSettings();
+      return;
+    }
+    await permissions.openAppSettings();
+  }
+
   /// Stops both modes. Coordinators should call this only when logging out.
   Future<void> stopTracking() async {
     if (_isChangingMode) return;
@@ -165,6 +177,9 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     _startForegroundHeartbeat();
 
     if (await BackgroundLocator.isServiceRunning()) {
+      _backgroundServiceRunning = true;
+      _startBackgroundHealthMonitor();
+      await _updateBackgroundNotification();
       await _sendCurrentPositionOnce();
       return true;
     }
@@ -182,14 +197,22 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
         distanceFilter: 25,
         androidNotificationSettings: AndroidNotificationSettings(
           notificationChannelName: 'Location tracking',
-          notificationTitle: 'Papigiras tracking activo',
-          notificationMsg: 'Compartiendo ubicación en tiempo real',
+          notificationTitle: 'Ubicación de la gira activa',
+          notificationMsg: 'Compartiendo el recorrido con los apoderados',
           notificationBigMsg:
-              'La app está enviando tu ubicación para el coordinador.',
-          notificationIcon: '',
+              'Papigiras comparte el recorrido con los apoderados, incluso con la app cerrada.',
+          notificationIcon: 'launcher_icon',
         ),
       ),
     );
+    _backgroundServiceRunning = await BackgroundLocator.isServiceRunning();
+    if (!_backgroundServiceRunning) {
+      _lastError =
+          'No se pudo mantener activo el servicio de ubicación en segundo plano.';
+      debugPrint(_lastError);
+      return false;
+    }
+    _startBackgroundHealthMonitor();
     await _sendCurrentPositionOnce();
     return true;
   }
@@ -273,8 +296,70 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _stopBackgroundTracking() async {
+    _stopBackgroundHealthMonitor();
     if (await BackgroundLocator.isServiceRunning()) {
       await BackgroundLocator.unRegisterLocationUpdate();
+    }
+    _backgroundServiceRunning = false;
+  }
+
+  Future<void> _updateBackgroundNotification() async {
+    await BackgroundLocator.updateNotificationText(
+      title: 'Ubicación de la gira activa',
+      msg: 'Compartiendo el recorrido con los apoderados',
+      bigMsg:
+          'Papigiras comparte el recorrido con los apoderados, incluso con la app cerrada.',
+    );
+  }
+
+  void _startBackgroundHealthMonitor() {
+    _stopBackgroundHealthMonitor();
+    _backgroundHealthTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => unawaited(_ensureBackgroundServiceRunning()),
+    );
+  }
+
+  void _stopBackgroundHealthMonitor() {
+    _backgroundHealthTimer?.cancel();
+    _backgroundHealthTimer = null;
+  }
+
+  Future<void> _ensureBackgroundServiceRunning() async {
+    if (!_initialized ||
+        !_isTracking ||
+        !_backgroundTrackingEnabled ||
+        _isChangingMode ||
+        _isCheckingBackgroundService) {
+      return;
+    }
+    _isCheckingBackgroundService = true;
+    try {
+      final running = await BackgroundLocator.isServiceRunning();
+      if (running) {
+        if (!_backgroundServiceRunning) {
+          _backgroundServiceRunning = true;
+          notifyListeners();
+        }
+        return;
+      }
+
+      _backgroundServiceRunning = false;
+      notifyListeners();
+      debugPrint('Background location service stopped; restarting it.');
+      final restarted = await _activateBackgroundTracking();
+      _backgroundServiceRunning = restarted;
+      if (!restarted && _lastError == null) {
+        _lastError =
+            'La ubicación en segundo plano se detuvo y no pudo reiniciarse.';
+      }
+      notifyListeners();
+    } catch (error) {
+      _backgroundServiceRunning = false;
+      _setModeError(error);
+      notifyListeners();
+    } finally {
+      _isCheckingBackgroundService = false;
     }
   }
 
@@ -329,12 +414,17 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
         state == AppLifecycleState.detached ||
         state == AppLifecycleState.inactive) {
       _stopForegroundHeartbeat();
+      _stopBackgroundHealthMonitor();
       await _stopForegroundTracking();
     }
 
     if (state == AppLifecycleState.resumed) {
       if (_backgroundTrackingEnabled) {
         _startForegroundHeartbeat();
+        await _ensureBackgroundServiceRunning();
+        if (_backgroundServiceRunning) {
+          _startBackgroundHealthMonitor();
+        }
         await _sendCurrentPositionOnce();
       } else if (_foregroundPositionSubscription == null) {
         await _activateForegroundTracking();
@@ -346,6 +436,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _stopForegroundHeartbeat();
+    _stopBackgroundHealthMonitor();
     unawaited(_stopForegroundTracking());
     super.dispose();
   }

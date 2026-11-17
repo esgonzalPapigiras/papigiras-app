@@ -192,9 +192,17 @@ class CoordinatorEndDrawer extends StatelessWidget {
       secondary: const Icon(Icons.location_on, color: Colors.teal),
       title: Text('Ubicación en segundo plano',
           style: TextStyle(color: Colors.grey[800])),
-      subtitle: const Text(
-          'Permite compartir tu ubicación aunque la app esté minimizada',
-          style: TextStyle(fontSize: 12)),
+      subtitle: Text(
+        locationService.isChangingMode
+            ? 'Activando ubicación…'
+            : locationService.backgroundTrackingEnabled &&
+                    locationService.backgroundServiceRunning
+                ? 'Activa: compartiendo el recorrido con los apoderados'
+                : locationService.backgroundTrackingEnabled
+                    ? 'Verificando el servicio de ubicación…'
+                    : 'Solo se comparte mientras la app está abierta',
+        style: const TextStyle(fontSize: 12),
+      ),
       value: locationService.backgroundTrackingEnabled,
       onChanged: locationService.isChangingMode
           ? null
@@ -206,7 +214,14 @@ class CoordinatorEndDrawer extends StatelessWidget {
               }
               if (context.mounted && locationService.lastError != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(locationService.lastError!)),
+                  SnackBar(
+                    content: Text(locationService.lastError!),
+                    duration: const Duration(seconds: 8),
+                    action: SnackBarAction(
+                      label: 'CONFIGURACIÓN',
+                      onPressed: locationService.openRequiredLocationSettings,
+                    ),
+                  ),
                 );
               }
             },

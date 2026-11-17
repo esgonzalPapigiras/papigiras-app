@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/pages/alumns/loginpassenger.dart';
 import 'package:papigiras_app/pages/attorney/loginFather.dart';
 import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/utils/session_utils.dart';
 
 class WelcomeScreen extends StatefulWidget {
+  const WelcomeScreen({super.key});
+
   @override
-  _WelcomeScreenState createState() => _WelcomeScreenState();
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
@@ -18,67 +21,134 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     });
   }
 
+  void _openProfile(WidgetBuilder builder) {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: builder));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Image.asset('assets/logo-papigiras.png', height: 200.0),
-                SizedBox(height: 10.0),
-                Text('Bienvenido a Papigiras', style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.w600, color: Colors.white)),
-                Text('¿Cuál es tu rol?', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-                SizedBox(height: 30.0),
-                SizedBox(
-                  width: 250.0,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginFather()));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 15.0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-                      backgroundColor: Colors.teal,
-                    ),
-                    child: Text('Apoderado', style: TextStyle(fontSize: 18.0, color: Colors.white)),
+      body: SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+              children: [
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Image.asset(
+                    'assets/logo-letras-papigiras.png',
+                    width: 148,
+                    semanticLabel: 'PapiGiras',
                   ),
                 ),
-                SizedBox(height: 15.0),
-                SizedBox(
-                  width: 250.0,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPassenger()));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 15.0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-                      backgroundColor: Colors.teal,
-                    ),
-                    child: Text('Alumno', style: TextStyle(fontSize: 18.0, color: Colors.white)),
+                const SizedBox(height: 36),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'Elige tu perfil',
+                    style: Theme.of(context).textTheme.displaySmall,
                   ),
                 ),
-                SizedBox(height: 15.0),
-                SizedBox(
-                  width: 250.0,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginCoordinator()));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 15.0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-                      backgroundColor: Colors.teal,
-                    ),
-                    child: Text('Coordinador', style: TextStyle(fontSize: 18.0, color: Colors.white)),
-                  ),
+                const SizedBox(height: 28),
+                _ProfileChoice(
+                  title: 'Apoderado',
+                  description: 'Sigo la gira de un estudiante',
+                  icon: Icons.people_alt_outlined,
+                  primary: true,
+                  onTap: () => _openProfile((_) => LoginFather()),
+                ),
+                const SizedBox(height: 10),
+                _ProfileChoice(
+                  title: 'Alumno',
+                  description: 'Viajo con mi colegio',
+                  icon: Icons.school_outlined,
+                  onTap: () => _openProfile((_) => LoginPassenger()),
+                ),
+                const SizedBox(height: 10),
+                _ProfileChoice(
+                  title: 'Coordinador',
+                  description: 'Gestiono una gira asignada',
+                  icon: Icons.assignment_outlined,
+                  onTap: () => _openProfile((_) => LoginCoordinator()),
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileChoice extends StatelessWidget {
+  const _ProfileChoice({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.onTap,
+    this.primary = false,
+  });
+
+  final String title;
+  final String description;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool primary;
+
+  @override
+  Widget build(BuildContext context) {
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        child: Material(
+          color: primary ? PapigirasColors.mint : PapigirasColors.soft,
+          borderRadius: BorderRadius.circular(30),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                children: [
+                  ExcludeSemantics(
+                    child: CircleAvatar(
+                      radius: 22,
+                      foregroundColor: PapigirasColors.ink,
+                      backgroundColor: PapigirasColors.surface,
+                      child: Icon(icon, size: 21),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title,
+                            style: Theme.of(context).textTheme.titleLarge),
+                        const SizedBox(height: 4),
+                        Text(
+                          description,
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: PapigirasColors.muted,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const ExcludeSemantics(
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 21,
+                      color: PapigirasColors.ink,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

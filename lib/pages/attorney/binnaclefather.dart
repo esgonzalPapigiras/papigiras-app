@@ -1,13 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/binnacle.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/binnacledetailFather.dart';
-import 'package:papigiras_app/pages/attorney/documentsfather.dart';
 import 'package:papigiras_app/pages/attorney/indexFather.dart';
-import 'package:papigiras_app/pages/attorney/tripulationbusfather.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,6 +24,8 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
   final usuarioProvider = new CoordinatorProviders();
   XFile? _image;
   String? _imageUrl;
+  bool _isLoadingItineraries = true;
+  String? _itineraryError;
 
   Future<void> _loadImage() async {
     try {
@@ -61,12 +60,23 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
   }
 
   Future<void> _fetchItineraries(String tourCode) async {
+    setState(() {
+      _isLoadingItineraries = true;
+      _itineraryError = null;
+    });
     try {
-      itineraries =
-          await usuarioProvider.getBinnacle(widget.login.tourId.toString());
-      setState(() {}); // Actualiza el estado para reconstruir la interfaz
+      final data = await usuarioProvider.getBinnacle(tourCode);
+      if (!mounted) return;
+      setState(() {
+        itineraries = data;
+        _isLoadingItineraries = false;
+      });
     } catch (error) {
-      print("Error al cargar los itinerarios: $error");
+      if (!mounted) return;
+      setState(() {
+        _isLoadingItineraries = false;
+        _itineraryError = 'No se pudo cargar la bitácora.';
+      });
     }
   }
 
@@ -118,7 +128,6 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildCustomBottomNavigationBar(),
     );
   }
 
@@ -202,9 +211,28 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
           //_buildFilterOptions(),
           //SizedBox(height: 20),
           Expanded(
-            child: ListView(
-              children: _buildBinnacleEntries(),
-            ),
+            child: _isLoadingItineraries
+                ? const Center(child: CircularProgressIndicator())
+                : _itineraryError != null
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_itineraryError!),
+                            TextButton(
+                              onPressed: () => _fetchItineraries(
+                                  widget.login.tourId.toString()),
+                              child: const Text('Reintentar'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : itineraries.isEmpty
+                        ? const Center(
+                            child: Text('Aún no hay hitos en la bitácora'))
+                        : ListView(
+                            children: _buildBinnacleEntries(),
+                          ),
           ),
         ],
       ),
@@ -289,109 +317,6 @@ class _BitacoraFatherScreenState extends State<BitacoraFatherScreen> {
         ),
       );
     }).toList();
-  }
-
-  Widget _buildCustomBottomNavigationBar() {
-    return Container(
-      padding:
-          EdgeInsets.symmetric(vertical: 35), // Ajuste del espacio vertical
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 5,
-            blurRadius: 10,
-            offset: Offset(0, -3),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Espacio entre filas
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildBottomButton(
-                  Icons.book,
-                  'Bitácora del Viaje',
-                  null,
-                  BitacoraFatherScreen(
-                    login: widget.login,
-                  )),
-              buildBottomButton(
-                  Icons.directions_bus,
-                  'Bus & Tripulación',
-                  null,
-                  BusCrewFatherScreen(
-                    login: widget.login,
-                  )),
-              buildBottomButton(Icons.folder_open, 'Mis Documentos', null,
-                  DocumentFatherScreen(login: widget.login)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildBottomButton(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 40,
-            color: Colors.teal,
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.teal,
-              fontSize: 8,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildBottomButtonHito(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 70,
-            color: Colors.teal,
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.teal,
-              fontSize: 8,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Route _createRoute(Widget destination) {

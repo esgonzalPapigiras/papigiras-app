@@ -28,15 +28,18 @@ class TourTripulation {
   factory TourTripulation.fromJson(Map<String, dynamic> json) {
     return TourTripulation(
         tourSalesId: json['tourSalesId'],
-        tourTripulationIdentificationId: json['tourTripulationIdentificationId'],
-        tourTripulationNameId: json['tourTripulationNameId'],
-        tourTripulationPhoneId: json['tourTripulationPhoneId'],
+        tourTripulationIdentificationId:
+            json['tourTripulationIdentificationId'] ?? '',
+        tourTripulationNameId: json['tourTripulationNameId'] ?? '',
+        tourTripulationPhoneId: json['tourTripulationPhoneId'] ?? '',
         tourTripulationDateId: json['tourTripulationDateId'] ?? '',
-        tourTripulationBusBrand: json['tourTripulationBusBrand'],
-        tourTripulationBusPatent: json['tourTripulationBusPatent'],
-        tourTripulationBusYear: json['tourTripulationBusYear'],
-        tourTripulationBusModel: json['tourTripulationBusModel'],
-        tourTripulationBusEnterprise: json['tourTripulationBusEnterprise'],
-        tourTripulationTypeId: json['tourTripulationTypeId']);
+        tourTripulationBusBrand: json['tourTripulationBusBrand'] ?? '',
+        tourTripulationBusPatent: json['tourTripulationBusPatent'] ?? '',
+        tourTripulationBusYear: json['tourTripulationBusYear'] ?? '',
+        tourTripulationBusModel: json['tourTripulationBusModel'] ?? '',
+        tourTripulationBusEnterprise:
+            json['tourTripulationBusEnterprise'] ?? '',
+        tourTripulationTypeId:
+            (json['tourTripulationTypeId'] as num?)?.toInt() ?? 0);
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/design/papigiras_login_layout.dart';
 import 'package:papigiras_app/pages/coordinator/coordinatorTourSelection.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,8 +30,33 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
     final prefs = await SharedPreferences.getInstance();
     final storedRut = prefs.getString('coordinatorRut');
     if (storedRut != null && mounted) {
-      _rutController.text = storedRut;
+      _setRutText(storedRut);
     }
+  }
+
+  String _formatRut(String text) {
+    final unformatted = text.replaceAll(RegExp(r'[^0-9kK]'), '');
+    if (unformatted.isEmpty) return '';
+
+    final buffer = StringBuffer();
+    for (var index = 0; index < unformatted.length; index++) {
+      if (index == unformatted.length - 1) {
+        buffer.write('-');
+      } else if ((unformatted.length - index - 1) % 3 == 0 &&
+          index != unformatted.length - 2) {
+        buffer.write('.');
+      }
+      buffer.write(unformatted[index]);
+    }
+    return buffer.toString().toUpperCase();
+  }
+
+  void _setRutText(String value) {
+    final formattedRut = _formatRut(value);
+    _rutController.value = TextEditingValue(
+      text: formattedRut,
+      selection: TextSelection.collapsed(offset: formattedRut.length),
+    );
   }
 
   Future<void> _login() async {
@@ -114,110 +140,58 @@ class _LoginCoordinatorState extends State<LoginCoordinator> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/background.png'),
-            fit: BoxFit.cover,
+    return PapigirasLoginLayout(
+      role: PapigirasLoginRole.coordinator,
+      children: [
+        TextField(
+          controller: _rutController,
+          maxLength: 12,
+          keyboardType: TextInputType.text,
+          textInputAction: TextInputAction.next,
+          onChanged: _setRutText,
+          decoration: papigirasLoginField(
+            label: 'Tu RUT',
+            hint: '12.345.678-9',
           ),
         ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset('assets/logo-letras-papigiras.png', height: 60),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Bienvenido(a)',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  Text(
-                    'Coordinador(a)',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 30),
-                  TextField(
-                    controller: _rutController,
-                    keyboardType: TextInputType.text,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'RUT',
-                      hintText: '12.345.678-9',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _hidePassword,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _login(),
-                    decoration: InputDecoration(
-                      labelText: 'Contraseña',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        onPressed: () =>
-                            setState(() => _hidePassword = !_hidePassword),
-                        icon: Icon(
-                          _hidePassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 50,
-                        vertical: 15,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      backgroundColor: Colors.teal,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Ingresar',
-                            style: TextStyle(fontSize: 18)),
-                  ),
-                ],
+        const SizedBox(height: 12),
+        TextField(
+          controller: _passwordController,
+          obscureText: _hidePassword,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _login(),
+          decoration: papigirasLoginField(
+            label: 'Contraseña',
+            suffixIcon: IconButton(
+              tooltip:
+                  _hidePassword ? 'Mostrar contraseña' : 'Ocultar contraseña',
+              onPressed: () {
+                setState(() => _hidePassword = !_hidePassword);
+              },
+              icon: Icon(
+                _hidePassword ? Icons.visibility : Icons.visibility_off,
               ),
             ),
           ),
         ),
-      ),
+        const SizedBox(height: 18),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: _isLoading ? null : _login,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Ingresar'),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
