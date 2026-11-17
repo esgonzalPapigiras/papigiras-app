@@ -99,6 +99,19 @@ class LabApiClient extends http.BaseClient {
         'accept',
       }.contains(key.toLowerCase()),
     );
+    // Bodyless JSON POSTs can be rejected by an HTTPS intermediary even when
+    // the local API accepts them. Keep a concrete payload and length on the wire.
+    if (request is http.Request &&
+        request.method == 'POST' &&
+        request.bodyBytes.isEmpty &&
+        request.headers['content-type']
+                ?.split(';')
+                .first
+                .trim()
+                .toLowerCase() ==
+            'application/json') {
+      request.body = '{}';
+    }
     final requestGeneration = LabSession.generation;
     try {
       final response = await _transport

@@ -482,5 +482,28 @@
   "whitespace_only_adjustments": [
     "third_party/qr_code_scanner_plus/README.md",
     "third_party/qr_code_scanner_plus/android/src/main/kotlin/net/touchcapture/qr/flutterqrplus/QRView.kt"
+  ],
+  "follow_up_changes": [
+    {
+      "id": "INT-009",
+      "date": "2026-11-17",
+      "source_commit": "6f2440afe90e651c59c56cba7f82e5a198b887bd",
+      "files_sha256": {
+        "lib/lab/api_http.dart": "c8805de5dad4ea70532d21cd4cf15d9fffc65fda557abadaab82488ec99d3b8a",
+        "test/passenger_loading_transport_test.dart": "73a69a90585a2366a84ef5630dbedab924b10183735eebad4ab951086f87c829"
+      },
+      "backend_changes": false,
+      "database_changes": false,
+      "tests": {
+        "focused_local": 68,
+        "remote_configuration": 4,
+        "live_flutter_https_tours": [
+          114,
+          49,
+          47
+        ]
+      },
+      "physical_android_tested": false
+    }
   ]
 }

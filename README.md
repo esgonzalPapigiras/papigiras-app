@@ -41,3 +41,7 @@ Los IDs siguen separados de la app oficial. La firma release de pruebas requiere
 ## Reconciliación con GitHub del 16/11/2026
 
 App y panel siguen sobre las mismas bases oficiales. El backend parte ahora de `947419a`, que Esteban añadió después de la copia inicial. Se conservaron sus fotos HD y miniaturas, nombres únicos, límites de carga, limpieza y texto de notificación. Pilo mantiene fotos completas en `images`, IDs estables en `imageIds`, audio y permisos; se añaden `thumbnails`/`photoIds` y lectura de foto con autorización por gira. La integración productiva de FCM sigue pendiente; se conserva el aviso local de pruebas. No hay migraciones nuevas en esta reconciliación. Suite backend de la rama: **475 pruebas aprobadas**, sin fallos, errores ni omisiones. No se reinició ningún servicio activo.
+
+## Corrección del 17/11/2026
+
+Contador y nómina: corregido el POST vacío que fallaba por HTTPS. Sólo móvil; sin migraciones ni cambios backend. [Detalle breve y pruebas](revision/INT-009-contador-nomina.md).
