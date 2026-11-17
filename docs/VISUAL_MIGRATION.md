@@ -134,3 +134,11 @@ los servicios productivos por adaptadores LAB.
   menú y las reglas productivas que excluyen nóminas y archivos no públicos.
 - No se importaron repositorios de documentos privados ni adaptadores del
   prototipo.
+
+### Bitácora del apoderado
+
+- El listado adopta la línea de tiempo, tarjetas, actualización y estados Pilo
+  manteniendo fecha, hora, título y ubicación de cada hito.
+- Se conservan `getBinnacle`, la foto del menú y la navegación al detalle real.
+- El mapa embebido del prototipo no se incorporó porque requiere la capa de
+  mapas y datos georreferenciados posterior.
