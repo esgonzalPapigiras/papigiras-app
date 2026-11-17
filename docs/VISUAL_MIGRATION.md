@@ -142,3 +142,12 @@ los servicios productivos por adaptadores LAB.
 - Se conservan `getBinnacle`, la foto del menú y la navegación al detalle real.
 - El mapa embebido del prototipo no se incorporó porque requiere la capa de
   mapas y datos georreferenciados posterior.
+
+### Detalle de bitácora del apoderado
+
+- Se migraron encabezado, tarjeta del hito, galería adaptable, carga y errores
+  al estilo Pilo.
+- Se conservan `getHitoComplete`, la descarga autenticada de cada fotografía,
+  la pantalla completa y la foto del menú familiar.
+- La nota de audio del prototipo no se incorporó porque requiere almacenamiento
+  y endpoints que aún no forman parte de `main`.

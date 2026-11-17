@@ -1,85 +1,70 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/DetailHitoList.dart';
-import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/pages/attorney/FullscreenImageFather.dart';
-import 'package:papigiras_app/pages/attorney/binnaclefather.dart';
-import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:papigiras_app/utils/app_drawer_father.dart';
 
 class DetalleBitacoraFatherScreen extends StatefulWidget {
-  @override
-  _DetalleBitacoraFatherScreenState createState() =>
-      _DetalleBitacoraFatherScreenState();
+  const DetalleBitacoraFatherScreen({
+    super.key,
+    required this.idHito,
+    required this.login,
+  });
+
   final ResponseAttorney login;
   final String idHito;
-  DetalleBitacoraFatherScreen({required this.idHito, required this.login});
+
+  @override
+  State<DetalleBitacoraFatherScreen> createState() =>
+      _DetalleBitacoraFatherScreenState();
 }
 
 class _DetalleBitacoraFatherScreenState
     extends State<DetalleBitacoraFatherScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final usuarioProvider = new CoordinatorProviders();
-  Future<DetailHitoList>? _hitoDetailFuture;
-  XFile? _image;
-  String? _imageUrl;
-
-  Future<void> _loadImage() async {
-    try {
-      Responseimagepassenger imageUrl =
-          await usuarioProvider.getPicturePassenger(
-              widget.login.passengerIdentificacion.toString(),
-              widget.login.tourId.toString());
-      if (imageUrl.image.isNotEmpty) {
-        setState(() {
-          _imageUrl = imageUrl.image;
-        });
-      } else {
-        setState(() {
-          _imageUrl = null;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _imageUrl = null;
-      });
-    }
-  }
-
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl =
-        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-    } else {
-      print('No se puede abrir WhatsApp');
-      final whatsappDirect = Uri.parse(
-          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(whatsappDirect, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
-      }
-    }
-  }
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _provider = CoordinatorProviders();
+  late Future<DetailHitoList> _detail;
+  String? _drawerImage;
 
   @override
   void initState() {
     super.initState();
+    _detail = _load();
     _loadImage();
-    _hitoDetailFuture = usuarioProvider.getHitoComplete(
-        widget.idHito.toString(), widget.login.tourId.toString());
   }
 
-  Future<void> _openHitoPhoto(int? photoId, String previewBase64) async {
+  @override
+  void dispose() {
+    _provider.dispose();
+    super.dispose();
+  }
+
+  Future<DetailHitoList> _load() => _provider.getHitoComplete(
+        widget.idHito,
+        widget.login.tourId.toString(),
+      );
+
+  void _reload() => setState(() => _detail = _load());
+
+  Future<void> _loadImage() async {
+    try {
+      final photo = await _provider.getPicturePassenger(
+        widget.login.passengerIdentificacion.toString(),
+        widget.login.tourId.toString(),
+      );
+      if (mounted) {
+        setState(() => _drawerImage = photo.image.isEmpty ? null : photo.image);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _openPhoto(int? photoId, String previewBase64) async {
     if (photoId == null) {
-      await Navigator.push(
-        context,
+      await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => FullscreenImagePage(
             imageBytes: base64Decode(previewBase64.split(',').last),
@@ -88,30 +73,28 @@ class _DetalleBitacoraFatherScreenState
       );
       return;
     }
-
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
     try {
-      final bytes = await usuarioProvider.getHitoPhoto(
+      final bytes = await _provider.getHitoPhoto(
         photoId,
         widget.login.tourId.toString(),
       );
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
-      await Navigator.push(
-        context,
+      await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => FullscreenImagePage(imageBytes: bytes),
         ),
       );
-    } catch (error) {
+    } catch (_) {
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo cargar la foto: $error')),
+        const SnackBar(content: Text('No se pudo cargar la foto.')),
       );
     }
   }
@@ -120,225 +103,190 @@ class _DetalleBitacoraFatherScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9),
+      backgroundColor: PapigirasColors.canvas,
       endDrawer: AppDrawerFather(
-          login: widget.login, imageFile: _image, imageUrl: _imageUrl),
-      body: Stack(
-        children: [
-          _buildBackground(),
-          Column(
-            children: [
-              _buildAppBar(context),
-              Expanded(
-                child: FutureBuilder<DetailHitoList>(
-                  future: _hitoDetailFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    } else if (snapshot.hasData) {
-                      DetailHitoList hitoDetail = snapshot.data!;
-                      return _buildBinnacleContent(hitoDetail);
-                    } else {
-                      return Center(child: Text('No data available'));
-                    }
-                  },
-                ),
+        login: widget.login,
+        imageFile: null,
+        imageUrl: _drawerImage,
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: FutureBuilder<DetailHitoList>(
+                future: _detail,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final detail = snapshot.data;
+                  if (snapshot.hasError || detail == null) {
+                    return _ErrorState(onRetry: _reload);
+                  }
+                  return _buildContent(detail);
+                },
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => WelcomeScreen()),
-        (route) => false);
-  }
-
-  Widget _buildBackground() {
-    return Container(
-        decoration: BoxDecoration(
-            image: DecorationImage(
-                image: AssetImage('assets/background.png'),
-                fit: BoxFit.cover)));
-  }
-
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       child: Row(
         children: [
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.white, size: 30),
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            BitacoraFatherScreen(login: widget.login)));
-              },
-            ),
+          IconButton(
+            tooltip: 'Volver a la bitácora',
+            onPressed: () => Navigator.of(context).maybePop(),
+            style: IconButton.styleFrom(backgroundColor: PapigirasColors.soft),
+            icon: const Icon(Icons.arrow_back_rounded),
           ),
-          Spacer(),
-          Image.asset('assets/logo-letras-papigiras.png', height: 50),
-          Spacer(),
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.menu, color: Colors.white, size: 30),
-              onPressed: () {
-                _scaffoldKey.currentState?.openEndDrawer();
-              },
-            ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text('Detalle del hito',
+                style: Theme.of(context).textTheme.titleLarge),
+          ),
+          IconButton(
+            tooltip: 'Actualizar hito',
+            onPressed: _reload,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+          IconButton(
+            tooltip: 'Abrir menú',
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+            icon: const Icon(Icons.menu_rounded),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBinnacleContent(DetailHitoList hitoDetail) {
-    return Container(
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-      padding: EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: 20),
-          Expanded(child: ListView(children: _buildBinnacleEntries(hitoDetail)))
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildBinnacleEntries(DetailHitoList hitoDetail) {
-    List<Map<String, dynamic>> entries = [];
-    String time = hitoDetail.fecha ?? 'Sin hora';
-    String activity = hitoDetail.titulo ?? 'Actividad no disponible';
-    String description = hitoDetail.descripcion ?? 'Descripción no disponible';
-    entries.add({
-      'time': time,
-      'activity': activity,
-      'description': description,
-      'images': hitoDetail.images ?? const <String>[],
-      'thumbnails': hitoDetail.thumbnails ?? const <String>[],
-      'photoIds': hitoDetail.photoIds ?? const <int>[],
-    });
-    return entries.map((entry) {
-      return Card(
-        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+  Widget _buildContent(DetailHitoList detail) {
+    final images = detail.images ?? const <String>[];
+    final thumbnails = detail.thumbnails ?? const <String>[];
+    final photoIds = detail.photoIds ?? const <int>[];
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: PapigirasColors.soft,
+            borderRadius: BorderRadius.circular(28),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.place, color: Colors.teal),
-                  SizedBox(width: 8),
-                  Text(entry['time']!,
-                      style: TextStyle(
-                          color: Colors.teal,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold)),
-                  SizedBox(width: 8),
-                  Text(entry['activity']!,
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  const CircleAvatar(
+                    radius: 23,
+                    backgroundColor: PapigirasColors.mint,
+                    foregroundColor: PapigirasColors.onMint,
+                    child: Icon(Icons.place_outlined),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          detail.titulo ?? 'Actividad no disponible',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          detail.fecha ?? detail.hora ?? 'Sin fecha',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: PapigirasColors.teal,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-              SizedBox(height: 8),
-              Text(entry['description']!,
-                  style: TextStyle(color: Colors.grey, fontSize: 14)),
-              SizedBox(height: 16),
-              Column(
-                children: [
-                  for (var index = 0; index < entry['images'].length; index++)
-                    GestureDetector(
-                      onTap: () => _openHitoPhoto(
-                        index < entry['photoIds'].length
-                            ? entry['photoIds'][index] as int
-                            : null,
-                        entry['images'][index] as String,
+              const SizedBox(height: 18),
+              Text(
+                detail.descripcion ?? 'Descripción no disponible',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              if (images.isNotEmpty) ...[
+                const SizedBox(height: 22),
+                Text('Fotografías',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 12),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: images.length,
+                  itemBuilder: (context, index) {
+                    final preview = index < thumbnails.length
+                        ? thumbnails[index]
+                        : images[index];
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () => _openPhoto(
+                        index < photoIds.length ? photoIds[index] : null,
+                        images[index],
                       ),
-                      child: Image.memory(
-                          base64Decode(
-                              (entry['thumbnails'] ?? entry['images'])[index]
-                                  .split(',')
-                                  .last),
-                          height: 200,
-                          width: 200,
-                          fit: BoxFit.cover),
-                    ),
-                ],
-              )
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: Image.memory(
+                          base64Decode(preview.split(',').last),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const ColoredBox(
+                            color: PapigirasColors.surface,
+                            child: Icon(Icons.broken_image_outlined),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ],
           ),
         ),
-      );
-    }).toList();
+      ],
+    );
   }
+}
 
-  Widget buildBottomButton(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 40, color: Colors.teal),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))
+          const Icon(Icons.location_off_outlined,
+              size: 48, color: PapigirasColors.teal),
+          const SizedBox(height: 14),
+          const Text('No pudimos cargar este hito.'),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Reintentar'),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget buildBottomButtonHito(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 70, color: Colors.teal),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))
-        ],
-      ),
-    );
-  }
-
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0);
-        const end = Offset.zero;
-        const curve = Curves.ease;
-        var tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-        return SlideTransition(position: offsetAnimation, child: child);
-      },
     );
   }
 }
