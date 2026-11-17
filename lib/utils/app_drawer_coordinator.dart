@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
@@ -48,52 +49,48 @@ class AppDrawerCoordinator extends StatelessWidget {
   Widget build(BuildContext context) {
     final locationService = Provider.of<LocationService>(context);
     return Drawer(
+      backgroundColor: PapigirasColors.canvas,
       child: ListView(
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
         children: [
           // ── Header ──────────────────────────────────────────────────────────
           Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: PapigirasColors.soft,
+              borderRadius: BorderRadius.circular(28),
+            ),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.teal,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const CircleAvatar(
-                    radius: 35,
-                    backgroundImage: AssetImage('assets/profile.jpg'),
-                  ),
+                const CircleAvatar(
+                  radius: 34,
+                  backgroundColor: PapigirasColors.surface,
+                  backgroundImage: AssetImage('assets/profile.jpg'),
                 ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      login.tourTripulationNameId,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        login.tourTripulationNameId,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                    ),
-                    Text(
-                      login.tourTripulationIdentificationId,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black,
+                      Text(
+                        login.tourTripulationIdentificationId,
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 18),
           ListTile(
-            leading: const Icon(Icons.phone, color: Colors.teal),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            leading: const Icon(Icons.phone_outlined),
             title: Text(
               'Contactar Agencia',
               style: TextStyle(color: Colors.grey[800]),
@@ -101,15 +98,17 @@ class AppDrawerCoordinator extends StatelessWidget {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: const [
-                Icon(Icons.phone, color: Colors.teal),
+                Icon(Icons.phone, color: PapigirasColors.teal),
                 SizedBox(width: 10),
-                FaIcon(FontAwesomeIcons.whatsapp, color: Colors.teal),
+                FaIcon(FontAwesomeIcons.whatsapp, color: PapigirasColors.teal),
               ],
             ),
             onTap: () => _sendMessage('+56932157564', 'Hola! Necesito ayuda'),
           ),
           ListTile(
-            leading: const Icon(Icons.report_problem, color: Colors.teal),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            leading: const Icon(Icons.report_problem_outlined),
             title: Text(
               'Reportar un Problema',
               style: TextStyle(color: Colors.grey[800]),
@@ -117,7 +116,9 @@ class AppDrawerCoordinator extends StatelessWidget {
             onTap: () => _sendMessage('+56932157564', 'Hola! Necesito ayuda'),
           ),
           SwitchListTile(
-            secondary: const Icon(Icons.location_on, color: Colors.teal),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            secondary: const Icon(Icons.location_on_outlined),
             title: Text(
               'Ubicación en segundo plano',
               style: TextStyle(color: Colors.grey[800]),
@@ -158,7 +159,9 @@ class AppDrawerCoordinator extends StatelessWidget {
                   },
           ),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.teal),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            leading: const Icon(Icons.logout_rounded),
             title: Text(
               'Cerrar Sesión',
               style: TextStyle(color: Colors.grey[800]),

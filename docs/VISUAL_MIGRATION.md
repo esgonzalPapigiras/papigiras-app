@@ -225,3 +225,10 @@ los servicios productivos por adaptadores LAB.
 - El acceso de solo lectura a ficha médica del prototipo no se incorporó en
   esta fase porque agrega un flujo que no existía en `main` y usa sesión y
   componentes de laboratorio.
+
+### Menús compartidos
+
+- Los menús lateral familiar y de coordinador adoptan fondo, tarjetas de
+  identidad, radios, iconografía y espaciado Pilo.
+- Se conservan contacto por WhatsApp, cierre de sesión seguro y, para el
+  coordinador, todos los controles productivos de ubicación en segundo plano.
