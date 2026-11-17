@@ -1,100 +1,69 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/dto/tourTripulation.dart';
-import 'package:papigiras_app/pages/attorney/indexFather.dart';
-import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:papigiras_app/utils/app_drawer_father.dart';
 
 class BusCrewFatherScreen extends StatefulWidget {
+  const BusCrewFatherScreen({super.key, required this.login});
+
   final ResponseAttorney login;
 
-  BusCrewFatherScreen({required this.login});
-
   @override
-  _BusCrewFatherScreenState createState() => _BusCrewFatherScreenState();
+  State<BusCrewFatherScreen> createState() => _BusCrewFatherScreenState();
 }
 
 class _BusCrewFatherScreenState extends State<BusCrewFatherScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  List<TourTripulation> _tripulations = [];
-  final usuarioProvider = CoordinatorProviders();
-  bool _isLoading = true;
-  XFile? _image;
-  String? _imageUrl;
-
-  String _busValue(String value, String fallback) {
-    return value.trim().isEmpty ? fallback : value;
-  }
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _provider = CoordinatorProviders();
+  List<TourTripulation> _crew = [];
+  bool _loading = false;
+  bool _hasError = false;
+  String? _drawerImage;
 
   @override
   void initState() {
     super.initState();
-    _loadImage();
-    _loadTripulations(widget.login.tourId.toString()); // Usar tourSalesId
+    _loadDrawerImage();
+    _loadCrew();
   }
 
-  Future<void> _loadTripulations(String tourCode) async {
+  @override
+  void dispose() {
+    _provider.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadDrawerImage() async {
     try {
-      _tripulations = await usuarioProvider.getTripulation(tourCode);
-    } catch (e) {
-      print('Error al cargar la tripulación: $e');
+      final photo = await _provider.getPicturePassenger(
+        widget.login.passengerIdentificacion.toString(),
+        widget.login.tourId.toString(),
+      );
+      if (mounted) {
+        setState(() => _drawerImage = photo.image.isEmpty ? null : photo.image);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _drawerImage = null);
+    }
+  }
+
+  Future<void> _loadCrew() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _hasError = false;
+    });
+    try {
+      final result = await _provider.getTripulation(
+        widget.login.tourId.toString(),
+      );
+      if (mounted) setState(() => _crew = result);
+    } catch (_) {
+      if (mounted) setState(() => _hasError = true);
     } finally {
-      setState(() {
-        _isLoading = false; // Cambia el estado de carga
-      });
-    }
-  }
-
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl =
-        Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-    } else {
-      print('No se puede abrir WhatsApp');
-      final whatsappDirect = Uri.parse(
-          "whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(whatsappDirect, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
-      }
-    }
-  }
-
-  void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => WelcomeScreen()),
-        (route) => false);
-  }
-
-  Future<void> _loadImage() async {
-    try {
-      Responseimagepassenger imageUrl =
-          await usuarioProvider.getPicturePassenger(
-              widget.login.passengerIdentificacion.toString(),
-              widget.login.tourId.toString());
-      if (imageUrl.image.isNotEmpty) {
-        setState(() {
-          _imageUrl = imageUrl.image;
-        });
-      } else {
-        setState(() {
-          _imageUrl = null;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _imageUrl = null;
-      });
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -102,359 +71,248 @@ class _BusCrewFatherScreenState extends State<BusCrewFatherScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9),
+      backgroundColor: PapigirasColors.canvas,
       endDrawer: AppDrawerFather(
-          login: widget.login, imageFile: _image, imageUrl: _imageUrl),
-      body: Container(
-        decoration: BoxDecoration(
-            image: DecorationImage(
-                image: AssetImage('assets/background.png'), fit: BoxFit.cover)),
-        child: Column(children: [
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-            child: Row(
+        login: widget.login,
+        imageFile: null,
+        imageUrl: _drawerImage,
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(child: _buildContent()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'Volver',
+            onPressed: () => Navigator.of(context).maybePop(),
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Builder(
-                  builder: (context) => IconButton(
-                    icon: Icon(Icons.arrow_back, color: Colors.white, size: 30),
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  TravelFatherDashboard(login: widget.login)));
-                    },
-                  ),
+                Text(
+                  'Tripulación',
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
-                Spacer(),
-                Image.asset('assets/logo-letras-papigiras.png', height: 50),
-                Spacer(),
-                Builder(
-                  builder: (context) => IconButton(
-                    icon: Icon(Icons.menu, color: Colors.white, size: 30),
-                    onPressed: () {
-                      _scaffoldKey.currentState?.openEndDrawer();
-                    },
-                  ),
+                Text(
+                  'Equipo a cargo de la gira',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: _isLoading
-                ? Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(40),
-                              topRight: Radius.circular(40))),
-                      padding: EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20)),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text('Bus & Tripulación',
-                                    style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey[800])),
-                                SizedBox(height: 20),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Image.asset('assets/bus.jpg',
-                                        width: 100,
-                                        height: 100,
-                                        fit: BoxFit.cover),
-                                    SizedBox(width: 20),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          RichText(
-                                            text: TextSpan(
-                                              children: [
-                                                TextSpan(
-                                                    text: 'Patente: ',
-                                                    style: TextStyle(
-                                                        color: Colors.teal,
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                                TextSpan(
-                                                  text: _tripulations.isEmpty
-                                                      ? 'Sin patente'
-                                                      : _busValue(
-                                                          _tripulations[0]
-                                                              .tourTripulationBusPatent,
-                                                          'Sin patente',
-                                                        ),
-                                                  style: TextStyle(
-                                                      color: Colors.grey[800]),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          RichText(
-                                            text: TextSpan(
-                                              children: [
-                                                TextSpan(
-                                                    text: 'Marca: ',
-                                                    style: TextStyle(
-                                                        color: Colors.teal,
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                                TextSpan(
-                                                  text: _tripulations.isEmpty
-                                                      ? 'Sin marca'
-                                                      : _busValue(
-                                                          _tripulations[0]
-                                                              .tourTripulationBusBrand,
-                                                          'Sin marca',
-                                                        ),
-                                                  style: TextStyle(
-                                                      color: Colors.grey[800]),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          RichText(
-                                            text: TextSpan(
-                                              children: [
-                                                TextSpan(
-                                                    text: 'Modelo: ',
-                                                    style: TextStyle(
-                                                        color: Colors.teal,
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                                TextSpan(
-                                                  text: _tripulations.isEmpty
-                                                      ? 'Sin modelo'
-                                                      : _busValue(
-                                                          _tripulations[0]
-                                                              .tourTripulationBusModel,
-                                                          'Sin modelo',
-                                                        ),
-                                                  style: TextStyle(
-                                                      color: Colors.grey[800]),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          RichText(
-                                            text: TextSpan(
-                                              children: [
-                                                TextSpan(
-                                                    text: 'Año: ',
-                                                    style: TextStyle(
-                                                        color: Colors.teal,
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                                TextSpan(
-                                                  text: _tripulations.isEmpty
-                                                      ? 'Año no disponible'
-                                                      : _busValue(
-                                                          _tripulations[0]
-                                                              .tourTripulationBusYear,
-                                                          'Año no disponible',
-                                                        ),
-                                                  style: TextStyle(
-                                                      color: Colors.grey[800]),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          RichText(
-                                            text: TextSpan(
-                                              children: [
-                                                TextSpan(
-                                                    text: 'Empresa: ',
-                                                    style: TextStyle(
-                                                        color: Colors.teal,
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                                TextSpan(
-                                                  text: _tripulations.isEmpty
-                                                      ? 'Sin empresa'
-                                                      : _busValue(
-                                                          _tripulations[0]
-                                                              .tourTripulationBusEnterprise,
-                                                          'Sin empresa',
-                                                        ),
-                                                  style: TextStyle(
-                                                      color: Colors.grey[800]),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 20),
-                              ],
-                            ),
-                          ),
-                          Divider(height: 40, thickness: 1),
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: _tripulations.length,
-                            itemBuilder: (context, index) {
-                              final tripulation = _tripulations[index];
-                              final role =
-                                  tripulation.tourTripulationTypeId == 32
-                                      ? 'Coordinador'
-                                      : 'Conductor';
-                              final imagePath = role == 'Coordinador'
-                                  ? 'assets/profile.jpg'
-                                  : index == 0
-                                      ? 'assets/conductor_one.jpg'
-                                      : index == 1
-                                          ? 'assets/conductor_two.jpg'
-                                          : 'assets/conductor_three.jpg';
-                              final position = role == 'Coordinador'
-                                  ? ''
-                                  : 'Licencia Clase A';
-                              return _buildCrewMember(
-                                role: role,
-                                name: tripulation.tourTripulationNameId,
-                                position: position,
-                                id: tripulation.tourTripulationIdentificationId,
-                                imagePath: imagePath,
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+          IconButton(
+            tooltip: 'Actualizar tripulación',
+            onPressed: _loading ? null : _loadCrew,
+            icon: const Icon(Icons.refresh_rounded),
           ),
-        ]),
+          IconButton(
+            tooltip: 'Abrir menú',
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+            icon: const Icon(Icons.menu_rounded),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildCrewMember(
-      {required String role,
-      required String name,
-      required String position,
-      String? id,
-      required String imagePath}) {
-    return ListTile(
-      contentPadding: EdgeInsets.symmetric(vertical: 20.0),
-      leading: Container(
-        padding: EdgeInsets.all(2),
-        decoration: BoxDecoration(color: Colors.teal, shape: BoxShape.circle),
-        child: Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              image: DecorationImage(
-                  image: AssetImage(imagePath),
-                  fit: BoxFit.fitHeight,
-                  alignment: Alignment.center)),
-        ),
+  Widget _buildContent() {
+    if (_crew.isEmpty && _loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_crew.isEmpty) {
+      return _EmptyState(hasError: _hasError, onRetry: _loadCrew);
+    }
+    return RefreshIndicator(
+      onRefresh: _loadCrew,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+        children: [
+          _buildBusCard(_crew.first),
+          const SizedBox(height: 18),
+          Text('Equipo de viaje',
+              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 10),
+          if (_hasError)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: Text('No se pudo actualizar la tripulación.'),
+            ),
+          for (var index = 0; index < _crew.length; index++)
+            _buildCrewMember(_crew[index], index),
+        ],
       ),
-      title: Text(role,
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
-      subtitle: Column(
+    );
+  }
+
+  Widget _buildBusCard(TourTripulation data) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: PapigirasColors.ink,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(name,
-              style: TextStyle(
-                  color: Colors.grey[800], fontWeight: FontWeight.bold)),
-          if (position.isNotEmpty)
-            Text(position, style: TextStyle(color: Colors.grey[600])),
-          if (id != null && id.isNotEmpty)
-            Text(id, style: TextStyle(color: Colors.grey[600])),
-        ],
-      ),
-      onTap: () {},
-    );
-  }
-
-  Widget buildBottomButtonHito(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 70, color: Colors.teal),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 8))
-        ],
-      ),
-    );
-  }
-
-  Widget buildBottomButton(
-      IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            alignment: Alignment.topRight,
-            children: [
-              Icon(icon, size: 40, color: Colors.teal),
-              if (badge != null)
-                Positioned(
-                  top: -5,
-                  right: -5,
-                  child: Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                        color: Colors.orange, shape: BoxShape.circle),
-                    child: Text(badge,
-                        style: TextStyle(color: Colors.white, fontSize: 8)),
+          const CircleAvatar(
+            radius: 30,
+            backgroundColor: PapigirasColors.mint,
+            foregroundColor: PapigirasColors.onMint,
+            child: Icon(Icons.directions_bus_rounded, size: 32),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Bus de la gira',
+                  style: TextStyle(
+                    color: PapigirasColors.surface,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-            ],
+                const SizedBox(height: 10),
+                _busLine(
+                    'Patente', data.tourTripulationBusPatent, 'Sin patente'),
+                _busLine('Marca', data.tourTripulationBusBrand, 'Sin marca'),
+                _busLine('Modelo', data.tourTripulationBusModel, 'Sin modelo'),
+                _busLine('Año', data.tourTripulationBusYear, 'No disponible'),
+                _busLine(
+                  'Empresa',
+                  data.tourTripulationBusEnterprise,
+                  'Sin empresa',
+                ),
+              ],
+            ),
           ),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 8)),
         ],
       ),
     );
   }
 
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0);
-        const end = Offset.zero;
-        const curve = Curves.ease;
-        var tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-        return SlideTransition(position: offsetAnimation, child: child);
-      },
+  Widget _busLine(String label, String value, String fallback) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Text.rich(
+        TextSpan(
+          style: const TextStyle(color: PapigirasColors.surface, height: 1.35),
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(
+                color: PapigirasColors.mint,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            TextSpan(text: value.trim().isEmpty ? fallback : value),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCrewMember(TourTripulation person, int index) {
+    final coordinator = person.tourTripulationTypeId == 32;
+    final role = coordinator ? 'Coordinador' : 'Conductor';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: PapigirasColors.soft,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 25,
+            backgroundColor:
+                coordinator ? PapigirasColors.mint : PapigirasColors.surface,
+            foregroundColor: PapigirasColors.ink,
+            child: Icon(
+              coordinator
+                  ? Icons.support_agent_rounded
+                  : Icons.airline_seat_recline_normal_rounded,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(role, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  person.tourTripulationNameId,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                if (!coordinator)
+                  const Text(
+                    'Licencia Clase A',
+                    style: TextStyle(color: PapigirasColors.muted),
+                  ),
+                if (person.tourTripulationIdentificationId.isNotEmpty)
+                  Text(
+                    person.tourTripulationIdentificationId,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.hasError, required this.onRetry});
+  final bool hasError;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.directions_bus_outlined,
+                size: 48, color: PapigirasColors.teal),
+            const SizedBox(height: 14),
+            Text(
+              hasError
+                  ? 'No pudimos cargar la tripulación.'
+                  : 'Todavía no hay tripulación asignada.',
+              textAlign: TextAlign.center,
+            ),
+            if (hasError) ...[
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Reintentar'),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

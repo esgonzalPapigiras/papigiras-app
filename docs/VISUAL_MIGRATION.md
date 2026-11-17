@@ -116,3 +116,12 @@ los servicios productivos por adaptadores LAB.
   `sendMedicalDataEdit`; además, la cobertura existente se refleja al cargar.
 - Los permisos del coordinador y el modelo de actualización productivo no se
   modificaron.
+
+### Tripulación del apoderado
+
+- Se trasladaron el encabezado, la tarjeta oscura del bus, las tarjetas de
+  integrantes y los estados Pilo ya usados en coordinador.
+- Se conservan `getTripulation`, el identificador real de la gira y la foto del
+  pasajero usada por el menú del apoderado.
+- No se importó `TripCrewView` ni la navegación paralela del prototipo; la vista
+  sigue utilizando los servicios y rutas productivos de `main`.
