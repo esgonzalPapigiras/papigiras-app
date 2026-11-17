@@ -187,3 +187,12 @@ los servicios productivos por adaptadores LAB.
   `createMedicalRecord`, además de la carga de foto usada por el menú.
 - No se incorporaron guardado local, exportación ni formulario en hoja del
   prototipo porque implican comportamiento nuevo.
+
+### Dashboard del apoderado
+
+- Inicio adopta tarjetas Pilo para pasajero y gira, accesos en cuadrícula y el
+  mapa real dentro de una única superficie desplazable.
+- Se eliminó la barra inferior fija sobredimensionada sin quitar accesos:
+  bitácora, programa, tripulación, documentos, ficha médica y mapa continúan.
+- Se conservan la actualización productiva de foto, `TraceMap`, la pantalla de
+  mapa completa y el menú familiar.
