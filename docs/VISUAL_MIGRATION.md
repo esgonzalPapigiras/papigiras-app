@@ -244,3 +244,22 @@ los servicios productivos por adaptadores LAB.
   mapa completo, conservando `getBinnacle` y las capas cartográficas reales.
 - No se agregaron exportación/compartir PDF ni el controlador de mapa del
   prototipo porque dependen de adaptadores y comportamientos nuevos.
+
+## Auditoría de cierre visual
+
+- Cobertura revisada: selector de perfil, tres accesos, selección de gira,
+  dashboard y todas las rutas productivas de coordinador, apoderado y alumno,
+  además de menús, mapas, visor PDF e imágenes de pantalla completa.
+- Todas las vistas modificadas se verificaron por checkpoint con análisis de
+  Dart y compilación `flutter build apk --debug`; la compilación final genera
+  correctamente `build/app/outputs/flutter-apk/app-debug.apk`.
+- `dart analyze lib` no reporta errores de compilación; conserva advertencias
+  históricas de estilo y código legado. `flutter analyze` sobre todo el árbol
+  incluye además errores del proyecto de ejemplo del paquete local
+  `background_locator_2`, que no forma parte del APK productivo.
+- FCM, notificaciones locales, sesión persistente, autenticación, ubicación en
+  primer/segundo plano, cámara, QR, archivos, WhatsApp y contratos HTTP siguen
+  usando las implementaciones de `main`.
+- Quedan expresamente para una etapa funcional posterior: audio de hitos,
+  galería/likes, ranking, documentos privados y carga a Object Storage,
+  edición georreferenciada, ficha médica del alumno y demás adaptadores LAB.
