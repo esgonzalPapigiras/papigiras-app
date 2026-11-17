@@ -235,3 +235,12 @@ los servicios productivos por adaptadores LAB.
 - El menú coordinador realmente compartido por las vistas también adopta hoja
   lateral redondeada, cabecera Pilo y acciones en superficies suaves, sin
   incorporar ranking ni navegación paralela del prototipo.
+
+### Componentes de documento y mapa
+
+- El visor PDF adopta encabezado, superficie redondeada, carga, error y contador
+  de páginas Pilo, manteniendo la apertura del archivo temporal productivo.
+- La vista previa del mapa usa el mismo trazado, tarjetas y estados Pilo que el
+  mapa completo, conservando `getBinnacle` y las capas cartográficas reales.
+- No se agregaron exportación/compartir PDF ni el controlador de mapa del
+  prototipo porque dependen de adaptadores y comportamientos nuevos.

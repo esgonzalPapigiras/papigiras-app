@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/binnacle.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:papigiras_app/utils/tour_map_style.dart';
@@ -73,9 +74,14 @@ class _TraceMapState extends State<TraceMap> {
   Widget build(BuildContext context) {
     if (_loading) {
       return Container(
-          height: 250,
-          alignment: Alignment.center,
-          child: CircularProgressIndicator());
+        height: 250,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: PapigirasColors.soft,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: const CircularProgressIndicator(),
+      );
     }
     final entries = _binnacleData
         .map((dto) {
@@ -103,7 +109,7 @@ class _TraceMapState extends State<TraceMap> {
         height: 34,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.teal,
+            color: PapigirasColors.teal,
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 3),
             boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 4)],
@@ -117,13 +123,10 @@ class _TraceMapState extends State<TraceMap> {
     }
     final center = points.first;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
         height: 250,
-        margin: EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.grey.shade300)),
+        decoration: const BoxDecoration(color: PapigirasColors.soft),
         child: FlutterMap(
           options: MapOptions(
               initialCenter: center,
@@ -134,7 +137,11 @@ class _TraceMapState extends State<TraceMap> {
             if (points.length > 1)
               PolylineLayer(
                 polylines: [
-                  Polyline(points: points, strokeWidth: 4.0, color: Colors.blue)
+                  Polyline(
+                    points: points,
+                    strokeWidth: 4.0,
+                    color: PapigirasColors.teal,
+                  ),
                 ],
               ),
             MarkerLayer(markers: markers),
@@ -148,18 +155,24 @@ class _TraceMapState extends State<TraceMap> {
                     final idx = markers.indexOf(marker);
                     final dto = entries[idx].key;
                     return Card(
-                      margin: EdgeInsets.zero,
                       child: Container(
-                        width: 200,
-                        padding: EdgeInsets.all(8),
+                        width: 220,
+                        padding: const EdgeInsets.all(14),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(dto.binnacleTitulo,
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                            SizedBox(height: 4),
+                            Text(
+                              dto.binnacleTitulo,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 6),
                             Text(dto.binnacleDescripcion),
-                            Text(dto.binnacleFecha)
+                            const SizedBox(height: 6),
+                            Text(
+                              dto.binnacleFecha,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                           ],
                         ),
                       ),
@@ -183,11 +196,9 @@ class _TraceMapState extends State<TraceMap> {
   Widget _buildEmptyState() {
     return Container(
       height: 250,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(12),
+        color: PapigirasColors.soft,
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Center(
         child: Padding(
@@ -195,7 +206,11 @@ class _TraceMapState extends State<TraceMap> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.location_off_outlined, size: 38, color: Colors.teal),
+              const Icon(
+                Icons.location_off_outlined,
+                size: 38,
+                color: PapigirasColors.teal,
+              ),
               const SizedBox(height: 10),
               Text(
                 _errorMessage ?? 'Aún no hay hitos con ubicación',
