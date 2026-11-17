@@ -107,3 +107,12 @@ los servicios productivos por adaptadores LAB.
   `addHito`, `addHitoFoto` y los datos productivos enviados por `RequestHito`.
 - No se incorporaron audio, ajuste manual en mapa ni renovación de sesión del
   prototipo porque requieren servicios y contratos adicionales.
+
+### Edición de ficha médica
+
+- El formulario adopta encabezado compacto, tarjeta del pasajero, campos y
+  controles Pilo, desplazamiento con teclado y acción principal consistente.
+- Se conservaron todos los campos, validaciones, `getMedicalRecord` y
+  `sendMedicalDataEdit`; además, la cobertura existente se refleja al cargar.
+- Los permisos del coordinador y el modelo de actualización productivo no se
+  modificaron.

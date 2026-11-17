@@ -5,6 +5,7 @@ import 'package:papigiras_app/dto/updateMedicalRecord.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:papigiras_app/utils/coordinator_widgets.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 
 class MedicalRecordScreenEditCoordinator extends StatefulWidget {
   final TourSales login;
@@ -14,26 +15,40 @@ class MedicalRecordScreenEditCoordinator extends StatefulWidget {
   final String passengerApellidos;
 
   const MedicalRecordScreenEditCoordinator(
-      {super.key, required this.login, required this.idPassenger, required this.idDocumento, required this.nombrepassenger, required this.passengerApellidos});
+      {super.key,
+      required this.login,
+      required this.idPassenger,
+      required this.idDocumento,
+      required this.nombrepassenger,
+      required this.passengerApellidos});
 
   @override
-  State<MedicalRecordScreenEditCoordinator> createState() => _MedicalRecordScreenEditState();
+  State<MedicalRecordScreenEditCoordinator> createState() =>
+      _MedicalRecordScreenEditState();
 }
 
-class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordinator> {
+class _MedicalRecordScreenEditState
+    extends State<MedicalRecordScreenEditCoordinator> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final CoordinatorProviders _coordinatorProvider = CoordinatorProviders();
-  final TextEditingController _grupoSanguineoController = TextEditingController();
-  final TextEditingController _nombreEmergenciaController = TextEditingController();
-  final TextEditingController _relacionEmergenciaController = TextEditingController();
-  final TextEditingController _telefonoEmergenciaController = TextEditingController();
-  final TextEditingController _emailEmergenciaController = TextEditingController();
+  final TextEditingController _grupoSanguineoController =
+      TextEditingController();
+  final TextEditingController _nombreEmergenciaController =
+      TextEditingController();
+  final TextEditingController _relacionEmergenciaController =
+      TextEditingController();
+  final TextEditingController _telefonoEmergenciaController =
+      TextEditingController();
+  final TextEditingController _emailEmergenciaController =
+      TextEditingController();
   final TextEditingController _isapreController = TextEditingController();
   final TextEditingController _enfermedadesController = TextEditingController();
   final TextEditingController _medicamentosController = TextEditingController();
-  final TextEditingController _medicamentosEvitarController = TextEditingController();
-  final TextEditingController _cuidadosEspecialesController = TextEditingController();
+  final TextEditingController _medicamentosEvitarController =
+      TextEditingController();
+  final TextEditingController _cuidadosEspecialesController =
+      TextEditingController();
   PassengersMedicalRecordDTO? _record;
 
   bool _isLoading = true;
@@ -50,6 +65,7 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
 
   @override
   void dispose() {
+    _coordinatorProvider.dispose();
     _grupoSanguineoController.dispose();
     _nombreEmergenciaController.dispose();
     _relacionEmergenciaController.dispose();
@@ -65,19 +81,27 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
 
   Future<void> _loadRecord() async {
     try {
-      final record = await _coordinatorProvider.getMedicalRecord(widget.login.tourSalesId.toString(), widget.idPassenger);
+      final record = await _coordinatorProvider.getMedicalRecord(
+          widget.login.tourSalesId.toString(), widget.idPassenger);
       if (!mounted) return;
       _record = record;
       _grupoSanguineoController.text = record.bloodType ?? '';
       _nombreEmergenciaController.text = record.emergencyContactName ?? '';
-      _relacionEmergenciaController.text = record.emergencyContactRelation ?? '';
+      _relacionEmergenciaController.text =
+          record.emergencyContactRelation ?? '';
       _telefonoEmergenciaController.text = record.emergencyContactPhone ?? '';
       _emailEmergenciaController.text = record.emergencyContactEmail ?? '';
+      _tieneFonasa = record.hasFonasa;
+      _tieneIsapre = record.hasIsapre;
+      _isapreController.text = record.isapre ?? '';
       _enfermedadesController.text = _formatMultilineValue(record.diseases);
       _medicamentosController.text = _formatMultilineValue(record.medications);
-      _medicamentosEvitarController.text = _formatMultilineValue(record.avoidMedications);
-      _cuidadosEspecialesController.text = _formatMultilineValue(record.specialCareDetails);
-      _requiereCuidadosEspeciales = _cuidadosEspecialesController.text.trim().isNotEmpty;
+      _medicamentosEvitarController.text =
+          _formatMultilineValue(record.avoidMedications);
+      _cuidadosEspecialesController.text =
+          _formatMultilineValue(record.specialCareDetails);
+      _requiereCuidadosEspeciales = record.requiresSpecialCare ||
+          _cuidadosEspecialesController.text.trim().isNotEmpty;
       setState(() {
         _isLoading = false;
       });
@@ -86,7 +110,12 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
       setState(() {
         _isLoading = false;
       });
-      QuickAlert.show(context: context, type: QuickAlertType.error, title: 'Error', text: 'No se pudo cargar la ficha médica.', confirmBtnText: 'Aceptar');
+      QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'Error',
+          text: 'No se pudo cargar la ficha médica.',
+          confirmBtnText: 'Aceptar');
     }
   }
 
@@ -98,102 +127,144 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
   }
 
   List<String> _controllerToList(TextEditingController controller) {
-    return controller.text.split('\n').map((item) => item.trim()).where((item) => item.isNotEmpty).toList();
+    return controller.text
+        .split('\n')
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: kCoordinatorTeal,
-      endDrawer: CoordinatorEndDrawer(login: widget.login),
-      body: Stack(
-        children: [
-          _buildBackground(),
-          Column(
+    return PopScope(
+      canPop: !_isSaving,
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: PapigirasColors.canvas,
+        endDrawer: CoordinatorEndDrawer(login: widget.login),
+        body: SafeArea(
+          child: Column(
             children: [
-              CoordinatorTopBar(login: widget.login, scaffoldKey: _scaffoldKey),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Volver',
+                      onPressed: _isSaving
+                          ? null
+                          : () => Navigator.of(context).maybePop(),
+                      icon: const Icon(Icons.arrow_back_rounded),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Ficha médica',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Abrir menú',
+                      onPressed: _isSaving
+                          ? null
+                          : () => _scaffoldKey.currentState?.openEndDrawer(),
+                      icon: const Icon(Icons.menu_rounded),
+                    ),
+                  ],
+                ),
+              ),
               Expanded(child: _buildBody()),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildBackground() {
-    return Container(decoration: const BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)));
-  }
-
   Widget _buildBody() {
     if (_isLoading) {
-      return _buildLoadingState();
+      return const Center(child: CircularProgressIndicator());
     }
     if (_record == null) {
-      return _buildEmptyState();
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('No se encontró la ficha médica.'),
+            TextButton(
+              onPressed: () {
+                setState(() => _isLoading = true);
+                _loadRecord();
+              },
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
     }
     return _buildContent();
   }
 
-  Widget _buildLoadingState() {
-    return Container(
-      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-      child: const Center(child: CircularProgressIndicator()),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-      child: const Center(child: Text('No se encontró la ficha médica.')),
-    );
-  }
-
   Widget _buildContent() {
-    return Container(
-      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildPageHeader(),
-              const SizedBox(height: 24),
-              _buildPassengerInformationSection(),
-              _buildSectionDivider(),
-              _buildEmergencyContactSection(),
-              _buildSectionDivider(),
-              _buildCoverageSection(),
-              _buildSectionDivider(),
-              _buildMedicalBackgroundSection(),
-              _buildSectionDivider(),
-              _buildSpecialCareSection(),
-              const SizedBox(height: 30),
-              _buildSaveButton(),
-            ],
-          ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 28),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildPageHeader(),
+            const SizedBox(height: 24),
+            _buildPassengerInformationSection(),
+            _buildSectionDivider(),
+            _buildEmergencyContactSection(),
+            _buildSectionDivider(),
+            _buildCoverageSection(),
+            _buildSectionDivider(),
+            _buildMedicalBackgroundSection(),
+            _buildSectionDivider(),
+            _buildSpecialCareSection(),
+            const SizedBox(height: 30),
+            _buildSaveButton(),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildPageHeader() {
-    return Column(
-      children: [
-        const Icon(Icons.medical_information, size: 42, color: Colors.teal),
-        const SizedBox(height: 8),
-        Text('Ficha Médica', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-        const SizedBox(height: 8),
-        Text(
-          '${widget.nombrepassenger} ${widget.passengerApellidos}',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[700]),
-        ),
-        const SizedBox(height: 4),
-        Text(widget.idDocumento, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: PapigirasColors.soft,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          const CircleAvatar(
+            radius: 22,
+            backgroundColor: PapigirasColors.mint,
+            foregroundColor: PapigirasColors.onMint,
+            child: Icon(Icons.medical_services_outlined),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${widget.nombrepassenger} ${widget.passengerApellidos}'
+                      .trim(),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(widget.idDocumento,
+                    style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -201,7 +272,13 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
     return _buildFormSection(
       title: 'Datos del pasajero',
       icon: Icons.person,
-      children: [_buildTextFormField(label: 'Grupo sanguíneo', controller: _grupoSanguineoController, hintText: 'Ejemplo: O+', validator: _validateRequiredField)],
+      children: [
+        _buildTextFormField(
+            label: 'Grupo sanguíneo',
+            controller: _grupoSanguineoController,
+            hintText: 'Ejemplo: O+',
+            validator: _validateRequiredField)
+      ],
     );
   }
 
@@ -210,9 +287,16 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
       title: 'Contacto de emergencia',
       icon: Icons.emergency,
       children: [
-        _buildTextFormField(label: 'Nombre y apellido', controller: _nombreEmergenciaController, hintText: 'Nombre del contacto', validator: _validateRequiredField),
         _buildTextFormField(
-            label: 'Relación con el alumno(a)', controller: _relacionEmergenciaController, hintText: 'Ejemplo: Madre, padre o tutor', validator: _validateRequiredField),
+            label: 'Nombre y apellido',
+            controller: _nombreEmergenciaController,
+            hintText: 'Nombre del contacto',
+            validator: _validateRequiredField),
+        _buildTextFormField(
+            label: 'Relación con el alumno(a)',
+            controller: _relacionEmergenciaController,
+            hintText: 'Ejemplo: Madre, padre o tutor',
+            validator: _validateRequiredField),
         _buildTextFormField(
             label: 'Teléfono celular',
             controller: _telefonoEmergenciaController,
@@ -239,7 +323,7 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
           title: const Text('FONASA'),
           subtitle: const Text('El pasajero tiene cobertura FONASA'),
           value: _tieneFonasa,
-          activeColor: Colors.teal,
+          activeTrackColor: PapigirasColors.mint,
           onChanged: _isSaving
               ? null
               : (value) {
@@ -257,7 +341,7 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
           title: const Text('ISAPRE'),
           subtitle: const Text('El pasajero tiene cobertura ISAPRE'),
           value: _tieneIsapre,
-          activeColor: Colors.teal,
+          activeTrackColor: PapigirasColors.mint,
           onChanged: _isSaving
               ? null
               : (value) {
@@ -290,9 +374,18 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
       title: 'Antecedentes médicos',
       icon: Icons.medical_services,
       children: [
-        _buildMultilineField(label: 'Enfermedades', controller: _enfermedadesController, hintText: 'Escriba una enfermedad por línea'),
-        _buildMultilineField(label: 'Medicamentos', controller: _medicamentosController, hintText: 'Escriba un medicamento por línea'),
-        _buildMultilineField(label: 'Medicamentos a evitar', controller: _medicamentosEvitarController, hintText: 'Escriba un medicamento por línea'),
+        _buildMultilineField(
+            label: 'Enfermedades',
+            controller: _enfermedadesController,
+            hintText: 'Escriba una enfermedad por línea'),
+        _buildMultilineField(
+            label: 'Medicamentos',
+            controller: _medicamentosController,
+            hintText: 'Escriba un medicamento por línea'),
+        _buildMultilineField(
+            label: 'Medicamentos a evitar',
+            controller: _medicamentosEvitarController,
+            hintText: 'Escriba un medicamento por línea'),
       ],
     );
   }
@@ -305,9 +398,10 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Requiere cuidados especiales'),
-          subtitle: const Text('Active esta opción si debe registrar indicaciones adicionales'),
+          subtitle: const Text(
+              'Active esta opción si debe registrar indicaciones adicionales'),
           value: _requiereCuidadosEspeciales,
-          activeColor: Colors.teal,
+          activeTrackColor: PapigirasColors.mint,
           onChanged: _isSaving
               ? null
               : (value) {
@@ -336,15 +430,23 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
     );
   }
 
-  Widget _buildFormSection({required String title, required IconData icon, required List<Widget> children}) {
+  Widget _buildFormSection(
+      {required String title,
+      required IconData icon,
+      required List<Widget> children}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, color: Colors.teal, size: 24),
+            Icon(icon, color: PapigirasColors.teal, size: 22),
             const SizedBox(width: 10),
-            Expanded(child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800]))),
+            Expanded(
+                child: Text(title,
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: PapigirasColors.ink))),
           ],
         ),
         const SizedBox(height: 16),
@@ -363,11 +465,19 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
-          controller: controller, keyboardType: keyboardType, validator: validator, enabled: !_isSaving, decoration: _buildInputDecoration(label: label, hintText: hintText)),
+          controller: controller,
+          keyboardType: keyboardType,
+          validator: validator,
+          enabled: !_isSaving,
+          decoration: _buildInputDecoration(label: label, hintText: hintText)),
     );
   }
 
-  Widget _buildMultilineField({required String label, required TextEditingController controller, required String hintText, String? Function(String?)? validator}) {
+  Widget _buildMultilineField(
+      {required String label,
+      required TextEditingController controller,
+      required String hintText,
+      String? Function(String?)? validator}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
       child: TextFormField(
@@ -377,47 +487,50 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
         minLines: 4,
         maxLines: 7,
         textCapitalization: TextCapitalization.sentences,
-        decoration: _buildInputDecoration(label: label, hintText: hintText, alignLabelWithHint: true),
+        decoration: _buildInputDecoration(
+            label: label, hintText: hintText, alignLabelWithHint: true),
       ),
     );
   }
 
-  InputDecoration _buildInputDecoration({required String label, String? hintText, bool alignLabelWithHint = false}) {
+  InputDecoration _buildInputDecoration(
+      {required String label,
+      String? hintText,
+      bool alignLabelWithHint = false}) {
     return InputDecoration(
       labelText: label,
       hintText: hintText,
       alignLabelWithHint: alignLabelWithHint,
       filled: true,
-      fillColor: Colors.grey[100],
+      fillColor: PapigirasColors.soft,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.teal, width: 2)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: PapigirasColors.teal, width: 2)),
     );
   }
 
   Widget _buildSectionDivider() {
-    return const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider());
+    return const Padding(
+        padding: EdgeInsets.only(top: 4, bottom: 16), child: Divider());
   }
 
   Widget _buildSaveButton() {
-    return Center(
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: _isSaving ? null : _saveMedicalRecord,
-          icon: _isSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.save),
-          label: Text(
-            _isSaving ? 'Guardando...' : 'Guardar ficha médica',
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.teal,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: Colors.teal.withOpacity(0.6),
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-            textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-          ),
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: _isSaving ? null : _saveMedicalRecord,
+        icon: _isSaving
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2))
+            : const Icon(Icons.check_rounded),
+        label: Text(
+          _isSaving ? 'Guardando…' : 'Guardar ficha médica',
         ),
       ),
     );
@@ -431,7 +544,12 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
     }
     final passengerId = int.tryParse(widget.idPassenger);
     if (passengerId == null) {
-      await QuickAlert.show(context: context, type: QuickAlertType.error, title: 'Error', text: 'El identificador del pasajero no es válido.', confirmBtnText: 'Aceptar');
+      await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'Error',
+          text: 'El identificador del pasajero no es válido.',
+          confirmBtnText: 'Aceptar');
       return;
     }
     setState(() {
@@ -450,7 +568,9 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
       idPassenger: passengerId,
       idTour: widget.login.tourSalesId,
       requiereCuidadosEspeciales: _requiereCuidadosEspeciales,
-      cuidadosEspeciales: _requiereCuidadosEspeciales ? _cuidadosEspecialesController.text.trim() : null,
+      cuidadosEspeciales: _requiereCuidadosEspeciales
+          ? _cuidadosEspecialesController.text.trim()
+          : null,
       tieneFonasa: _tieneFonasa,
       tieneIsapre: _tieneIsapre,
       nombreIsapre: _tieneIsapre ? _isapreController.text.trim() : null,
@@ -477,7 +597,12 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEditCoordin
       setState(() {
         _isSaving = false;
       });
-      await QuickAlert.show(context: context, type: QuickAlertType.error, title: 'Error', text: 'No se pudo actualizar la ficha médica.', confirmBtnText: 'Aceptar');
+      await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'Error',
+          text: 'No se pudo actualizar la ficha médica.',
+          confirmBtnText: 'Aceptar');
     }
   }
 
