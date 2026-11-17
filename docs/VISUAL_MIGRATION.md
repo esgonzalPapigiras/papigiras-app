@@ -169,3 +169,12 @@ los servicios productivos por adaptadores LAB.
   menú y la navegación al formulario de edición existente.
 - No se incorporó el formulario unificado en hoja del prototipo porque cambia
   el flujo completo de creación/edición y depende de componentes ausentes.
+
+### Edición de ficha médica del apoderado
+
+- El formulario existente adopta encabezado, tarjeta del pasajero, superficies,
+  campos y acción principal Pilo, con desplazamiento adaptado al teclado.
+- Se preservan todos sus controladores, validaciones, cobertura, antecedentes,
+  cuidados especiales y `sendMedicalDataEdit`.
+- No se reemplazó por el formulario unificado del prototipo para evitar cambiar
+  el contrato y flujo productivos durante la migración visual.

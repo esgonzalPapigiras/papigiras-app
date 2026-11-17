@@ -10,6 +10,7 @@ import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:papigiras_app/utils/app_drawer_father.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 
 class MedicalRecordScreenEdit extends StatefulWidget {
   final ResponseAttorney login;
@@ -80,6 +81,15 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
 
   @override
   void dispose() {
+    usuarioProvider.dispose();
+    _nombreEmergenciaController.dispose();
+    _relacionEmergenciaController.dispose();
+    _telefonoEmergenciaController.dispose();
+    _emailEmergenciaController.dispose();
+    _alergiasController.dispose();
+    _GrupoSanguineoController.dispose();
+    _isapreController.dispose();
+    _cuidadosEspecialesController.dispose();
     _medicamentosEvitarController.dispose();
     _medicamentosController.dispose();
     _especificarEnfermedadesController.dispose();
@@ -172,72 +182,89 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
   Widget build(BuildContext context) {
     return Scaffold(
         key: _scaffoldKey,
-        backgroundColor: Color(0xFF3AC5C9),
+        backgroundColor: PapigirasColors.canvas,
         endDrawer: AppDrawerFather(
           login: widget.login,
           imageFile: _image, // remove if the screen has no image picker
           imageUrl: _imageUrl, // remove if the screen has no image URL
         ),
-        body: Container(
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/background.png'),
-              fit: BoxFit.cover,
-            ),
-          ),
+        body: SafeArea(
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 30.0, horizontal: 16.0),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
                 child: Row(
                   children: [
-                    Spacer(),
-                    Image.asset(
-                      'assets/logo-letras-papigiras.png', // Logo de la app
-                      height: 50,
+                    IconButton(
+                      tooltip: 'Volver',
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      icon: const Icon(Icons.arrow_back_rounded),
                     ),
-                    Spacer(),
-                    Builder(
-                      builder: (context) => IconButton(
-                        icon: Icon(Icons.menu, color: Colors.white, size: 30),
-                        onPressed: () {
-                          _scaffoldKey.currentState
-                              ?.openEndDrawer(); // Abre el Drawer desde la derecha
-                        },
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Editar ficha médica',
+                        style: Theme.of(context).textTheme.headlineMedium,
                       ),
+                    ),
+                    IconButton(
+                      tooltip: 'Abrir menú',
+                      onPressed: () =>
+                          _scaffoldKey.currentState?.openEndDrawer(),
+                      icon: const Icon(Icons.menu_rounded),
                     ),
                   ],
                 ),
               ),
               Expanded(
                 child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(40),
-                        topRight: Radius.circular(40),
-                      ),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    padding: const EdgeInsets.fromLTRB(20, 6, 20, 28),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Ficha Médica',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: PapigirasColors.soft,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Row(
+                            children: [
+                              const CircleAvatar(
+                                radius: 22,
+                                backgroundColor: PapigirasColors.mint,
+                                foregroundColor: PapigirasColors.onMint,
+                                child: Icon(Icons.medical_services_outlined),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${widget.login.passengerName ?? ''} ${widget.login.passengerApellidos ?? ''}'
+                                          .trim(),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
+                                    ),
+                                    Text(
+                                      widget.login.passengerIdentificacion ??
+                                          '',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         Form(
                           key: _formKey,
                           child: Column(
@@ -356,8 +383,9 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                               SizedBox(height: 10),
 
                               // Botón Guardar
-                              Center(
-                                child: ElevatedButton(
+                              SizedBox(
+                                width: double.infinity,
+                                child: FilledButton.icon(
                                   onPressed: () {
                                     if (!(_formKey.currentState?.validate() ??
                                         false)) {
@@ -400,7 +428,6 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                                     usuarioProvider
                                         .sendMedicalDataEdit(medical)
                                         .then((response) {
-                                      print(response);
                                       QuickAlert.show(
                                         context: context,
                                         type: QuickAlertType.success,
@@ -430,19 +457,8 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                                     });
                                     ;
                                   },
-                                  child: Text('Guardar Ficha Médica'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.teal,
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 30,
-                                      vertical: 15,
-                                    ),
-                                    textStyle: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                  icon: const Icon(Icons.check_rounded),
+                                  label: const Text('Guardar ficha médica'),
                                 ),
                               ),
                               SizedBox(height: 20),
@@ -452,20 +468,6 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
                       ],
                     ),
                   ),
-                ),
-              ),
-              // Barra de navegación inferior con sombreado
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 5,
-                      blurRadius: 10,
-                      offset: Offset(0, -3), // Sombra hacia arriba
-                    ),
-                  ],
                 ),
               ),
             ],
@@ -491,8 +493,8 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
             maxHeight: 80,
           ),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(10),
+            color: PapigirasColors.soft,
+            borderRadius: BorderRadius.circular(18),
           ),
           padding: EdgeInsets.all(10),
           child: TextField(
@@ -532,8 +534,8 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
             maxHeight: 150, // Ajusta la altura máxima según el contenido
           ),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(10),
+            color: PapigirasColors.soft,
+            borderRadius: BorderRadius.circular(18),
           ),
           padding: EdgeInsets.all(10),
           child: TextField(
@@ -602,8 +604,8 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
             maxHeight: 150, // Ajusta la altura máxima según el contenido
           ),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(10),
+            color: PapigirasColors.soft,
+            borderRadius: BorderRadius.circular(18),
           ),
           padding: EdgeInsets.all(10),
           child: TextField(
@@ -656,8 +658,8 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
             maxHeight: 150, // Ajusta la altura máxima según el contenido
           ),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(10),
+            color: PapigirasColors.soft,
+            borderRadius: BorderRadius.circular(18),
           ),
           padding: EdgeInsets.all(10),
           child: TextField(
@@ -710,8 +712,8 @@ class _MedicalRecordScreenEditState extends State<MedicalRecordScreenEdit> {
             maxHeight: 150, // Ajusta la altura máxima según el contenido
           ),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(10),
+            color: PapigirasColors.soft,
+            borderRadius: BorderRadius.circular(18),
           ),
           padding: EdgeInsets.all(10),
           child: TextField(
