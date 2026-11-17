@@ -32,3 +32,13 @@ los servicios productivos por adaptadores LAB.
 - No se incluyeron documentos internos, vouchers ni carga de archivos. El
   mockup usa repositorios y almacenamiento privado que requieren trabajo de
   backend/Object Storage antes de poder integrarse correctamente.
+
+### Actividades y perfil del coordinador
+
+- Actividades adopta encabezado, formularios, botones, tarjetas y estados Pilo
+  conservando los endpoints existentes de itinerarios y registro.
+- El perfil adopta la composición visual del mockup sin perder la carga y
+  actualización de foto que ya existía en `main`.
+- El cambio de contraseña continúa usando la validación y el endpoint
+  productivo actual. No se incorporó el almacenamiento seguro de credenciales
+  del mockup porque pertenece a una funcionalidad posterior.

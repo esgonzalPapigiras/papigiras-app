@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/coordinator_session.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 
@@ -103,6 +104,7 @@ class _CoordinatorProfileScreenState extends State<CoordinatorProfileScreen> {
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmationPasswordController.dispose();
+    _provider.dispose();
     super.dispose();
   }
 
@@ -232,91 +234,184 @@ class _CoordinatorProfileScreenState extends State<CoordinatorProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-          title: const Text('Mi perfil'),
-          backgroundColor: Colors.teal,
-          foregroundColor: Colors.white),
-      body: FutureBuilder<CoordinatorProfile>(
-        future: _profileFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                      snapshot.error.toString().replaceFirst('Exception: ', ''),
-                      textAlign: TextAlign.center)),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: Text('No se pudo cargar el perfil.'));
-          }
-          final profile = snapshot.data!;
-          return ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Center(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    CircleAvatar(
-                      radius: 55,
-                      backgroundImage: _profileImage != null
-                          ? MemoryImage(_profileImage!)
-                          : const AssetImage('assets/profile.jpg')
-                              as ImageProvider,
-                    ),
-                    Positioned(
-                      right: -4,
-                      bottom: -4,
-                      child: IconButton.filled(
-                        tooltip: 'Cambiar foto de perfil',
-                        onPressed:
-                            _uploadingPicture ? null : _changeProfilePicture,
-                        icon: _uploadingPicture
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.camera_alt),
-                      ),
-                    ),
-                  ],
-                ),
+      body: SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: FutureBuilder<CoordinatorProfile>(
+              future: _profileFuture,
+              builder: (context, snapshot) => ListView(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                children: [
+                  _header(context),
+                  const SizedBox(height: 24),
+                  _profileContent(context, snapshot),
+                ],
               ),
-              const SizedBox(height: 16),
-              Text('${profile.name} ${profile.lastname}'.trim(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
-              _field(Icons.badge, 'RUT', profile.rut),
-              _field(Icons.phone, 'Teléfono', profile.phone),
-              _field(Icons.email, 'Correo', profile.email),
-              _field(Icons.home, 'Residencia', profile.residence),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                  onPressed: _showPasswordDialog,
-                  icon: const Icon(Icons.lock),
-                  label: const Text('Cambiar contraseña')),
-            ],
-          );
-        },
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _field(IconData icon, String label, String value) {
-    return ListTile(
-        leading: Icon(icon, color: Colors.teal),
-        title: Text(label),
-        subtitle: Text(value.isEmpty ? 'Sin información' : value));
+  Widget _header(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IconButton(
+            tooltip: 'Volver',
+            style: IconButton.styleFrom(
+              backgroundColor: PapigirasColors.soft,
+              minimumSize: const Size.square(48),
+            ),
+            onPressed: () => Navigator.maybePop(context),
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+          const SizedBox(height: 18),
+          Semantics(
+            header: true,
+            child: Text(
+              'Mi perfil',
+              style: Theme.of(context).textTheme.displaySmall,
+            ),
+          ),
+        ],
+      );
+
+  Widget _profileContent(
+    BuildContext context,
+    AsyncSnapshot<CoordinatorProfile> snapshot,
+  ) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (!snapshot.hasData) {
+      final message = snapshot.hasError
+          ? snapshot.error.toString().replaceFirst('Exception: ', '')
+          : 'No se pudo cargar el perfil.';
+      return Center(child: Text(message, textAlign: TextAlign.center));
+    }
+
+    final profile = snapshot.data!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              CircleAvatar(
+                radius: 48,
+                backgroundImage: _profileImage != null
+                    ? MemoryImage(_profileImage!)
+                    : const AssetImage('assets/profile.jpg') as ImageProvider,
+              ),
+              Positioned(
+                right: -5,
+                bottom: -5,
+                child: IconButton.filled(
+                  tooltip: 'Cambiar foto de perfil',
+                  style: IconButton.styleFrom(
+                    backgroundColor: PapigirasColors.mint,
+                    foregroundColor: PapigirasColors.ink,
+                  ),
+                  onPressed: _uploadingPicture ? null : _changeProfilePicture,
+                  icon: _uploadingPicture
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.camera_alt_outlined),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          '${profile.name} ${profile.lastname}'.trim(),
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 20),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: PapigirasColors.soft,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _field(context, Icons.badge_outlined, 'RUT', profile.rut),
+                const Divider(height: 24),
+                _field(
+                  context,
+                  Icons.phone_outlined,
+                  'Teléfono',
+                  profile.phone,
+                ),
+                const Divider(height: 24),
+                _field(
+                  context,
+                  Icons.email_outlined,
+                  'Correo',
+                  profile.email,
+                ),
+                const Divider(height: 24),
+                _field(
+                  context,
+                  Icons.home_outlined,
+                  'Residencia',
+                  profile.residence,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        FilledButton.icon(
+          onPressed: _showPasswordDialog,
+          icon: const Icon(Icons.lock_outline_rounded),
+          label: const Text('Cambiar contraseña'),
+        ),
+      ],
+    );
+  }
+
+  Widget _field(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 20,
+          foregroundColor: PapigirasColors.ink,
+          backgroundColor: PapigirasColors.surface,
+          child: Icon(icon, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 4),
+              Text(
+                value.isEmpty ? 'Sin información' : value,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
