@@ -51,3 +51,12 @@ los servicios productivos por adaptadores LAB.
   menú real del coordinador; también se agregó actualización manual.
 - No se importaron el tema paralelo ni los helpers de datos del prototipo. La
   vista usa los tokens visuales compartidos de producción.
+
+### Fichas médicas del coordinador
+
+- Se incorporaron el resumen oscuro, las tarjetas Pilo por pasajero, el orden
+  por apellido, recarga mediante gesto y estados de carga/error/vacío.
+- Se conservaron la consulta productiva de pasajeros y las acciones reales de
+  editar, visualizar, descargar y compartir cada ficha guardada.
+- La edición sigue regresando a esta vista y actualizando el listado. No se
+  añadieron campos, permisos ni contratos de backend del prototipo.
