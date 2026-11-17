@@ -88,3 +88,13 @@ los servicios productivos por adaptadores LAB.
   cada pasajero; la búsqueda y el orden se ejecutan localmente.
 - No se incorporaron fotografías, filtros por sexo/rol/dieta ni datos clínicos
   adicionales porque `main` no recibe todavía esos campos y servicios.
+
+### Contador de pasajeros
+
+- El contador adopta resumen oscuro, controles Pilo, estado visible del último
+  cambio, tarjetas compactas y un marco claro para el lector QR.
+- Se conservan `getListPassenger`, el lector de cámara real, la extracción de
+  `tourPassenger` y el conteo manual que ya existían en `main`.
+- El reinicio ahora pide confirmación. No se importó la sesión temporal ni el
+  contador rápido en hoja del prototipo porque cambian el comportamiento y no
+  persisten asistencia en el backend actual.
