@@ -1,130 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/ProgramViewDto.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
-import 'package:papigiras_app/pages/coordinator/binnacleCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/indexCoordinator.dart';
-import 'package:papigiras_app/pages/coordinator/loginCoordinator.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:papigiras_app/utils/coordinator_widgets.dart';
 
 class ViewProgramCoordScreen extends StatefulWidget {
+  const ViewProgramCoordScreen({super.key, required this.login});
   final TourSales login;
-  ViewProgramCoordScreen({required this.login});
+
   @override
-  _ViewProgramCoordScreenState createState() => _ViewProgramCoordScreenState();
+  State<ViewProgramCoordScreen> createState() => _ViewProgramCoordScreenState();
 }
 
 class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  final usuarioProvider = new CoordinatorProviders();
-  Future<ProgramViewDto>? _hitoDetailFuture;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _provider = CoordinatorProviders();
+  late Future<ProgramViewDto> _program;
 
   @override
   void initState() {
     super.initState();
-    _hitoDetailFuture = usuarioProvider.getviewProgram(widget.login.tourSalesId.toString());
+    _program = _loadProgram();
+  }
+
+  Future<ProgramViewDto> _loadProgram() =>
+      _provider.getviewProgram(widget.login.tourSalesId.toString());
+
+  void _refresh() => setState(() => _program = _loadProgram());
+
+  @override
+  void dispose() {
+    _provider.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9),
-      endDrawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            Container(
-              color: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.teal,
-                      shape: BoxShape.circle,
-                    ),
-                    child: CircleAvatar(
-                      radius: 35,
-                      backgroundImage: AssetImage('assets/profile.jpg'),
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover)),
+      backgroundColor: PapigirasColors.canvas,
+      endDrawer: CoordinatorEndDrawer(login: widget.login),
+      body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-              child: Row(
-                children: [
-                  Builder(
-                    builder: (context) => IconButton(
-                      icon: Icon(Icons.arrow_back, color: Colors.white, size: 30),
-                      onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => TravelCoordinatorDashboard(login: widget.login)));
-                      },
-                    ),
-                  ),
-                  Spacer(),
-                  Image.asset('assets/logo-letras-papigiras.png', height: 50),
-                  Spacer(),
-                  Builder(
-                    builder: (context) => IconButton(
-                      icon: Icon(Icons.menu, color: Colors.white, size: 30),
-                      onPressed: () {
-                        _scaffoldKey.currentState?.openEndDrawer();
-                      },
-                    ),
-                  ),
-                ],
-              ),
+            _Header(
+              onBack: () => Navigator.of(context).maybePop(),
+              onRefresh: _refresh,
+              onMenu: () => _scaffoldKey.currentState?.openEndDrawer(),
             ),
             Expanded(
               child: FutureBuilder<ProgramViewDto>(
-                future: _hitoDetailFuture,
+                future: _program,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (snapshot.hasData) {
-                    final programView = snapshot.data;
-                    return SingleChildScrollView(
-                      child: Container(
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [Text('Programa', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800]))],
-                            ),
-                            SizedBox(height: 20),
-                            Divider(),
-                            SizedBox(height: 10),
-                            buildInfoSection('Curso', programView?.courseClient ?? "", programView?.nameClient ?? "", programView?.seasonClient.toString() ?? ""),
-                            SizedBox(height: 10),
-                            buildInfoSectionEnfermedades('Fecha de Ida y Vuelta', programView?.tourInit ?? "", programView?.tourEnd ?? ""),
-                            SizedBox(height: 10),
-                            buildInfoSectionMedicamentos('Actividades de la Gira', programView?.activities),
-                            SizedBox(height: 500),
-                          ],
-                        ),
-                      ),
-                    );
-                  } else {
-                    return Center(child: Text('No se encontraron datos'));
+                    return const Center(child: CircularProgressIndicator());
                   }
+                  if (snapshot.hasError) {
+                    return _MessageState(
+                      icon: Icons.cloud_off_rounded,
+                      message: 'No pudimos cargar el programa.',
+                      actionLabel: 'Reintentar',
+                      onAction: _refresh,
+                    );
+                  }
+                  final program = snapshot.data;
+                  if (program == null) {
+                    return const _MessageState(
+                      icon: Icons.event_note_rounded,
+                      message: 'No se encontraron datos del programa.',
+                    );
+                  }
+                  return _ProgramContent(program: program);
                 },
               ),
             ),
@@ -133,129 +80,191 @@ class _ViewProgramCoordScreenState extends State<ViewProgramCoordScreen> {
       ),
     );
   }
+}
 
-  Future<bool> isSessionValid(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    final expiryDateString = prefs.getString('expiryDate');
-    if (expiryDateString == null) {
-      _redirectToLogin(context);
-      return false;
-    }
-    final expiryDate = DateTime.parse(expiryDateString);
-    if (DateTime.now().isAfter(expiryDate)) {
-      _redirectToLogin(context);
-      return false;
-    }
-    return true;
-  }
+class _Header extends StatelessWidget {
+  const _Header(
+      {required this.onBack, required this.onRefresh, required this.onMenu});
+  final VoidCallback onBack;
+  final VoidCallback onRefresh;
+  final VoidCallback onMenu;
 
-  void _redirectToLogin(BuildContext context) {
-    SharedPreferences.getInstance().then((prefs) => prefs.clear());
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginCoordinator()), (route) => false);
-  }
-
-  Widget buildInfoSection(String title, String courseClient, String nameClient, String seasonClient) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('$title:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-        SizedBox(height: 5),
-        Container(
-          constraints: BoxConstraints(maxHeight: 80),
-          decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
-          padding: EdgeInsets.all(10),
-          child: SingleChildScrollView(child: Text(nameClient + " " + courseClient + " " + seasonClient, style: TextStyle(color: Colors.grey[800]))),
-        ),
-      ],
-    );
-  }
-
-  Widget buildInfoSectionEnfermedades(String title, String init, String end) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('$title:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-        SizedBox(height: 5),
-        Container(
-          decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
-          padding: EdgeInsets.all(10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('Fecha de salida:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[700])),
-                  Align(alignment: Alignment.center, child: Text(init, style: TextStyle(fontSize: 14, color: Colors.grey[800]))),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('Fecha de regreso:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[700])),
-                  Align(alignment: Alignment.center, child: Text(end, style: TextStyle(fontSize: 14, color: Colors.grey[800]))),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget buildInfoSectionMedicamentos(String title, List<String>? result) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('$title:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800])),
-        SizedBox(height: 1),
-        Container(
-          constraints: BoxConstraints(maxHeight: 400),
-          decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
-          padding: EdgeInsets.all(3),
-          child: result == null || result.isEmpty
-              ? Center(child: Text('No hay actividades disponibles.', style: TextStyle(color: Colors.grey[600])))
-              : ListView.builder(
-                  itemCount: result.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(title: Text(result[index]));
-                  },
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget buildBottomButton(IconData icon, String label, String? badge) {
-    return GestureDetector(
-      onTap: () {
-        print('$label presionado');
-        if (label == 'Bitácora del Viaje') {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => BitacoraCoordScreen(login: widget.login)));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: Row(
         children: [
-          Stack(
-            alignment: Alignment.topRight,
-            children: [
-              Icon(icon, size: 40, color: Colors.teal),
-              if (badge != null)
-                Positioned(
-                  top: -5,
-                  right: -5,
-                  child: Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
-                    child: Text(badge, style: TextStyle(color: Colors.white, fontSize: 12)),
-                  ),
-                ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 14)),
+          IconButton(
+              tooltip: 'Volver',
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back_rounded)),
+          const SizedBox(width: 4),
+          Expanded(
+              child: Text('Programa',
+                  style: Theme.of(context).textTheme.headlineMedium)),
+          IconButton(
+              tooltip: 'Actualizar programa',
+              onPressed: onRefresh,
+              icon: const Icon(Icons.refresh_rounded)),
+          IconButton(
+              tooltip: 'Abrir menú',
+              onPressed: onMenu,
+              icon: const Icon(Icons.menu_rounded)),
         ],
+      ),
+    );
+  }
+}
+
+class _ProgramContent extends StatelessWidget {
+  const _ProgramContent({required this.program});
+  final ProgramViewDto program;
+
+  @override
+  Widget build(BuildContext context) {
+    final activities = program.activities ?? const <String>[];
+    final course = [
+      program.nameClient,
+      program.courseClient,
+      program.seasonClient?.toString()
+    ].whereType<String>().where((value) => value.trim().isNotEmpty).join(' · ');
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+      children: [
+        _SectionCard(title: 'Curso', icon: Icons.school_outlined, children: [
+          Text(course.isEmpty ? 'Sin información de curso' : course,
+              style: Theme.of(context).textTheme.bodyLarge)
+        ]),
+        const SizedBox(height: 14),
+        _SectionCard(
+            title: 'Fechas de la gira',
+            icon: Icons.calendar_month_outlined,
+            children: [
+              _DateRow(label: 'Salida', value: program.tourInit),
+              const Divider(height: 24),
+              _DateRow(label: 'Regreso', value: program.tourEnd),
+            ]),
+        const SizedBox(height: 14),
+        _SectionCard(
+          title: 'Actividades de la gira',
+          icon: Icons.route_outlined,
+          children: activities.isEmpty
+              ? const [Text('No hay actividades disponibles.')]
+              : [
+                  for (var index = 0; index < activities.length; index++)
+                    _ActivityRow(number: index + 1, label: activities[index])
+                ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ActivityRow extends StatelessWidget {
+  const _ActivityRow({required this.number, required this.label});
+  final int number;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+              color: PapigirasColors.mint, shape: BoxShape.circle),
+          child: Text('$number',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: PapigirasColors.onMint, fontWeight: FontWeight.w700)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+            child: Padding(
+                padding: const EdgeInsets.only(top: 3), child: Text(label))),
+      ]),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard(
+      {required this.title, required this.icon, required this.children});
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+          color: PapigirasColors.soft, borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Icon(icon, color: PapigirasColors.teal),
+            const SizedBox(width: 10),
+            Expanded(
+                child:
+                    Text(title, style: Theme.of(context).textTheme.titleMedium))
+          ]),
+          const SizedBox(height: 14),
+          ...children,
+        ]),
+      ),
+    );
+  }
+}
+
+class _DateRow extends StatelessWidget {
+  const _DateRow({required this.label, required this.value});
+  final String label;
+  final String? value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      Expanded(
+          child: Text(label, style: Theme.of(context).textTheme.bodySmall)),
+      Text(value?.trim().isNotEmpty == true ? value! : 'Sin fecha',
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(fontWeight: FontWeight.w600)),
+    ]);
+  }
+}
+
+class _MessageState extends StatelessWidget {
+  const _MessageState(
+      {required this.icon,
+      required this.message,
+      this.actionLabel,
+      this.onAction});
+  final IconData icon;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 48, color: PapigirasColors.teal),
+          const SizedBox(height: 14),
+          Text(message, textAlign: TextAlign.center),
+          if (onAction != null) ...[
+            const SizedBox(height: 18),
+            FilledButton(onPressed: onAction, child: Text(actionLabel!))
+          ],
+        ]),
       ),
     );
   }

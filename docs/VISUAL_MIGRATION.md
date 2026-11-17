@@ -42,3 +42,12 @@ los servicios productivos por adaptadores LAB.
 - El cambio de contraseña continúa usando la validación y el endpoint
   productivo actual. No se incorporó el almacenamiento seguro de credenciales
   del mockup porque pertenece a una funcionalidad posterior.
+
+### Programa del coordinador
+
+- Programa adopta las tarjetas Pilo para curso, fechas y actividades, además
+  de encabezado compacto y estados de carga, error y ausencia de datos.
+- Se conserva `getviewProgram`, el identificador productivo de la gira y el
+  menú real del coordinador; también se agregó actualización manual.
+- No se importaron el tema paralelo ni los helpers de datos del prototipo. La
+  vista usa los tokens visuales compartidos de producción.
