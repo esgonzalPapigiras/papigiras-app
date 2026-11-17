@@ -79,3 +79,12 @@ los servicios productivos por adaptadores LAB.
   registro y la navegación al detalle productivo.
 - No se incorporaron mapa embebido ni creación georreferenciada de hitos; son
   funcionalidades nuevas del prototipo y no simples cambios visuales.
+
+### Pasajeros del coordinador
+
+- El listado adopta buscador, orden A–Z/Z–A, contador de resultados, tarjetas
+  Pilo, recarga por gesto y estados de carga/error/vacío.
+- Se conserva `getListPassenger`, el RUT y el estado real de ficha médica de
+  cada pasajero; la búsqueda y el orden se ejecutan localmente.
+- No se incorporaron fotografías, filtros por sexo/rol/dieta ni datos clínicos
+  adicionales porque `main` no recibe todavía esos campos y servicios.
