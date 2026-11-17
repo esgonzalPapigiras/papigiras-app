@@ -215,3 +215,13 @@ los servicios productivos por adaptadores LAB.
   estilos cartográficos y actualización periódica productivos.
 - No se copió `LabMap`, ubicación sintética ni la nueva arquitectura de mapas
   del prototipo porque sustituyen integraciones reales y agregan funcionalidad.
+
+### Inicio del alumno
+
+- El perfil y pase QR adoptan la composición Pilo, con cabecera adaptable,
+  tarjeta oscura y superficie de lectura de alto contraste.
+- Se conservan la fotografía productiva, el menú existente y el contenido
+  exacto del QR con la URL real de información del pasajero.
+- El acceso de solo lectura a ficha médica del prototipo no se incorporó en
+  esta fase porque agrega un flujo que no existía en `main` y usa sesión y
+  componentes de laboratorio.

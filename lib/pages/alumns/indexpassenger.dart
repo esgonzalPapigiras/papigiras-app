@@ -1,79 +1,31 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
+import 'package:papigiras_app/design/papigiras_theme.dart';
 import 'package:papigiras_app/dto/ResponseImagePassenger.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
-import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:papigiras_app/utils/app_drawer_father.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class TravelPassengerDashboard extends StatefulWidget {
+  const TravelPassengerDashboard({super.key, required this.login});
+
   final ResponseAttorney login;
-  TravelPassengerDashboard({required this.login});
+
   @override
-  _TravelPassengerDashboardState createState() => _TravelPassengerDashboardState();
+  State<TravelPassengerDashboard> createState() =>
+      _TravelPassengerDashboardState();
 }
 
 class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
+  static const _passengerInformationUrl =
+      'https://stingray-app-9tqd9.ondigitalocean.app/app/services/get/information/passenger?tourPassenger=';
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final usuarioProvider = new CoordinatorProviders();
-  String baseUrl = "https://stingray-app-9tqd9.ondigitalocean.app/app/services/get/information/passenger?tourPassenger=";
-  XFile? _image;
+  final CoordinatorProviders _provider = CoordinatorProviders();
   String? _imageUrl;
-
-  String formatDate(String date) {
-    DateTime parsedDate = DateTime.parse(date);
-    String formattedDate = DateFormat('dd-MM-yyyy').format(parsedDate);
-    return formattedDate;
-  }
-
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl = Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-    } else {
-      print('No se puede abrir WhatsApp');
-      final whatsappDirect = Uri.parse("whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(whatsappDirect, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
-      }
-    }
-  }
-
-  Future<void> _loadImage() async {
-    try {
-      Responseimagepassenger imageUrl = await usuarioProvider.getPicturePassenger(widget.login.passengerIdentificacion.toString(), widget.login.tourId.toString());
-      if (imageUrl.image.isNotEmpty) {
-        setState(() {
-          _imageUrl = imageUrl.image;
-        });
-      } else {
-        setState(() {
-          _imageUrl = null;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _imageUrl = null;
-      });
-    }
-  }
-
-  bool _isBase64(String data) {
-    try {
-      base64Decode(data.split(',').last);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
 
   @override
   void initState() {
@@ -81,134 +33,165 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard> {
     _loadImage();
   }
 
+  Future<void> _loadImage() async {
+    try {
+      final Responseimagepassenger result = await _provider.getPicturePassenger(
+        widget.login.passengerIdentificacion.toString(),
+        widget.login.tourId.toString(),
+      );
+      if (mounted && result.image.isNotEmpty) {
+        setState(() => _imageUrl = result.image);
+      }
+    } catch (_) {
+      // The default profile image remains visible when no photo is available.
+    }
+  }
+
+  ImageProvider<Object> _passengerImage() {
+    final image = _imageUrl;
+    if (image == null || image.isEmpty) {
+      return const AssetImage('assets/profile.jpg');
+    }
+    try {
+      return MemoryImage(base64Decode(image.split(',').last));
+    } catch (_) {
+      return NetworkImage(image);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final name = [
+      widget.login.passengerName ?? '',
+      widget.login.passengerApellidos ?? '',
+    ].where((part) => part.trim().isNotEmpty).join(' ');
+    final identification = widget.login.passengerIdentificacion ?? '';
+    final qrData = jsonEncode({
+      'id': 20,
+      'url': '$_passengerInformationUrl${widget.login.passengerId}',
+    });
+
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Color(0xFF3AC5C9),
-      endDrawer: AppDrawerFather(login: widget.login, imageFile: _image, imageUrl: _imageUrl),
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(image: AssetImage('assets/background.png'), fit: BoxFit.cover),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-              child: Row(
+      endDrawer: AppDrawerFather(
+        login: widget.login,
+        imageUrl: _imageUrl,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Spacer(),
-                  Image.asset('assets/logo-letras-papigiras.png', height: 50),
-                  Spacer(),
-                  Builder(
-                    builder: (context) => IconButton(
-                      icon: Icon(Icons.menu, color: Colors.white, size: 30),
-                      onPressed: () {
-                        _scaffoldKey.currentState?.openEndDrawer();
-                      },
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundColor: PapigirasColors.soft,
+                        backgroundImage: _passengerImage(),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Alumno', style: theme.textTheme.bodySmall),
+                            const SizedBox(height: 5),
+                            Text(
+                              name.isEmpty ? 'Mi perfil' : name,
+                              style: theme.textTheme.headlineMedium,
+                            ),
+                            if (identification.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                'RUT $identification',
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Abrir menú del alumno',
+                        onPressed: () =>
+                            _scaffoldKey.currentState?.openEndDrawer(),
+                        style: IconButton.styleFrom(
+                          backgroundColor: PapigirasColors.soft,
+                          minimumSize: const Size.square(48),
+                        ),
+                        icon: const Icon(Icons.menu_rounded, size: 26),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 18),
+                    decoration: BoxDecoration(
+                      color: PapigirasColors.ink,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Mi pase',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: PapigirasColors.surface,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.qr_code_rounded,
+                              color: PapigirasColors.mint,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final size = math.min(218.0, constraints.maxWidth);
+                            return Center(
+                              child: Container(
+                                width: size,
+                                height: size,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: QrImageView(
+                                  data: qrData,
+                                  backgroundColor: Colors.white,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Muéstralo al coordinador',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: PapigirasColors.line,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(40.0), topRight: Radius.circular(40.0))),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 20),
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundImage: _image != null
-                            ? FileImage(File(_image!.path)) as ImageProvider<Object>
-                            : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                                ? (_isBase64(_imageUrl!)
-                                    ? MemoryImage(base64Decode(_imageUrl!.split(',').last)) as ImageProvider<Object>
-                                    : NetworkImage(_imageUrl!) as ImageProvider<Object>)
-                                : AssetImage('assets/profile.jpg') as ImageProvider<Object>,
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        '${widget.login.passengerName!}\n${widget.login.passengerApellidos!}',
-                        style: TextStyle(fontSize: 14, color: Colors.black, fontWeight: FontWeight.bold),
-                      ),
-                      Text(widget.login.passengerIdentificacion!, style: TextStyle(fontSize: 14, color: Colors.black)),
-                      SizedBox(height: 8),
-                      Divider(),
-                      SizedBox(height: 100),
-                      Center(
-                        child: QrImageView(
-                          data: jsonEncode({"id": 20, "url": baseUrl + widget.login.passengerId.toString()}),
-                          size: 200,
-                          embeddedImageStyle: QrEmbeddedImageStyle(size: const Size(100, 100)),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Sección inferior de botones
-          ],
+          ),
         ),
       ),
-    );
-  }
-
-  void logoutUser(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => WelcomeScreen()), (route) => false);
-  }
-
-  Widget buildBottomButton(IconData icon, String label, String? badge, Widget? destination) {
-    return GestureDetector(
-      onTap: () {
-        if (destination != null) {
-          Navigator.of(context).push(_createRoute(destination));
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            alignment: Alignment.topRight,
-            children: [
-              Icon(icon, size: 40, color: Colors.teal),
-              if (badge != null)
-                Positioned(
-                  top: -5,
-                  right: -5,
-                  child: Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
-                    child: Text(badge, style: TextStyle(color: Colors.white, fontSize: 12)),
-                  ),
-                ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.teal, fontSize: 14)),
-        ],
-      ),
-    );
-  }
-
-  Route _createRoute(Widget destination) {
-    return PageRouteBuilder(
-      transitionDuration: Duration(milliseconds: 1000),
-      pageBuilder: (context, animation, secondaryAnimation) => destination,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0); // Desde abajo
-        const end = Offset.zero;
-        const curve = Curves.ease;
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-        return SlideTransition(position: offsetAnimation, child: child);
-      },
     );
   }
 }
