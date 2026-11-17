@@ -160,3 +160,12 @@ los servicios productivos por adaptadores LAB.
   contacto y cierre de sesión.
 - No se importaron adaptadores de laboratorio del prototipo para imágenes,
   preferencias o contacto.
+
+### Consulta de ficha médica del apoderado
+
+- La ficha guardada adopta tarjeta del pasajero, secciones Pilo para datos
+  médicos, emergencia, cobertura y cuidados, además de recarga y edición.
+- Se conservan `getMedicalRecord`, todos los campos productivos, la foto del
+  menú y la navegación al formulario de edición existente.
+- No se incorporó el formulario unificado en hoja del prototipo porque cambia
+  el flujo completo de creación/edición y depende de componentes ausentes.
