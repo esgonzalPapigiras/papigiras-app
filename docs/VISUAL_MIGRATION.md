@@ -60,3 +60,13 @@ los servicios productivos por adaptadores LAB.
   editar, visualizar, descargar y compartir cada ficha guardada.
 - La edición sigue regresando a esta vista y actualizando el listado. No se
   añadieron campos, permisos ni contratos de backend del prototipo.
+
+### Detalle de bitácora del coordinador
+
+- El detalle adopta encabezado compacto, tarjeta Pilo, galería adaptable,
+  recarga, errores recuperables y confirmación de eliminación integrada.
+- Se preservaron la carga autenticada de fotografías, la vista de imagen
+  completa, el borrado productivo y el permiso `canModify` entregado por el
+  servidor.
+- No se incorporaron edición de hitos, audio ni ubicación/mapa del prototipo:
+  son funcionalidades nuevas que requieren una etapa posterior.
