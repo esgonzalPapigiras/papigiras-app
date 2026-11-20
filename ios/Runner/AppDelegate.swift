@@ -2,6 +2,11 @@ import Flutter
 import UIKit
 import LocalAuthentication
 import Security
+import background_locator_2
+
+func registerLocationPlugins(registry: FlutterPluginRegistry) {
+  GeneratedPluginRegistrant.register(with: registry)
+}
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -10,6 +15,7 @@ import Security
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
+    BackgroundLocatorPlugin.setPluginRegistrantCallback(registerLocationPlugins)
     if let controller = window?.rootViewController as? FlutterViewController {
       let credentials = FlutterMethodChannel(
         name: "com.papigiras.lab/credentials",

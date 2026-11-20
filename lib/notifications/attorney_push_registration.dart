@@ -35,7 +35,11 @@ class AttorneyPushRegistration {
       await register(token);
     }
 
-    _subscription = source.refreshedTokens.listen(
+    // Permission/APNs readiness precedes all token registration, including a
+    // cached token refresh emitted while the native permission dialog is open.
+    await source.prepare();
+    if (!current()) return;
+    final subscription = source.refreshedTokens.listen(
       (token) async {
         try {
           await send(token);
@@ -47,14 +51,21 @@ class AttorneyPushRegistration {
         if (current()) onError(error, stack);
       },
     );
-    await source.prepare();
-    if (!current()) return;
-    final token = await source.getToken();
-    if (!current()) return;
-    if (token == null || token.isEmpty) {
-      throw StateError('No se recibió un token de notificaciones.');
+    _subscription = subscription;
+    try {
+      final token = await source.getToken();
+      if (!current()) return;
+      if (token == null || token.isEmpty) {
+        throw StateError('No se recibió un token de notificaciones.');
+      }
+      await send(token);
+    } catch (_) {
+      // Only this attempt owns this listener. A newer session may already have
+      // installed another one while the old native request was finishing.
+      if (revision == _revision) _subscription = null;
+      await subscription.cancel();
+      rethrow;
     }
-    await send(token);
   }
 
   Future<void> stop({bool revokeDeviceToken = true}) {

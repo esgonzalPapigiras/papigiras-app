@@ -47,6 +47,12 @@
 	</array>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Usa Face ID para abrir tu contraseña de Papigiras guardada en este iPhone.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Comparte la ubicación de la gira con los apoderados cuando actives el seguimiento.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Mantén la ubicación de la gira actualizada para los apoderados con el teléfono bloqueado mientras el seguimiento esté activo.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Comparte la ubicación de la gira en segundo plano mientras el seguimiento esté activo.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Papigiras LAB necesita el micrófono para grabar la nota de voz que decidas adjuntar a un hito.</string>
 	<key>NSCameraUsageDescription</key>
@@ -60,6 +66,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>location</string>
 	</array>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<true/>

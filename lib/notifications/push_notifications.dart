@@ -34,7 +34,7 @@ abstract final class PushNotifications {
     FirebaseMessaging.onBackgroundMessage(papigirasBackgroundMessage);
     await _local.initialize(
       const InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/launcher_icon'),
+        android: AndroidInitializationSettings('@mipmap/launcher_icon'),
         iOS: DarwinInitializationSettings(
           requestAlertPermission: false,
           requestBadgePermission: false,

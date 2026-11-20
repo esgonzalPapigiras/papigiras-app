@@ -1,13 +1,15 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:papigiras_app/lab/preferences.dart';
 import 'package:papigiras_app/lab/session.dart';
 import 'package:papigiras_app/lab/synthetic_location.dart';
 import 'package:papigiras_app/utils/location_callback.dart';
 import '../runtime/api_destination.dart';
+import '../tracking/native_gps_driver.dart';
 
-/// Explicit opt-in to a fictional route while the LAB is in the foreground.
-/// It never requests GPS or claims native background location.
+/// Explicit opt-in to native GPS in connected builds. The reference LAB keeps
+/// its separate foreground-only synthetic source for deterministic tests.
 class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   static const sharingPreferenceKey = 'coordinatorLocationSharingEnabled';
   bool _isTracking = false;
@@ -32,20 +34,25 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   int? _confirmedModeRevision;
   final LabSyntheticLocation source;
   final Duration heartbeatInterval;
+  NativeGpsDriver? _native;
+  String? _nativeSession;
+  int? _nativeTourId;
 
   LocationService({
     LabSyntheticLocation? source,
     this.heartbeatInterval = const Duration(minutes: 1),
+    NativeGpsDriver? nativeDriver,
   }) : source = source ?? LabSyntheticLocation.instance {
     final binding = WidgetsBinding.instance;
     _foregroundActive =
         binding.lifecycleState == null ||
         binding.lifecycleState == AppLifecycleState.resumed;
     binding.addObserver(this);
+    if (AppEnvironment.connected) _native = nativeDriver ?? DeviceGpsDriver();
   }
 
   bool get isTracking => _isTracking;
-  bool get backgroundTrackingEnabled => false;
+  bool get backgroundTrackingEnabled => _native?.backgroundEnabled ?? false;
   bool get initialized => _initialized;
   bool get isChangingMode => _isChangingMode;
   String? get lastError => _lastError;
@@ -53,12 +60,14 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   DateTime? get lastAttempt => _lastAttempt;
 
   /// A local view may react to our own switch, but must not override another
-  /// tour, role or login. No device-GPS access is introduced by this signal.
+  /// tour, role or login.
   int? get activeTourId =>
       _initialized &&
           !_disposed &&
           _sessionGeneration == LabSession.generation &&
           _preferences?.getString('token') == _sessionToken &&
+          (_native == null ||
+              _preferences?.getInt('selectedTourId') == _nativeTourId) &&
           _preferences?.getString('userRole') == 'coordinator'
       ? _preferences?.getInt('selectedTourId')
       : null;
@@ -84,6 +93,8 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
       _sessionToken != null &&
       _sessionGeneration == LabSession.generation &&
       _preferences?.getString('token') == _sessionToken &&
+      (_native == null ||
+          _preferences?.getInt('selectedTourId') == _nativeTourId) &&
       _preferences?.getString('userRole') == 'coordinator' &&
       _preferences?.getBool(sharingPreferenceKey) == true;
 
@@ -104,6 +115,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     if (_initialized &&
         _sessionGeneration == LabSession.generation &&
         _sessionToken == prefs.getString('token') &&
+        (_native == null || _nativeTourId == prefs.getInt('selectedTourId')) &&
         prefs.getString('userRole') == 'coordinator' &&
         _isTracking == enabled)
       return;
@@ -136,6 +148,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     // Stop synchronously; an HTTP request already accepted cannot be recalled.
     if (!enabled) {
       _isTracking = false;
+      _nativeSession = null;
       _cancelHeartbeat();
     }
     final setup = _modeChain.then(
@@ -155,14 +168,51 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
           _changed();
         }
         if (_currentMode(revision) && enabled && _isTracking) {
+          if (_native != null) {
+            final session = _nativeSession!;
+            await _native!.start(
+              session: session,
+              isCurrent: () =>
+                  _currentMode(revision) &&
+                  _isTracking &&
+                  _nativeSession == session &&
+                  _preferences?.getInt('selectedTourId') == _nativeTourId &&
+                  _sessionGeneration == LabSession.generation,
+              onPosition: (lat, lon) =>
+                  unawaited(_sendNativePosition(lat, lon)),
+              onError: (message) {
+                if (_currentMode(revision)) {
+                  _lastError = message;
+                  _changed();
+                }
+              },
+            );
+            if (!_currentMode(revision)) return;
+            await _preferences?.setBool(
+              'backgroundTrackingEnabled',
+              backgroundTrackingEnabled,
+            );
+            _lastError = _native!.warning;
+          }
           await sendSyntheticPositionNow();
+        } else if (_currentMode(revision) && !enabled && _native != null) {
+          await _native!.stop();
         }
-      } catch (_) {
+      } catch (error) {
         if (_currentMode(revision)) {
           _isTracking = false;
           _cancelHeartbeat();
-          _lastError =
-              'No se pudo cambiar el envío de ubicación del LAB. Inténtalo nuevamente.';
+          _lastError = _native == null
+              ? 'No se pudo cambiar el envío de ubicación del LAB. Inténtalo nuevamente.'
+              : error is StateError
+              ? error.message.toString()
+              : 'No se pudo activar la ubicación. Revisa los permisos e inténtalo nuevamente.';
+          if (_native != null) {
+            _nativeSession = null;
+            await _preferences?.setBool(sharingPreferenceKey, false);
+            await _preferences?.remove(nativeTrackingSessionKey);
+            await _native!.stop();
+          }
         }
       } finally {
         if (_currentMode(revision)) {
@@ -183,11 +233,6 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     int sessionGeneration,
   ) async {
     if (!_currentMode(revision)) return;
-    if (AppEnvironment.connected && enabled) {
-      // Interim integration guard: never publish the LAB's synthetic bus route
-      // to the real API. Replace with the native source in the GPS milestone.
-      throw StateError('El seguimiento GPS real aún está en integración.');
-    }
     final prefs = await SharedPreferences.getInstance();
     if (!_currentMode(revision)) return;
     _preferences = prefs;
@@ -202,10 +247,10 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
       _cancelHeartbeat();
       if (enabled)
         _lastError =
-            'Inicia sesión como coordinador para compartir una ubicación ficticia.';
+            'Inicia sesión como coordinador para compartir tu ubicación.';
       return;
     }
-    await source.restore();
+    if (_native == null) await source.restore();
     if (!_currentMode(revision)) return;
     // A logout/new role during restore must not recreate its cleared choice.
     if (sessionGeneration != LabSession.generation ||
@@ -217,6 +262,18 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
     await prefs.setBool(sharingPreferenceKey, enabled);
+    if (_native != null) {
+      if (enabled) {
+        _nativeTourId = prefs.getInt('selectedTourId');
+        if (_nativeTourId == null)
+          throw StateError('Selecciona una gira antes de compartir ubicación.');
+        _nativeSession =
+            '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}';
+        await prefs.setString(nativeTrackingSessionKey, _nativeSession!);
+      } else {
+        await prefs.remove(nativeTrackingSessionKey);
+      }
+    }
     await prefs.setBool('backgroundTrackingEnabled', false);
     if (!_currentMode(revision)) return;
     if (sessionGeneration != LabSession.generation ||
@@ -231,7 +288,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     _sessionGeneration = sessionGeneration;
     _initialized = true;
     _isTracking = enabled;
-    _pendingCount = prefs.getStringList(pendingLocationsKey)?.length ?? 0;
+    _pendingCount = _queuedCount(prefs);
     if (enabled) {
       _startForegroundHeartbeat();
     } else {
@@ -243,6 +300,12 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> startTracking() => setSharingEnabled(true);
   Future<void> enableForegroundOnlyTracking() => setSharingEnabled(true);
   Future<void> stopTracking() => setSharingEnabled(false);
+
+  int _queuedCount(SharedPreferences? prefs) =>
+      (prefs?.getStringList(pendingLocationsKey)?.length ?? 0) +
+      (AppEnvironment.connected
+          ? prefs?.getStringList(pendingBackgroundLocationsKey)?.length ?? 0
+          : 0);
 
   void _startForegroundHeartbeat() {
     _cancelHeartbeat();
@@ -258,6 +321,10 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     if (!_canSend(revision) || _advancing) return;
     _advancing = true;
     try {
+      if (_native != null) {
+        await sendSyntheticPositionNow();
+        return;
+      }
       await source.advance(shouldAdvance: () => _canSend(revision));
       if (_canSend(revision)) await sendSyntheticPositionNow();
     } finally {
@@ -266,6 +333,8 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> selectSyntheticPoint(int index) async {
+    if (_native != null)
+      return; // LAB controls must never change real coordinates.
     // Explicit LAB preview selection remains available while sharing is off.
     await source.select(index);
     await sendSyntheticPositionNow();
@@ -274,6 +343,18 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> sendSyntheticPositionNow() async {
     final revision = _sendRevision;
     if (!_canSend(revision)) return;
+    if (_native != null) {
+      try {
+        final point = await _native!.currentPosition();
+        if (_canSend(revision)) await _sendNativePosition(point.$1, point.$2);
+      } catch (_) {
+        if (_canSend(revision)) {
+          _lastError = 'No se pudo obtener la ubicación actual.';
+          _changed();
+        }
+      }
+      return;
+    }
     try {
       final point = source.current;
       final receipt = await sendCoordinatorLocation(
@@ -320,6 +401,29 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     unawaited(sendSyntheticPositionNow());
   }
 
+  Future<void> _sendNativePosition(double latitude, double longitude) async {
+    final revision = _sendRevision;
+    final session = _nativeSession;
+    if (!_canSend(revision) || session == null) return;
+    final receipt = await sendCoordinatorLocation(
+      latitude: latitude,
+      longitude: longitude,
+      expectedTrackingSession: session,
+      canSend: () => _canSend(revision) && _nativeSession == session,
+    );
+    if (!_canSend(revision) || _nativeSession != session) return;
+    _lastAttempt = DateTime.now();
+    _pendingCount = _queuedCount(_preferences);
+    if (receipt != null && receipt.tourId == activeTourId) {
+      _confirmedPosition = receipt;
+      _confirmedModeRevision = _modeRevision;
+    }
+    _lastError = _pendingCount > 0
+        ? 'Sin conexión: $_pendingCount posiciones pendientes de envío.'
+        : _native?.warning;
+    _changed();
+  }
+
   @override
   void dispose() {
     _disposed = true;
@@ -328,6 +432,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     _isTracking = false;
     WidgetsBinding.instance.removeObserver(this);
     _cancelHeartbeat();
+    _native?.dispose();
     super.dispose();
   }
 }

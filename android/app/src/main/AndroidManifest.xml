@@ -3,12 +3,21 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <application
         android:label="${appLabel}"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
+        <service android:name="yukams.app.background_locator_2.IsolateHolderService"
+            android:permission="android.permission.FOREGROUND_SERVICE"
+            android:foregroundServiceType="location" android:exported="false" />
         <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="hito_channel" />
         <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@mipmap/launcher_icon" />
         <activity

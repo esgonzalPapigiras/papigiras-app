@@ -6,6 +6,7 @@ import '../dto/TourSales.dart';
 import '../dto/responseAttorney.dart';
 import 'preferences.dart';
 import '../utils/fcm_utils.dart';
+import '../runtime/api_destination.dart';
 
 abstract final class LabSession {
   static const revision = String.fromEnvironment('PAPIGIRAS_API_URL') != ''
@@ -32,7 +33,9 @@ abstract final class LabSession {
     'coordinatorRut',
     'labSessionRevision',
     'pendingCoordinatorLocations',
+    'pendingBackgroundCoordinatorLocations',
     'coordinatorLocationSharingEnabled',
+    'nativeTrackingSession',
   ];
 
   static Future<void> clear(
@@ -41,11 +44,14 @@ abstract final class LabSession {
   }) async {
     // Revoke asynchronous work even if a future login receives the same token.
     _generation++;
-    await FcmUtils.stop();
+    // Revoke the background isolate before any slower native push cleanup.
+    await prefs.remove('nativeTrackingSession');
+    final pushCleanup = FcmUtils.stop();
+    await prefs.setBool('isLoggedIn', false);
     for (final key in keys) {
       await prefs.remove(key);
     }
-    await prefs.setBool('isLoggedIn', false);
+    await pushCleanup;
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
     if (notifyChanged) changed.value++;
@@ -57,6 +63,9 @@ abstract final class LabSession {
     int? expectedGeneration,
   }) async {
     final prefs = await SharedPreferences.getInstance();
+    // A background GPS isolate can observe a 401 after the UI has logged in
+    // again. Compare with the persisted session, not that isolate's cache.
+    if (AppEnvironment.connected) await prefs.reload();
     final token = requestToken ?? '';
     if ((prefs.getString('token') ?? '') != token ||
         (expectedGeneration != null && expectedGeneration != _generation))

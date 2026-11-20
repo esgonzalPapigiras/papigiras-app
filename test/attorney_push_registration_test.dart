@@ -75,6 +75,44 @@ void main() {
     expect(sent, isEmpty);
   });
 
+  test(
+    'permission failure leaves no refresh listener and a later retry works',
+    () async {
+      tokens.apns = Completer<void>();
+      final sent = <String>[];
+      final start = registration.start(
+        sessionIsCurrent: () => true,
+        register: (token) async => sent.add(token),
+      );
+      final failure = expectLater(start, throwsStateError);
+      await Future<void>.delayed(Duration.zero);
+      tokens.events.add('not-authorized');
+      tokens.apns!.completeError(StateError('Permission denied'));
+      await failure;
+      tokens.events.add('still-not-authorized');
+      await Future<void>.delayed(Duration.zero);
+      expect(sent, isEmpty);
+      expect(tokens.events.hasListener, isFalse);
+      tokens.apns = null;
+      await registration.start(
+        sessionIsCurrent: () => true,
+        register: (token) async => sent.add(token),
+      );
+      expect(sent, ['device-token']);
+    },
+  );
+
+  test('failed initial server registration releases its listener', () async {
+    await expectLater(
+      registration.start(
+        sessionIsCurrent: () => true,
+        register: (_) async => throw StateError('Unavailable'),
+      ),
+      throwsStateError,
+    );
+    expect(tokens.events.hasListener, isFalse);
+  });
+
   test('changed session rejects refresh even before explicit stop', () async {
     var current = true;
     final sent = <String>[];
