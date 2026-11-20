@@ -1,4 +1,5 @@
 import 'session.dart';
+import '../runtime/api_destination.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -20,6 +21,9 @@ abstract final class LabApi {
   static bool get _validPort => const {8084, 18084}.contains(localPort);
 
   static Uri uri(String path, [Map<String, String>? query]) {
+    if (AppEnvironment.connected) {
+      return AppEnvironment.destination!.uri(path, query);
+    }
     if (isRemotePreview) {
       if (!_validPreviewHost)
         throw StateError('Destino de pruebas no autorizado');
@@ -29,36 +33,38 @@ abstract final class LabApi {
     return Uri.http('127.0.0.1:$localPort', path, query);
   }
 
-  static bool permits(String method, Uri uri) =>
-      (isRemotePreview
-          ? _validPreviewHost &&
-                uri.scheme == 'https' &&
-                uri.host == previewHost &&
-                uri.port == 443
-          : _validPort &&
-                uri.scheme == 'http' &&
-                uri.host == '127.0.0.1' &&
-                uri.port == localPort) &&
-      const {'GET', 'POST'}.contains(method) &&
-      uri.userInfo.isEmpty &&
-      !uri.hasFragment &&
-      uri.path.startsWith('/app/services/') &&
-      !uri.pathSegments.any(
-        (segment) =>
-            segment == '..' ||
-            segment == '.' ||
-            segment.contains('\\') ||
-            segment.contains('%'),
-      );
+  static bool permits(String method, Uri uri) => AppEnvironment.connected
+      ? AppEnvironment.destination!.permits(method, uri)
+      : (isRemotePreview
+                ? _validPreviewHost &&
+                      uri.scheme == 'https' &&
+                      uri.host == previewHost &&
+                      uri.port == 443
+                : _validPort &&
+                      uri.scheme == 'http' &&
+                      uri.host == '127.0.0.1' &&
+                      uri.port == localPort) &&
+            const {'GET', 'POST'}.contains(method) &&
+            uri.userInfo.isEmpty &&
+            !uri.hasFragment &&
+            uri.path.startsWith('/app/services/') &&
+            !uri.pathSegments.any(
+              (segment) =>
+                  segment == '..' ||
+                  segment == '.' ||
+                  segment.contains('\\') ||
+                  segment.contains('%'),
+            );
 }
 
 class LabApiException implements Exception {
   final int statusCode;
   const LabApiException(this.statusCode);
   @override
-  String toString() =>
-      'Servidor LAB: solicitud rechazada ($statusCode). '
-      'Revisa la sesión y los datos del servidor local.';
+  String toString() => AppEnvironment.connected
+      ? 'Papigiras: solicitud rechazada ($statusCode). Revisa la sesión y los permisos.'
+      : 'Servidor LAB: solicitud rechazada ($statusCode). '
+            'Revisa la sesión y los datos del servidor local.';
 }
 
 class _LocalApiTransport extends HttpOverrides {}
@@ -116,7 +122,13 @@ class LabApiClient extends http.BaseClient {
     try {
       final response = await _transport
           .send(request)
-          .timeout(Duration(seconds: LabApi.isRemotePreview ? 120 : 12));
+          .timeout(
+            Duration(
+              seconds: AppEnvironment.connected || LabApi.isRemotePreview
+                  ? 120
+                  : 12,
+            ),
+          );
       if (response.statusCode < 200 || response.statusCode >= 300) {
         // The local server can return 403 for an absent credential. A 403
         // with a credential remains a permission error, not a session expiry.
@@ -147,13 +159,17 @@ class LabApiClient extends http.BaseClient {
       );
     } on SocketException {
       throw Exception(
-        LabApi.isRemotePreview
+        AppEnvironment.connected
+            ? 'No se pudo conectar con Papigiras. Comprueba tu conexión e inténtalo de nuevo.'
+            : LabApi.isRemotePreview
             ? 'La conexión de pruebas no está disponible. Comprueba Internet e indica a Camilo que revise el servidor.'
             : 'El servidor Papigiras LAB no está disponible. Inicia el servidor local en tu Mac y vuelve a intentarlo.',
       );
     } on TimeoutException {
       throw Exception(
-        'El servidor Papigiras LAB no respondió a tiempo. No se usaron datos de demostración.',
+        AppEnvironment.connected
+            ? 'Papigiras no respondió a tiempo. Comprueba el resultado antes de repetir la operación.'
+            : 'El servidor Papigiras LAB no respondió a tiempo. No se usaron datos de demostración.',
       );
     }
   }

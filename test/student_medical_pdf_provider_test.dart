@@ -34,7 +34,9 @@ void main() {
             }),
           );
           expect(request.headers['Authorization'], 'Bearer fixture-only');
-          expect(request.body, isEmpty);
+          // INT-009 gives every bodyless JSON POST an explicit HTTPS payload.
+          expect(request.body, '{}');
+          expect(request.contentLength, 2);
           return http.Response('%PDF-1.4 fixture', 200);
         }),
       ),

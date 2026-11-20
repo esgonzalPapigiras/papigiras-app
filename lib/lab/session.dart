@@ -7,7 +7,9 @@ import '../dto/responseAttorney.dart';
 import 'preferences.dart';
 
 abstract final class LabSession {
-  static const revision = String.fromEnvironment('PAPIGIRAS_PREVIEW_HOST') == ''
+  static const revision = String.fromEnvironment('PAPIGIRAS_API_URL') != ''
+      ? 'connected-v1:' + String.fromEnvironment('PAPIGIRAS_API_URL')
+      : String.fromEnvironment('PAPIGIRAS_PREVIEW_HOST') == ''
       ? 'recovered-2026-11-03'
       : 'preview-2026-11-16:' +
             String.fromEnvironment('PAPIGIRAS_PREVIEW_HOST');
