@@ -8,7 +8,7 @@ import 'package:papigiras_app/maps/trip_hito_edit_sheet.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:papigiras_app/utils/coordinator_widgets.dart';
 import 'package:papigiras_app/maps/hito_location_draft.dart';
-import 'package:papigiras_app/lab/synthetic_location.dart';
+import 'package:papigiras_app/maps/hito_location_source.dart';
 
 class DetalleBitacoraCoordScreen extends StatefulWidget {
   const DetalleBitacoraCoordScreen({
@@ -96,9 +96,7 @@ class _DetalleBitacoraCoordScreenState
     // This fallback is just the initial view, never sent unless it is selected.
     final initial =
         current ??
-        HitoLocationDraft.selectedPoint(
-          LabSyntheticLocation.instance.current.latLng,
-        );
+        HitoLocationDraft.selectedPoint(HitoLocationSource.initialMapCenter);
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,

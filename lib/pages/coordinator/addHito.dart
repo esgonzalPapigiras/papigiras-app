@@ -12,7 +12,8 @@ import 'package:papigiras_app/dto/requestHito.dart';
 import 'package:papigiras_app/lab/media.dart';
 import 'package:papigiras_app/lab/api_http.dart';
 import 'package:papigiras_app/utils/coordinator_reauthentication_dialog.dart';
-import 'package:papigiras_app/lab/synthetic_location.dart';
+import 'package:papigiras_app/maps/hito_location_source.dart';
+import 'package:papigiras_app/runtime/api_destination.dart';
 import 'package:papigiras_app/maps/hito_location_draft.dart';
 import 'package:papigiras_app/maps/pilo_hito_location_picker.dart';
 import 'package:papigiras_app/maps/trip_map_ui.dart';
@@ -122,7 +123,8 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
   RequestHito? _submitted;
   bool _allowSheetClose = false;
   bool _confirmingClose = false;
-  LabRoutePoint _position = LabSyntheticLocation.instance.current;
+  HitoLocationDraft? _position;
+  int _locationRevision = 0;
   bool get _locked =>
       _publisher.busy ||
       _checkingSession ||
@@ -174,56 +176,46 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
   }
 
   Future<void> _restoreLocation() async {
+    final revision = ++_locationRevision;
     try {
-      final initial = widget.initialLocation;
-      if (initial == null) await LabSyntheticLocation.instance.restore();
-      if (!mounted) return;
+      final initial =
+          widget.initialLocation ?? await HitoLocationSource.current();
+      if (!mounted || revision != _locationRevision) return;
       setState(() {
-        _position = initial == null
-            ? LabSyntheticLocation.instance.current
-            : LabRoutePoint(
-                initial.point.latitude,
-                initial.point.longitude,
-                initial.label,
-              );
+        _position = initial;
         _locationReady = true;
       });
     } catch (_) {
-      if (mounted)
+      if (mounted && revision == _locationRevision)
         setState(
           () => _error =
-              'No pudimos cargar la ubicación del laboratorio. Inténtalo de nuevo.',
+              'No pudimos obtener tu ubicación. Puedes seleccionar un punto en el mapa.',
         );
     }
   }
 
   Future<void> _adjustLocation() async {
-    if (_locked ||
-        _picking ||
-        _recording ||
-        _choosingLocation ||
-        !_locationReady)
-      return;
+    if (_locked || _picking || _recording || _choosingLocation) return;
+    ++_locationRevision;
     FocusScope.of(context).unfocus();
     setState(() => _choosingLocation = true);
     try {
       final selected = await showPiloHitoLocationPicker(
         context,
-        initial: HitoLocationDraft(
-          point: _position.latLng,
-          label: _position.address,
-        ),
+        initial:
+            _position ??
+            HitoLocationDraft.selectedPoint(
+              HitoLocationSource.initialMapCenter,
+            ),
       );
       if (!mounted || selected == null) return;
       setState(() {
         _locationAdjusted =
-            _locationAdjusted || selected.point != _position.latLng;
+            _locationAdjusted || selected.point != _position?.point;
         // This is the hito draft only. Never move the shared bus location.
-        _position = LabRoutePoint(
-          selected.point.latitude,
-          selected.point.longitude,
-          selected.label,
-        );
+        _position = selected;
+        _locationReady = true;
+        _error = null;
       });
     } finally {
       if (mounted) setState(() => _choosingLocation = false);
@@ -262,10 +254,10 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
     return RequestHito(
       titulo: _title.text.trim(),
       descripcion: _description.text.trim(),
-      ubicacion: _position.address,
+      ubicacion: _position!.label,
       notaCierre: '',
-      latitud: _position.latitude.toString(),
-      longitud: _position.longitude.toString(),
+      latitud: _position!.point.latitude.toString(),
+      longitud: _position!.point.longitude.toString(),
       hora: DateFormat('HH:mm').format(chileTime),
       idTour: widget.login.tourSalesId,
       fecha: DateFormat('dd/MM/yyyy').format(now),
@@ -743,7 +735,7 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                     onPressed:
                         _locked || _picking || _recording || _choosingLocation
                         ? null
-                        : _locationReady
+                        : _locationReady || AppEnvironment.connected
                         ? _adjustLocation
                         : _restoreLocation,
                     style: OutlinedButton.styleFrom(
@@ -780,7 +772,9 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 _locationReady
-                                    ? _position.address
+                                    ? _position!.label
+                                    : AppEnvironment.connected
+                                    ? 'Selecciona la ubicación del hito'
                                     : 'Cargando ubicación…',
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -795,7 +789,11 @@ class _AddHitoScreenState extends State<HitoAddCoordScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          _locationReady ? 'Ajustar' : 'Reintentar',
+                          _locationReady
+                              ? 'Ajustar'
+                              : AppEnvironment.connected
+                              ? 'Seleccionar'
+                              : 'Reintentar',
                           style: const TextStyle(
                             fontSize: 12,
                             color: PiloFamilyTheme.accentText,

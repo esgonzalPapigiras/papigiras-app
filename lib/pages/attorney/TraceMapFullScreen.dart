@@ -6,7 +6,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
 import 'package:papigiras_app/design/pilo_family_theme.dart';
-import 'package:papigiras_app/lab/synthetic_location.dart';
+import 'package:papigiras_app/maps/hito_location_source.dart';
+import 'package:papigiras_app/runtime/api_destination.dart';
 import 'package:papigiras_app/maps/hito_location_draft.dart';
 import 'package:papigiras_app/maps/trip_map_controller.dart';
 import 'package:papigiras_app/maps/trip_map_data.dart';
@@ -83,9 +84,7 @@ class _TraceMapFullScreenState extends State<TraceMapFullScreen> {
   }
 
   Future<LatLng> _readCoordinatorLocation() async {
-    final source = LabSyntheticLocation.instance;
-    await source.restore();
-    return source.current.latLng;
+    return (await HitoLocationSource.current()).point;
   }
 
   Future<void> _createHito({LatLng? at}) async {
@@ -95,21 +94,18 @@ class _TraceMapFullScreenState extends State<TraceMapFullScreen> {
     try {
       // The normal action begins where the coordinator currently is, even
       // after exploring elsewhere. Only an explicit long press overrides it.
-      final point = at ?? await _readCoordinatorLocation();
+      final location = at == null
+          ? await HitoLocationSource.current()
+          : HitoLocationDraft.selectedPoint(at);
       if (!mounted) return;
-      final source = LabSyntheticLocation.instance.current;
-      await create(
-        at == null
-            ? HitoLocationDraft(point: point, label: source.address)
-            : HitoLocationDraft.selectedPoint(point),
-      );
+      await create(location);
       if (mounted && widget.controller == null) await _controller.refresh();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'No pudimos abrir el nuevo hito. Inténtalo de nuevo.',
+              'No pudimos obtener la ubicación. También puedes mantener pulsado un punto del mapa.',
             ),
           ),
         );
@@ -222,9 +218,10 @@ class _TraceMapFullScreenState extends State<TraceMapFullScreen> {
                   onLocateCoordinator: widget.onCreateHito == null
                       ? null
                       : _readCoordinatorLocation,
-                  emptyMapCenter: widget.onCreateHito == null
+                  emptyMapCenter:
+                      widget.onCreateHito == null || AppEnvironment.connected
                       ? null
-                      : LabSyntheticLocation.instance.current.latLng,
+                      : HitoLocationSource.initialMapCenter,
                   onCreateHitoAt: widget.onCreateHito == null
                       ? null
                       : (point) => _createHito(at: point),
@@ -360,9 +357,11 @@ class _TraceMapFullScreenState extends State<TraceMapFullScreen> {
                             onLocateCoordinator: widget.onCreateHito == null
                                 ? null
                                 : _readCoordinatorLocation,
-                            emptyMapCenter: widget.onCreateHito == null
+                            emptyMapCenter:
+                                widget.onCreateHito == null ||
+                                    AppEnvironment.connected
                                 ? null
-                                : LabSyntheticLocation.instance.current.latLng,
+                                : HitoLocationSource.initialMapCenter,
                             onCreateHitoAt: widget.onCreateHito == null
                                 ? null
                                 : (point) => _createHito(at: point),
