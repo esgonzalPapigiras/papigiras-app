@@ -8,24 +8,14 @@ import 'package:papigiras_app/utils/location_callback.dart';
 import 'package:papigiras_app/lab/session.dart';
 import 'package:provider/provider.dart';
 import 'package:papigiras_app/lab/preferences.dart';
-import 'package:papigiras_app/lab/offline.dart';
+import 'package:papigiras_app/runtime/contact_actions.dart';
 
 class AppDrawerCoordinator extends StatelessWidget {
   final TourSales login;
   const AppDrawerCoordinator({Key? key, required this.login}) : super(key: key);
 
-  Future<void> _sendMessage(String phone, String message) async {
-    final whatsappUrl = Uri.parse('lab-contact:$phone');
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-      return;
-    }
-    final direct = Uri.parse('lab-contact:$phone');
-    if (await canLaunchUrl(direct)) {
-      await launchUrl(direct, mode: LaunchMode.externalApplication);
-    }
-  }
-
+  Future<void> _sendMessage(String phone, String message) =>
+      openWhatsAppContact(phone: phone, message: message);
   Future<void> _logout(BuildContext context) async {
     final locationService = Provider.of<LocationService>(
       context,
@@ -101,7 +91,7 @@ class AppDrawerCoordinator extends StatelessWidget {
                 FaIcon(FontAwesomeIcons.whatsapp, color: Colors.teal),
               ],
             ),
-            onTap: () => _sendMessage('LAB-CONTACTO', 'Hola! Necesito ayuda'),
+            onTap: () => _sendMessage(agencyPhone, 'Hola! Necesito ayuda'),
           ),
           ListTile(
             leading: const Icon(Icons.report_problem, color: Colors.teal),
@@ -109,7 +99,7 @@ class AppDrawerCoordinator extends StatelessWidget {
               'Reportar un Problema',
               style: TextStyle(color: Colors.grey[800]),
             ),
-            onTap: () => _sendMessage('LAB-CONTACTO', 'Hola! Necesito ayuda'),
+            onTap: () => _sendMessage(agencyPhone, 'Hola! Necesito ayuda'),
           ),
           SwitchListTile(
             secondary: const Icon(Icons.location_on, color: Colors.teal),

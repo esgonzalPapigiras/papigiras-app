@@ -6,7 +6,7 @@ import 'package:papigiras_app/design/pilo_family_theme.dart';
 import 'package:papigiras_app/design/trip_display_names.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/dto/coordinator_session.dart';
-import 'package:papigiras_app/lab/offline.dart';
+import 'package:papigiras_app/runtime/contact_actions.dart';
 import 'package:papigiras_app/lab/preferences.dart';
 import 'package:papigiras_app/lab/session.dart';
 import 'package:papigiras_app/navigation/family_navigation.dart';
@@ -21,25 +21,12 @@ import 'package:papigiras_app/utils/profile_photo_avatar.dart';
 import 'package:provider/provider.dart';
 
 const Color kCoordinatorTeal = Color(0xFF3AC5C9);
-const String kAgencyPhone = "LAB-CONTACTO";
+const String kAgencyPhone = agencyPhone;
 
 Future<void> sendWhatsAppMessage({
   required String phone,
   required String message,
-}) async {
-  final whatsappUrl = Uri.parse("lab-contact:$phone");
-  if (await canLaunchUrl(whatsappUrl)) {
-    await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-    return;
-  }
-  final whatsappDirect = Uri.parse("lab-contact:$phone");
-  if (await canLaunchUrl(whatsappDirect)) {
-    await launchUrl(whatsappDirect, mode: LaunchMode.externalApplication);
-  } else {
-    throw 'WhatsApp no está instalado o no puede manejar la URL';
-  }
-}
-
+}) => openWhatsAppContact(phone: phone, message: message);
 Future<void> logoutCoordinator(BuildContext context) async {
   await context.read<LocationService>().stopTracking();
   final prefs = await SharedPreferences.getInstance();

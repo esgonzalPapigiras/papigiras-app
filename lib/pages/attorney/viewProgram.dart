@@ -15,7 +15,7 @@ import 'package:quickalert/quickalert.dart';
 import 'package:papigiras_app/lab/preferences.dart';
 import 'package:papigiras_app/utils/location_callback.dart';
 import 'package:papigiras_app/lab/session.dart';
-import 'package:papigiras_app/lab/offline.dart';
+import 'package:papigiras_app/runtime/contact_actions.dart';
 
 class ViewProgramScreen extends StatefulWidget {
   final ResponseAttorney login;
@@ -97,23 +97,8 @@ class _ViewProgramScreenState extends State<ViewProgramScreen> {
     );
   }
 
-  void sendMessage({required String phone, required String message}) async {
-    final whatsappUrl = Uri.parse("lab-contact:$phone");
-
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-    } else {
-      // Personal data and exception payloads are intentionally not logged.
-      // Intenta con el esquema directo
-      final whatsappDirect = Uri.parse("lab-contact:$phone");
-      if (await canLaunchUrl(whatsappDirect)) {
-        await launchUrl(whatsappDirect, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'WhatsApp no está instalado o no puede manejar la URL';
-      }
-    }
-  }
-
+  Future<void> sendMessage({required String phone, required String message}) =>
+      openWhatsAppContact(phone: phone, message: message);
   void logoutUser(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await LabSession.clear(prefs);
@@ -209,7 +194,7 @@ class _ViewProgramScreenState extends State<ViewProgramScreen> {
               ),
               onTap: () {
                 sendMessage(
-                  phone: "LAB-CONTACTO",
+                  phone: agencyPhone,
                   message: "Hola! Necesito ayuda",
                 );
               },
@@ -230,7 +215,7 @@ class _ViewProgramScreenState extends State<ViewProgramScreen> {
               ),
               onTap: () {
                 sendMessage(
-                  phone: "LAB-CONTACTO",
+                  phone: agencyPhone,
                   message: "Hola! Necesito ayuda",
                 );
               },

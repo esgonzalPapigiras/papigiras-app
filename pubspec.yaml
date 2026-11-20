@@ -1,7 +1,7 @@
 name: papigiras_app
-description: Papigiras LAB - copia Flutter independiente con servicios ficticios.
+description: PapiGiras - experiencia móvil para coordinadores, apoderados y pasajeros.
 publish_to: none
-version: 0.1.0+1
+version: 1.1.0+17
 environment:
   sdk: '>=3.10.0 <4.0.0'
 dependencies:
@@ -29,6 +29,8 @@ dependencies:
   path_provider_android: 2.2.17
   path_provider_foundation: 2.4.4
   share_plus: 10.1.4
+  # Restore the official app's external contact launcher.
+  url_launcher: 6.3.1
   flutter_pdfview: 1.4.5
   # Pilo-only fix: serialize native camera errors and handle asynchronous startup.
   qr_code_scanner_plus:

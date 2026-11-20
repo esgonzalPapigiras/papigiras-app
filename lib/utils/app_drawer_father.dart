@@ -11,7 +11,7 @@ import 'package:papigiras_app/design/pilo_family_theme.dart';
 import 'package:papigiras_app/design/trip_display_names.dart';
 import 'package:papigiras_app/dto/responseAttorney.dart';
 import 'package:papigiras_app/lab/media.dart';
-import 'package:papigiras_app/lab/offline.dart';
+import 'package:papigiras_app/runtime/contact_actions.dart';
 import 'package:papigiras_app/lab/preferences.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
@@ -175,14 +175,14 @@ class AppDrawerFather extends StatelessWidget {
               key: const ValueKey('family-menu-contact'),
               label: 'Contactar agencia',
               icon: Icons.chat_bubble_outline_rounded,
-              onTap: () => _sendMessage('LAB-CONTACTO', 'Hola! Necesito ayuda'),
+              onTap: () => _sendMessage(agencyPhone, 'Hola! Necesito ayuda'),
             ),
             const SizedBox(height: 8),
             _PiloMenuRow(
               key: const ValueKey('family-menu-report'),
               label: 'Reportar un problema',
               icon: Icons.help_outline_rounded,
-              onTap: () => _sendMessage('LAB-CONTACTO', 'Hola! Necesito ayuda'),
+              onTap: () => _sendMessage(agencyPhone, 'Hola! Necesito ayuda'),
             ),
             const SizedBox(height: 16),
             _PiloMenuRow(
@@ -196,20 +196,10 @@ class AppDrawerFather extends StatelessWidget {
         ),
       );
 
-  // Preserve the existing contact operation. LAB continues to block external
+  // Preserve the existing contact operation. Isolated reference builds block external
   // apps; the former telephone icons were decorative, not a separate call.
-  Future<void> _sendMessage(String phone, String message) async {
-    final whatsappUrl = Uri.parse('lab-contact:$phone');
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-      return;
-    }
-    final direct = Uri.parse('lab-contact:$phone');
-    if (await canLaunchUrl(direct)) {
-      await launchUrl(direct, mode: LaunchMode.externalApplication);
-    }
-  }
-
+  Future<void> _sendMessage(String phone, String message) =>
+      openWhatsAppContact(phone: phone, message: message);
   Future<void> _changePassword(BuildContext context) async {
     if (!allowPasswordChange) return;
     final provider = passwordProvider ?? CoordinatorProviders();
@@ -306,7 +296,7 @@ class AppDrawerFather extends StatelessWidget {
                                   size: 24,
                                 ),
                                 onTap: () => _sendMessage(
-                                  'LAB-CONTACTO',
+                                  agencyPhone,
                                   'Hola! Necesito ayuda',
                                 ),
                               ),
@@ -322,7 +312,7 @@ class AppDrawerFather extends StatelessWidget {
                                   size: 24,
                                 ),
                                 onTap: () => _sendMessage(
-                                  'LAB-CONTACTO',
+                                  agencyPhone,
                                   'Hola! Necesito ayuda',
                                 ),
                               ),

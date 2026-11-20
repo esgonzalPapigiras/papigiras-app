@@ -54,13 +54,13 @@
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Comparte la ubicación de la gira en segundo plano mientras el seguimiento esté activo.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Papigiras LAB necesita el micrófono para grabar la nota de voz que decidas adjuntar a un hito.</string>
+	<string>PapiGiras necesita el micrófono para grabar la nota de voz que decidas adjuntar a un hito.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Papigiras LAB usa la cámara para fotos de prueba y códigos QR ficticios.</string>
+	<string>PapiGiras usa la cámara para adjuntar fotos a la gira y leer los códigos QR de los pasajeros.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Selecciona imágenes de prueba para Papigiras LAB.</string>
+	<string>Selecciona fotos para compartir en la gira o leer un código QR.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Guarda las imágenes ficticias del laboratorio en Fotos.</string>
+	<string>Guarda en Fotos las imágenes de la gira que elijas descargar.</string>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>UIBackgroundModes</key>
