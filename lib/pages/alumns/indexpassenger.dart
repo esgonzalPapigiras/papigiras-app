@@ -1,4 +1,4 @@
-import 'dart:convert';
+import '../../runtime/passenger_qr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -169,15 +169,14 @@ class _TravelPassengerDashboardState extends State<TravelPassengerDashboard>
             qr: Semantics(
               label: 'Código QR de identificación del estudiante',
               image: true,
-              child: QrImageView(
-                data: jsonEncode({
-                  'id': 20,
-                  'url': 'papigiras-lab:passenger/${widget.login.passengerId}',
-                }),
-                size: 200,
-                padding: const EdgeInsets.all(12),
-                backgroundColor: Colors.white,
-              ),
+              child: (widget.login.passengerId ?? 0) <= 0
+                  ? const Text('Código QR no disponible')
+                  : QrImageView(
+                      data: passengerQrCodec.encode(widget.login.passengerId!),
+                      size: 200,
+                      padding: const EdgeInsets.all(12),
+                      backgroundColor: Colors.white,
+                    ),
             ),
             medicalStatus: _status,
             onMedical: () => _openMedical(context),

@@ -244,7 +244,7 @@ void main() {
       await tester.tap(find.text('Leer QR desde Galería'));
       await tester.pumpAndSettle();
       expect(
-        find.text('No se encontró un QR válido de Papigiras LAB en la imagen.'),
+        find.text('No se encontró un QR válido de Papigiras en la imagen.'),
         findsOneWidget,
       );
       expect(find.text('Leer QR desde Galería').hitTestable(), findsOneWidget);

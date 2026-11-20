@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
+import '../../runtime/passenger_qr.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
@@ -449,30 +449,14 @@ class _CountDownCoordScreenState extends State<CountDownCoordScreen>
   );
 }
 
-/// Accept only a LAB passenger payload; never navigate to a scanned URL.
-String? labPassengerIdFromQr(String payload) {
-  var value = payload.trim();
-  if (value.startsWith('{')) {
-    try {
-      final decoded = jsonDecode(value);
-      if (decoded is! Map || decoded['url'] is! String) return null;
-      value = decoded['url'] as String;
-    } on FormatException {
-      return null;
-    }
-  }
-  final uri = Uri.tryParse(value);
-  if (uri == null ||
-      uri.scheme != 'papigiras-lab' ||
-      uri.hasAuthority ||
-      uri.hasQuery ||
-      uri.hasFragment)
-    return null;
-  return RegExp(r'^passenger/([1-9][0-9]*)$').firstMatch(uri.path)?.group(1);
-}
+/// Extract identification only. No scanned URL is opened or fetched.
+String? passengerIdFromQr(String payload) => passengerQrCodec.decode(payload);
+
+// Retained for the original reference tests and existing internal callers.
+String? labPassengerIdFromQr(String payload) => passengerIdFromQr(payload);
 
 /// Decode the actual image locally, including simulator gallery fixtures.
-Future<String> decodeLabPassengerQrImage(Uint8List bytes) async {
+Future<String> decodePassengerQrImage(Uint8List bytes) async {
   final codec = await ui.instantiateImageCodec(
     bytes,
     targetWidth: 1024,
@@ -500,11 +484,9 @@ Future<String> decodeLabPassengerQrImage(Uint8List bytes) async {
           ),
         ),
       );
-      final passenger = labPassengerIdFromQr(result.text);
+      final passenger = passengerIdFromQr(result.text);
       if (passenger == null)
-        throw const FormatException(
-          'El QR no es un pasajero de Papigiras LAB.',
-        );
+        throw const FormatException('El QR no es un pasajero de Papigiras.');
       return passenger;
     } finally {
       frame.image.dispose();
@@ -513,6 +495,9 @@ Future<String> decodeLabPassengerQrImage(Uint8List bytes) async {
     codec.dispose();
   }
 }
+
+Future<String> decodeLabPassengerQrImage(Uint8List bytes) =>
+    decodePassengerQrImage(bytes);
 
 class QRViewExample extends StatefulWidget {
   const QRViewExample({super.key, this.cameraBuilder, this.galleryImageLoader});
@@ -526,7 +511,7 @@ class QRViewExample extends StatefulWidget {
 }
 
 class _QRViewExampleState extends State<QRViewExample> {
-  final _cameraKey = GlobalKey(debugLabel: 'LAB QR camera');
+  final _cameraKey = GlobalKey(debugLabel: 'Papigiras QR camera');
   StreamSubscription<Barcode>? _subscription;
   QRViewController? _controller;
   bool _busy = false;
@@ -548,10 +533,10 @@ class _QRViewExampleState extends State<QRViewExample> {
     _controller = controller;
     _subscription = controller.scannedDataStream.listen((barcode) async {
       if (_done || _busy || barcode.code == null) return;
-      final id = labPassengerIdFromQr(barcode.code!);
+      final id = passengerIdFromQr(barcode.code!);
       if (id == null) {
         if (mounted)
-          setState(() => _message = 'El QR debe pertenecer a Papigiras LAB.');
+          setState(() => _message = 'El QR debe pertenecer a Papigiras.');
         return;
       }
       _done = true;
@@ -582,14 +567,14 @@ class _QRViewExampleState extends State<QRViewExample> {
         bytes = await image?.readAsBytes();
       }
       if (!mounted || bytes == null) return;
-      final id = await decodeLabPassengerQrImage(bytes);
+      final id = await decodePassengerQrImage(bytes);
       _done = true;
       if (mounted) Navigator.pop(context, id);
     } catch (_) {
       if (mounted)
         setState(
           () => _message =
-              'No se encontró un QR válido de Papigiras LAB en la imagen.',
+              'No se encontró un QR válido de Papigiras en la imagen.',
         );
     } finally {
       if (mounted && !_done) {
