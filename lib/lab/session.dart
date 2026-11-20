@@ -7,6 +7,8 @@ import '../dto/responseAttorney.dart';
 import 'preferences.dart';
 import '../utils/fcm_utils.dart';
 import '../runtime/api_destination.dart';
+import '../utils/location_callback.dart'
+    show captureRemoteLocationStop, stopRemoteLocationSharing;
 
 abstract final class LabSession {
   static const revision = String.fromEnvironment('PAPIGIRAS_API_URL') != ''
@@ -36,6 +38,7 @@ abstract final class LabSession {
     'pendingBackgroundCoordinatorLocations',
     'coordinatorLocationSharingEnabled',
     'nativeTrackingSession',
+    'nativeTrackingTour',
   ];
 
   static Future<void> clear(
@@ -44,6 +47,7 @@ abstract final class LabSession {
   }) async {
     // Revoke asynchronous work even if a future login receives the same token.
     _generation++;
+    final locationStop = captureRemoteLocationStop(prefs);
     // Revoke the background isolate before any slower native push cleanup.
     await prefs.remove('nativeTrackingSession');
     final pushCleanup = FcmUtils.stop();
@@ -51,6 +55,8 @@ abstract final class LabSession {
     for (final key in keys) {
       await prefs.remove(key);
     }
+    // Local identity is already revoked. A rejected cleanup cannot clear a new login.
+    if (locationStop != null) await stopRemoteLocationSharing(locationStop);
     await pushCleanup;
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();

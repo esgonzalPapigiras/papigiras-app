@@ -8,18 +8,20 @@ import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:papigiras_app/utils/location_callback.dart';
 
 /// A recorded coordinator position, without personal fields from the response.
-/// The endpoint does not identify a bus or acknowledge whether sharing is on.
+/// The endpoint does not identify a bus. New senders expose explicit sharing state.
 class TripBusPosition {
   const TripBusPosition({
     required this.coordinatorId,
     required this.coordinate,
     required this.recordedAt,
     this.headingDegrees,
+    this.sharingEnabled,
   });
 
   final int coordinatorId;
   final LatLng coordinate;
   final DateTime? recordedAt;
+  final bool? sharingEnabled;
 
   /// Direction of travel clockwise from north, when successive fixes show motion.
   final double? headingDegrees;
@@ -105,9 +107,10 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
     return false;
   }
 
-  /// Recency is evidence of a recorded update, not a remote sharing state.
+  /// Explicit remote OFF takes precedence over recency; legacy senders use time.
   /// Future timestamps, failures and hidden/background maps never pulse.
   bool get isRecent {
+    if (_position?.sharingEnabled == false) return false;
     final recordedAt = _position?.recordedAt;
     if (_position?.coordinatorId == _localCoordinatorId &&
         (!_localSharingEnabled || _localReceipt == null))
@@ -119,7 +122,7 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Connect only the current coordinator's map to their local sharing choice.
   /// OFF is immediate; ON becomes recent only after the exact POST is accepted.
-  /// Remote maps still use the existing endpoint's timestamp-based contract.
+  /// Remote maps honor explicit OFF and retain timestamp expiry for old senders.
   void setLocalSharing({
     required int coordinatorId,
     required bool enabled,
@@ -181,6 +184,16 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
     if (remote.coordinatorId == _localCoordinatorId &&
         (!_localSharingEnabled || _localReceipt == null))
       return local;
+    if (remote.coordinatorId == local.coordinatorId &&
+        remote.sharingEnabled == false) {
+      return TripBusPosition(
+        coordinatorId: local.coordinatorId,
+        coordinate: local.coordinate,
+        recordedAt: local.recordedAt,
+        headingDegrees: local.headingDegrees,
+        sharingEnabled: false,
+      );
+    }
     final localTime = local.recordedAt;
     final remoteTime = remote.recordedAt;
     if (localTime != null &&
@@ -329,11 +342,29 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
 
     // An undated, repeated or out-of-order fix must not move the last known
     // position or alter its heading.
+    final switchingToActiveSender =
+        previous?.sharingEnabled == false &&
+        previous?.coordinatorId != next.coordinatorId &&
+        next.sharingEnabled != false &&
+        nextVerified &&
+        now.difference(nextTime) <= recentWindow;
     if (previousVerified &&
+        !switchingToActiveSender &&
         (!nextVerified ||
             nextTime.isBefore(previousTime) ||
             (nextTime == previousTime &&
                 next.coordinatorId == previous?.coordinatorId))) {
+      if (next.coordinatorId == previous?.coordinatorId) {
+        if (next.sharingEnabled == previous?.sharingEnabled) return previous;
+        // A switch acknowledgement can change without a newer GPS fix.
+        return TripBusPosition(
+          coordinatorId: previous!.coordinatorId,
+          coordinate: previous.coordinate,
+          recordedAt: previous.recordedAt,
+          headingDegrees: previous.headingDegrees,
+          sharingEnabled: next.sharingEnabled,
+        );
+      }
       return previous;
     }
     if (!nextVerified) {
@@ -365,6 +396,7 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
       coordinate: next.coordinate,
       recordedAt: nextTime,
       headingDegrees: heading,
+      sharingEnabled: next.sharingEnabled,
     );
   }
 
@@ -386,6 +418,7 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
             coordinatorId: row.coordinatorId,
             coordinate: LatLng(row.latitude, row.longitude),
             recordedAt: row.recordedAt?.toUtc(),
+            sharingEnabled: row.sharingEnabled,
           ),
         )
         .toList();
@@ -394,7 +427,10 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
     int dateRank(TripBusPosition item) {
       final date = item.recordedAt;
       if (date == null) return 0;
-      return date.isAfter(now) ? 1 : 2;
+      if (date.isAfter(now)) return 1;
+      if (item.sharingEnabled != false && now.difference(date) <= recentWindow)
+        return 3;
+      return 2;
     }
 
     candidates.sort((a, b) {

@@ -16,10 +16,63 @@ enum LocationQueue { foreground, background }
 
 const maximumPendingLocations = 200;
 const nativeTrackingSessionKey = 'nativeTrackingSession';
+const nativeTrackingTourKey = 'nativeTrackingTour';
 Future<void> _sendChain = Future<void>.value();
+String? _registeredTrackingSession;
+String? _registeredTrackingToken;
 
 @visibleForTesting
 LabApiClient? locationClientForTests;
+
+/// Captured before local revocation; never send OFF using a later login/tour.
+class RemoteLocationStop {
+  const RemoteLocationStop(this._token, this.tourId, this.session);
+  final String _token;
+  final int tourId;
+  final String session;
+}
+
+RemoteLocationStop? captureRemoteLocationStop(SharedPreferences prefs) {
+  if (!AppEnvironment.connected || prefs.getString('userRole') != 'coordinator')
+    return null;
+  final token = prefs.getString('token');
+  final tour =
+      prefs.getInt(nativeTrackingTourKey) ?? prefs.getInt('selectedTourId');
+  final session = prefs.getString(nativeTrackingSessionKey);
+  if (token == null ||
+      token.isEmpty ||
+      tour == null ||
+      tour <= 0 ||
+      session == null ||
+      session.isEmpty)
+    return null;
+  return RemoteLocationStop(token, tour, session);
+}
+
+Future<bool> stopRemoteLocationSharing(RemoteLocationStop target) async {
+  final client = locationClientForTests ?? LabApiClient();
+  try {
+    await client
+        .post(
+          LabApi.uri('/app/services/coordinator/location-sharing'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': target._token,
+          },
+          body: jsonEncode({
+            'tourId': target.tourId,
+            'session': target.session,
+            'enabled': false,
+          }),
+        )
+        .timeout(const Duration(seconds: 5));
+    return true;
+  } catch (_) {
+    return false;
+  } finally {
+    if (locationClientForTests == null) client.close();
+  }
+}
 
 /// Exact local POST acknowledged by the existing API, without session secrets.
 class CoordinatorLocationReceipt {
@@ -102,6 +155,7 @@ Future<CoordinatorLocationReceipt?> _sendCoordinatorLocation({
               prefs.getString(nativeTrackingSessionKey) ==
                   expectedTrackingSession &&
               prefs.getBool('coordinatorLocationSharingEnabled') == true &&
+              prefs.getInt(nativeTrackingTourKey) == tourId &&
               prefs.getInt('selectedTourId') == tourId)) &&
       prefs.getString('userRole') == 'coordinator';
   Future<bool> stillPermitted() async {
@@ -125,7 +179,10 @@ Future<CoordinatorLocationReceipt?> _sendCoordinatorLocation({
     try {
       final location = jsonDecode(encoded) as Map<String, dynamic>;
       if (AppEnvironment.connected && location['tourId'] != tourId) continue;
-      if (!await _postLocation(location, token)) {
+      if (AppEnvironment.connected &&
+          location['trackingSession'] != expectedTrackingSession)
+        continue;
+      if (!await _postLocation(location, token, stillPermitted)) {
         remaining.addAll(pending.sublist(i));
         break;
       }
@@ -139,8 +196,9 @@ Future<CoordinatorLocationReceipt?> _sendCoordinatorLocation({
       'longitude': longitude,
       'tourId': tourId,
       'recordedAt': recordedAt.toIso8601String(),
+      if (AppEnvironment.connected) 'trackingSession': expectedTrackingSession,
     };
-    if (!await _postLocation(location, token)) {
+    if (!await _postLocation(location, token, stillPermitted)) {
       remaining.add(jsonEncode(location));
     } else if (permitted() && prefs.getInt('selectedTourId') == tourId) {
       receipt = CoordinatorLocationReceipt(
@@ -165,7 +223,11 @@ Future<CoordinatorLocationReceipt?> _sendCoordinatorLocation({
       : null;
 }
 
-Future<bool> _postLocation(Map<String, dynamic> location, String token) async {
+Future<bool> _postLocation(
+  Map<String, dynamic> location,
+  String token,
+  Future<bool> Function() stillPermitted,
+) async {
   if (LabMode.fixturesForTests && locationClientForTests == null) return true;
   final client = locationClientForTests ?? LabApiClient();
   final url = LabApi.uri('/app/services/add-position-coordinator', {
@@ -173,8 +235,26 @@ Future<bool> _postLocation(Map<String, dynamic> location, String token) async {
     'longitud': location['longitude'].toString(),
     'tourId': location['tourId'].toString(),
     'recordedAt': location['recordedAt'].toString(),
+    if (AppEnvironment.connected)
+      'trackingSession': location['trackingSession'].toString(),
   });
   try {
+    if (AppEnvironment.connected &&
+        (_registeredTrackingSession != location['trackingSession'] ||
+            _registeredTrackingToken != token)) {
+      await client.post(
+        LabApi.uri('/app/services/coordinator/location-sharing'),
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+        body: jsonEncode({
+          'tourId': location['tourId'],
+          'session': location['trackingSession'],
+          'enabled': true,
+        }),
+      );
+      _registeredTrackingSession = location['trackingSession'] as String;
+      _registeredTrackingToken = token;
+    }
+    if (!await stillPermitted()) return false;
     await client.post(
       url,
       headers: {'Content-Type': 'application/json', 'Authorization': token},

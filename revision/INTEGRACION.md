@@ -1,5 +1,7 @@
 # Integración y configuración pendiente
 
+> Actualización del checkout `codex/pilo-integration-2026` (20/11/2026): esta entrega de referencia ya tiene adaptaciones oficiales locales de transporte/login, Firebase/APNs, GPS nativo y apagado remoto. Los IDs oficiales y la configuración pública Firebase están restaurados. Véase el encabezado de README.md para el comando conectado y el registro vigente del backend. La tabla y las afirmaciones de configuración LAB de abajo son antecedentes de la entrega original; no prueban ni describen por sí solas el estado actual. La comprobación física y Xcode Cloud siguen pendientes.
+
 La rama entrega el código completo de la candidata elegida por Camilo para revisar y probar. No incluye el historial de chats ni exige reaplicar parches PG. Las fuentes funcionales se conservaron respecto de los commits comprobados, salvo espacios finales documentados; ORIGEN.json permite verificarlo. README.md tiene los comandos de cada componente.
 
 ## Para probar la experiencia ahora

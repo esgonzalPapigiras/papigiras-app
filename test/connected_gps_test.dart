@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -52,11 +54,13 @@ void main() {
       late LocationService service;
       late List<http.Request> requests;
       setUp(() async {
+        SharedPreferences.setMockInitialValues({});
         prefs = await SharedPreferences.getInstance();
         await prefs.setString('userRole', 'coordinator');
         await prefs.setString('token', 'Bearer test-only');
         await prefs.setBool('isLoggedIn', true);
         await prefs.setInt('selectedTourId', 10);
+        await prefs.setInt(nativeTrackingTourKey, 10);
         requests = [];
         locationClientForTests = LabApiClient(
           transport: MockClient((request) async {
@@ -81,9 +85,15 @@ void main() {
           expect(requests, isEmpty);
           await service.setSharingEnabled(true);
           expect(gps.starts, 1);
-          expect(requests.single.url.queryParameters['latitud'], '-36.8');
-          expect(requests.single.url.queryParameters['longitud'], '-73.0');
-          expect(requests.single.url.queryParameters['tourId'], '10');
+          expect(requests, hasLength(2));
+          expect(jsonDecode(requests.first.body)['enabled'], isTrue);
+          expect(requests.last.url.queryParameters['latitud'], '-36.8');
+          expect(requests.last.url.queryParameters['longitud'], '-73.0');
+          expect(requests.last.url.queryParameters['tourId'], '10');
+          expect(
+            requests.last.url.queryParameters['trackingSession'],
+            prefs.getString(nativeTrackingSessionKey),
+          );
           expect(service.confirmedPosition!.latitude, -36.8);
           expect(service.backgroundTrackingEnabled, isTrue);
         },
@@ -100,7 +110,8 @@ void main() {
           expect(service.isTracking, isFalse);
           gps.permission!.complete();
           await starting;
-          expect(requests, isEmpty);
+          expect(requests, hasLength(1));
+          expect(jsonDecode(requests.single.body)['enabled'], isFalse);
           expect(gps.current!(), isFalse);
         },
       );
@@ -115,6 +126,104 @@ void main() {
         expect(requests, isEmpty);
         expect(service.confirmedPosition, isNull);
       });
+
+      test(
+        'OFF during delayed ON acknowledgement never sends the captured position',
+        () async {
+          final registering = Completer<http.Response>();
+          locationClientForTests!.close();
+          locationClientForTests = LabApiClient(
+            transport: MockClient((request) async {
+              requests.add(request);
+              if (request.url.path.endsWith('location-sharing') &&
+                  jsonDecode(request.body)['enabled'] == true)
+                return registering.future;
+              return http.Response('{}', 200);
+            }),
+          );
+          final starting = service.setSharingEnabled(true);
+          while (requests.isEmpty) {
+            await Future<void>.delayed(Duration.zero);
+          }
+          final session = jsonDecode(requests.single.body)['session'];
+          await service.setSharingEnabled(false);
+          expect(service.isTracking, isFalse);
+          expect(prefs.getString(nativeTrackingSessionKey), isNull);
+          expect(jsonDecode(requests.last.body), {
+            'tourId': 10,
+            'session': session,
+            'enabled': false,
+          });
+          registering.complete(http.Response('{}', 200));
+          await starting;
+          expect(
+            requests.where(
+              (request) =>
+                  request.url.path.endsWith('add-position-coordinator'),
+            ),
+            isEmpty,
+          );
+          expect(service.confirmedPosition, isNull);
+        },
+      );
+
+      test(
+        'unconfirmed OFF reports local stop and retries the captured old tour on resume',
+        () async {
+          var online = true;
+          locationClientForTests!.close();
+          locationClientForTests = LabApiClient(
+            transport: MockClient((request) async {
+              requests.add(request);
+              return http.Response('{}', online ? 200 : 503);
+            }),
+          );
+          await service.setSharingEnabled(true);
+          final session = prefs.getString(nativeTrackingSessionKey);
+          online = false;
+          await service.setSharingEnabled(false);
+          expect(service.isTracking, isFalse);
+          expect(service.lastError, contains('No pudimos confirmar'));
+          expect(gps.stops, greaterThan(0));
+          await prefs.setInt('selectedTourId', 11);
+          await prefs.setString('token', 'Bearer another-login');
+          online = true;
+          service.didChangeAppLifecycleState(AppLifecycleState.resumed);
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          expect(jsonDecode(requests.last.body), {
+            'tourId': 10,
+            'session': session,
+            'enabled': false,
+          });
+          expect(requests.last.headers['authorization'], 'Bearer test-only');
+          expect(prefs.getString('token'), 'Bearer another-login');
+          expect(service.lastError, isNull);
+        },
+      );
+
+      test(
+        'logout revokes local identity before sending the captured OFF',
+        () async {
+          await service.setSharingEnabled(true);
+          final session = prefs.getString(nativeTrackingSessionKey);
+          locationClientForTests!.close();
+          locationClientForTests = LabApiClient(
+            transport: MockClient((request) async {
+              requests.add(request);
+              expect(prefs.getString('token'), isNull);
+              expect(prefs.getString(nativeTrackingSessionKey), isNull);
+              return http.Response('{}', 200);
+            }),
+          );
+          await LabSession.clear(prefs);
+          expect(jsonDecode(requests.last.body), {
+            'tourId': 10,
+            'session': session,
+            'enabled': false,
+          });
+          expect(requests.last.headers['authorization'], 'Bearer test-only');
+        },
+      );
 
       test(
         'background callbacks reject a revoked or replaced session',
@@ -133,7 +242,49 @@ void main() {
             longitude: -73,
             expectedTrackingSession: 'new-session',
           );
+          expect(
+            requests.where(
+              (request) =>
+                  request.url.path.endsWith('add-position-coordinator'),
+            ),
+            isEmpty,
+          );
+          expect(jsonDecode(requests.single.body)['session'], 'new-session');
+        },
+      );
+
+      test(
+        'background callback cannot use an old nonce for a newly selected tour',
+        () async {
+          await prefs.setBool(LocationService.sharingPreferenceKey, true);
+          await prefs.setString(
+            nativeTrackingSessionKey,
+            'session_aaaaaaaaaaaa',
+          );
+          await prefs.setInt('selectedTourId', 11);
+          await sendCoordinatorLocation(
+            latitude: -36.8,
+            longitude: -73,
+            expectedTrackingSession: 'session_aaaaaaaaaaaa',
+            queue: LocationQueue.background,
+          );
           expect(requests, isEmpty);
+        },
+      );
+
+      test(
+        'permission failure stays visible after successful remote cleanup',
+        () async {
+          gps.permission = Completer<void>();
+          final starting = service.setSharingEnabled(true);
+          await Future<void>.delayed(Duration.zero);
+          gps.permission!.completeError(
+            StateError('Permiso de ubicación denegado.'),
+          );
+          await starting;
+          expect(service.isTracking, isFalse);
+          expect(service.lastError, contains('Permiso de ubicación denegado'));
+          expect(jsonDecode(requests.single.body)['enabled'], isFalse);
         },
       );
 
@@ -177,9 +328,15 @@ void main() {
             expectedTrackingSession: 'session',
             queue: LocationQueue.background,
           );
-          expect(requests, hasLength(2));
+          final positions = requests
+              .where(
+                (request) =>
+                    request.url.path.endsWith('add-position-coordinator'),
+              )
+              .toList();
+          expect(positions, hasLength(2));
           expect(
-            requests.first.url.queryParameters['recordedAt'],
+            positions.first.url.queryParameters['recordedAt'],
             captured.add(const Duration(minutes: 1)).toIso8601String(),
           );
           expect(prefs.getStringList(pendingBackgroundLocationsKey), isEmpty);

@@ -7,6 +7,7 @@ import 'package:papigiras_app/lab/preferences.dart';
 import 'package:papigiras_app/lab/session.dart';
 import 'package:papigiras_app/maps/trip_bus_controller.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
+import 'package:papigiras_app/utils/location_callback.dart';
 
 class _PositionProvider extends CoordinatorProviders {
   final tours = <String>[];
@@ -32,6 +33,7 @@ PositionCoordinator _point(
   DateTime? date, {
   double latitude = -33.45,
   double longitude = -70.65,
+  bool? sharingEnabled,
 }) => PositionCoordinator(
   coordinatorId: id,
   coordinatorName: 'Demo',
@@ -39,6 +41,7 @@ PositionCoordinator _point(
   latitude: latitude,
   longitude: longitude,
   recordedAt: date,
+  sharingEnabled: sharingEnabled,
 );
 
 void main() {
@@ -119,6 +122,94 @@ void main() {
     expect(controller.position?.coordinatorId, 3);
     expect(controller.isRecent, isTrue);
   });
+
+  testController(
+    'remote OFF overrides a fresh repeated position without hiding history',
+    (tester) async {
+      provider.rows = [_point(1, now, sharingEnabled: true)];
+      controller.setVisible(true);
+      await tester.pump();
+      expect(controller.isRecent, isTrue);
+      final coordinate = controller.position!.coordinate;
+      provider.rows = [_point(1, now, sharingEnabled: false)];
+      await controller.refresh();
+      expect(controller.position!.coordinate, coordinate);
+      expect(controller.position!.sharingEnabled, isFalse);
+      expect(controller.isRecent, isFalse);
+      provider.rows = [_point(1, now, sharingEnabled: true)];
+      await controller.refresh();
+      expect(controller.isRecent, isTrue);
+    },
+  );
+
+  testController(
+    'another active coordinator wins over a newer stopped sender',
+    (tester) async {
+      provider.rows = [_point(1, now, sharingEnabled: false)];
+      controller.setVisible(true);
+      await tester.pump();
+      provider.rows = [
+        _point(1, now, sharingEnabled: false),
+        _point(
+          2,
+          now.subtract(const Duration(seconds: 15)),
+          sharingEnabled: true,
+        ),
+      ];
+      await controller.refresh();
+      expect(controller.position!.coordinatorId, 2);
+      expect(controller.isRecent, isTrue);
+    },
+  );
+
+  test('position contract preserves explicit OFF and unknown legacy state', () {
+    final payload = _point(1, now).toJson();
+    expect(PositionCoordinator.fromJson(payload).sharingEnabled, isNull);
+    expect(
+      PositionCoordinator.fromJson({
+        ...payload,
+        'sharingEnabled': false,
+      }).sharingEnabled,
+      isFalse,
+    );
+    expect(
+      PositionCoordinator.fromJson({
+        ...payload,
+        'sharingEnabled': true,
+      }).sharingEnabled,
+      isTrue,
+    );
+  });
+
+  testController(
+    'authoritative OFF overrides an earlier local position acknowledgement',
+    (tester) async {
+      controller.setVisible(true);
+      await tester.pump();
+      controller.setLocalSharing(
+        coordinatorId: 1,
+        enabled: true,
+        confirmed: CoordinatorLocationReceipt(
+          tourId: 910001,
+          latitude: -33.45,
+          longitude: -70.65,
+          recordedAt: now,
+        ),
+      );
+      expect(controller.isRecent, isTrue);
+      provider.rows = [
+        _point(
+          1,
+          now.subtract(const Duration(seconds: 5)),
+          sharingEnabled: false,
+        ),
+      ];
+      await controller.refresh();
+      expect(controller.position!.recordedAt, now);
+      expect(controller.position!.sharingEnabled, isFalse);
+      expect(controller.isRecent, isFalse);
+    },
+  );
 
   testController('fecha futura o ausente nunca se presenta como reciente', (
     tester,

@@ -11,6 +11,8 @@ import '../tracking/native_gps_driver.dart';
 /// Explicit opt-in to native GPS in connected builds. The reference LAB keeps
 /// its separate foreground-only synthetic source for deterministic tests.
 class LocationService extends ChangeNotifier with WidgetsBindingObserver {
+  static const _remoteStopWarning =
+      'GPS apagado en este teléfono. No pudimos confirmar el apagado en el servidor; la última ubicación dejará de mostrarse activa al vencer su vigencia.';
   static const sharingPreferenceKey = 'coordinatorLocationSharingEnabled';
   bool _isTracking = false;
   bool _initialized = false;
@@ -37,6 +39,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   NativeGpsDriver? _native;
   String? _nativeSession;
   int? _nativeTourId;
+  RemoteLocationStop? _pendingRemoteStop;
 
   LocationService({
     LabSyntheticLocation? source,
@@ -112,6 +115,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
     final enabled = prefs.getBool(sharingPreferenceKey) ?? false;
+    if (_pendingRemoteStop != null) unawaited(_flushRemoteStop());
     if (_initialized &&
         _sessionGeneration == LabSession.generation &&
         _sessionToken == prefs.getString('token') &&
@@ -131,6 +135,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
         _initialized &&
         _sessionGeneration == LabSession.generation &&
         _isTracking == enabled &&
+        (enabled || _pendingRemoteStop == null) &&
         _preferences?.getString('token') == _sessionToken &&
         _preferences?.getString('userRole') == 'coordinator') {
       return Future<void>.value();
@@ -197,6 +202,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
           await sendSyntheticPositionNow();
         } else if (_currentMode(revision) && !enabled && _native != null) {
           await _native!.stop();
+          await _flushRemoteStop();
         }
       } catch (error) {
         if (_currentMode(revision)) {
@@ -208,10 +214,17 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
               ? error.message.toString()
               : 'No se pudo activar la ubicación. Revisa los permisos e inténtalo nuevamente.';
           if (_native != null) {
+            final stop = _preferences == null
+                ? null
+                : captureRemoteLocationStop(_preferences!);
             _nativeSession = null;
             await _preferences?.setBool(sharingPreferenceKey, false);
             await _preferences?.remove(nativeTrackingSessionKey);
             await _native!.stop();
+            if (stop != null) {
+              _pendingRemoteStop = stop;
+              await _flushRemoteStop();
+            }
           }
         }
       } finally {
@@ -263,6 +276,12 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     }
     await prefs.setBool(sharingPreferenceKey, enabled);
     if (_native != null) {
+      final previous = captureRemoteLocationStop(prefs);
+      if (previous != null) {
+        _pendingRemoteStop = previous;
+        // A delayed OFF is bound to the old nonce and cannot stop a newer ON.
+        if (enabled) unawaited(_flushRemoteStop());
+      }
       if (enabled) {
         _nativeTourId = prefs.getInt('selectedTourId');
         if (_nativeTourId == null)
@@ -270,8 +289,10 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
         _nativeSession =
             '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}';
         await prefs.setString(nativeTrackingSessionKey, _nativeSession!);
+        await prefs.setInt(nativeTrackingTourKey, _nativeTourId!);
       } else {
         await prefs.remove(nativeTrackingSessionKey);
+        await prefs.remove(nativeTrackingTourKey);
       }
     }
     await prefs.setBool('backgroundTrackingEnabled', false);
@@ -300,6 +321,20 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> startTracking() => setSharingEnabled(true);
   Future<void> enableForegroundOnlyTracking() => setSharingEnabled(true);
   Future<void> stopTracking() => setSharingEnabled(false);
+
+  Future<void> _flushRemoteStop() async {
+    final target = _pendingRemoteStop;
+    if (target == null) return;
+    final confirmed = await stopRemoteLocationSharing(target);
+    if (_disposed || !identical(target, _pendingRemoteStop)) return;
+    if (confirmed) {
+      _pendingRemoteStop = null;
+      if (_lastError == _remoteStopWarning) _lastError = null;
+    } else if (!_isTracking) {
+      _lastError ??= _remoteStopWarning;
+    }
+    _changed();
+  }
 
   int _queuedCount(SharedPreferences? prefs) =>
       (prefs?.getStringList(pendingLocationsKey)?.length ?? 0) +
@@ -391,6 +426,8 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foregroundActive = state == AppLifecycleState.resumed;
+    if (_foregroundActive && _pendingRemoteStop != null)
+      unawaited(_flushRemoteStop());
     if (!_foregroundActive) {
       ++_sendRevision;
       _cancelHeartbeat();

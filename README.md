@@ -1,5 +1,17 @@
 # Pilo · entrega para revisión de Esteban
 
+> **Estado de este checkout, 20/11/2026:** la rama `codex/pilo-integration-2026` contiene la integración local en curso. Conserva la interfaz Pilo y ya incorpora identidad oficial `com.papigiras`, Firebase/APNs, GPS nativo y contratos privados de la API. Las secciones originales de entrega que siguen describen la referencia del 16/11, no el estado completo de esta integración. No se ha desplegado ni verificado entrega de notificaciones en teléfonos.
+
+Para compilar el candidato conectado con Flutter **3.38.10**, después de preparar el backend compatible:
+
+```sh
+flutter build apk --debug --dart-define=PAPIGIRAS_API_URL=https://stingray-app-9tqd9-djh6d.ondigitalocean.app
+```
+
+El APK queda en `build/app/outputs/flutter-apk/app-debug.apk`. Sin ese define se conserva el entorno de referencia LAB. La rama backend necesita sus migraciones aditivas V8–V14 y los servicios correspondientes; cambiar sólo la URL no instala esas dependencias. El flujo final de Xcode Cloud, QR/contactos y la aceptación visual/en dispositivos siguen pendientes. No es aún un candidato de release verificado.
+
+Verificación local actual: 983 pruebas Flutter aprobadas, 22 omisiones dependientes de configuración; 10 pruebas GPS conectadas aprobadas por separado con HTTP simulado; compilación Android debug conectada correcta. El análisis de `lib test integration_test` no tiene errores y mantiene ocho avisos heredados. El análisis global también incluye errores antiguos del ejemplo del plugin GPS vendorizado, que no forma parte del APK. El registro completo y los límites están en `../ms-papigiras-app/docs/pilo-integration/CHECKPOINT.md` y `GPS-SHARING.md`.
+
 Esta rama contiene la versión renovada elegida por Camilo. Es una candidata de pruebas, con frontend y backend compatibles; **no reemplazar producción ni fusionar directamente a main**. La interfaz corresponde a la versión probada en simulador y a la beta Android. No se incluyen datos de pasajeros, contraseñas reales, firmas, bases de datos ni el túnel temporal.
 
 ## Qué cambió

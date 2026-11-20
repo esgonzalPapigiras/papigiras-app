@@ -7,6 +7,7 @@ class PositionCoordinator {
   final double latitude;
   final double longitude;
   final DateTime? recordedAt;
+  final bool? sharingEnabled;
 
   PositionCoordinator({
     required this.coordinatorId,
@@ -15,6 +16,7 @@ class PositionCoordinator {
     required this.latitude,
     required this.longitude,
     required this.recordedAt,
+    this.sharingEnabled,
   });
 
   factory PositionCoordinator.fromJson(Map<String, dynamic> json) {
@@ -27,6 +29,9 @@ class PositionCoordinator {
       recordedAt: json['recordedAt'] == null
           ? null
           : DateTime.tryParse(JsonFields.dateText(json['recordedAt'])),
+      sharingEnabled: json['sharingEnabled'] is bool
+          ? json['sharingEnabled'] as bool
+          : null,
     );
   }
 
@@ -38,6 +43,7 @@ class PositionCoordinator {
       'latitude': latitude,
       'longitude': longitude,
       'recordedAt': recordedAt?.toIso8601String(),
+      if (sharingEnabled != null) 'sharingEnabled': sharingEnabled,
     };
   }
 
