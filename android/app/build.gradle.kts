@@ -12,6 +12,19 @@ if (!previewBuild) apply(plugin = "com.google.gms.google-services")
 val previewKeyFile = System.getenv("PILO_PREVIEW_KEY_PROPERTIES")
 val previewKey = Properties()
 if (previewBuild && previewKeyFile != null) file(previewKeyFile).inputStream().use { previewKey.load(it) }
+// Preserve the official app's existing, git-ignored signing contract. Never
+// substitute a debug/test key when preparing a store update.
+val releaseKeyFile = rootProject.file("key.properties")
+val releaseKey = Properties()
+val hasReleaseKey = !previewBuild && releaseKeyFile.isFile
+if (hasReleaseKey) {
+    releaseKeyFile.inputStream().use { releaseKey.load(it) }
+    for (name in listOf("storeFile", "storePassword", "keyAlias", "keyPassword")) {
+        require(!releaseKey.getProperty(name).isNullOrBlank()) {
+            "Official Android key.properties is missing required signing field: $name"
+        }
+    }
+}
 
 android {
     namespace = "com.papigiras.lab"
@@ -41,6 +54,12 @@ android {
     }
 
     signingConfigs {
+        if (hasReleaseKey) create("officialRelease") {
+            storeFile = file(releaseKey.getProperty("storeFile"))
+            storePassword = releaseKey.getProperty("storePassword")
+            keyAlias = releaseKey.getProperty("keyAlias")
+            keyPassword = releaseKey.getProperty("keyPassword")
+        }
         if (previewBuild && previewKeyFile != null) create("preview") {
             storeFile = file(previewKey.getProperty("storeFile"))
             storePassword = previewKey.getProperty("storePassword")
@@ -50,8 +69,13 @@ android {
     }
     buildTypes {
         release {
-            // Distribution signing is intentionally absent until configured for the new app.
-            signingConfig = if (previewBuild && previewKeyFile != null) signingConfigs.getByName("preview") else null
+            // Without the original key this is an unsigned inspection artifact,
+            // not an installable/store-ready update.
+            signingConfig = when {
+                previewBuild && previewKeyFile != null -> signingConfigs.getByName("preview")
+                hasReleaseKey -> signingConfigs.getByName("officialRelease")
+                else -> null
+            }
         }
     }
 }

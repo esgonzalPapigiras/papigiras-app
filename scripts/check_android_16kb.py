@@ -7,6 +7,8 @@ Runtime testing on a 16 KB Android device is still required.
 import argparse
 import hashlib
 import json
+import os
+import shutil
 import struct
 import subprocess
 import zipfile
@@ -61,12 +63,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('bundle', type=Path)
     parser.add_argument('--report', type=Path)
+    parser.add_argument('--java', type=Path, help='Java executable; defaults to JAVA_HOME/PATH, then the original Mac toolchain')
+    parser.add_argument('--bundletool', type=Path, help='Pinned bundletool-all-1.18.3.jar')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     tools = root.parent / 'papigiras-tools'
-    java = tools / 'jdk-17/amazon-corretto-17.jdk/Contents/Home/bin/java'
-    bundletool = tools / 'bundletool/bundletool-all-1.18.3.jar'
-    assert hashlib.sha256(bundletool.read_bytes()).hexdigest() == 'a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29'
+    java_home = os.environ.get('JAVA_HOME')
+    java = args.java or (Path(java_home) / 'bin' / ('java.exe' if os.name == 'nt' else 'java') if java_home else None)
+    java = java or shutil.which('java') or tools / 'jdk-17/amazon-corretto-17.jdk/Contents/Home/bin/java'
+    bundletool = args.bundletool or tools / 'bundletool/bundletool-all-1.18.3.jar'
+    if hashlib.sha256(bundletool.read_bytes()).hexdigest() != 'a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29':
+        raise SystemExit('Unexpected bundletool checksum; require the pinned official 1.18.3 release')
     config = subprocess.run([str(java), '-jar', str(bundletool), 'dump', 'config',
                              '--bundle=' + str(args.bundle)], capture_output=True, text=True, check=True)
     config_data = json.loads(config.stdout)
