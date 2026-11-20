@@ -4,38 +4,39 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:papigiras_app/dto/TourSales.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
+import 'package:papigiras_app/utils/location_callback.dart';
+import 'package:papigiras_app/lab/session.dart';
 import 'package:provider/provider.dart';
 import 'package:papigiras_app/lab/preferences.dart';
 import 'package:papigiras_app/lab/offline.dart';
 
 class AppDrawerCoordinator extends StatelessWidget {
   final TourSales login;
-  const AppDrawerCoordinator({
-    Key? key,
-    required this.login,
-  }) : super(key: key);
+  const AppDrawerCoordinator({Key? key, required this.login}) : super(key: key);
 
   Future<void> _sendMessage(String phone, String message) async {
-    final whatsappUrl =
-        Uri.parse('lab-contact:$phone');
+    final whatsappUrl = Uri.parse('lab-contact:$phone');
     if (await canLaunchUrl(whatsappUrl)) {
       await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
       return;
     }
-    final direct = Uri.parse(
-        'lab-contact:$phone');
+    final direct = Uri.parse('lab-contact:$phone');
     if (await canLaunchUrl(direct)) {
       await launchUrl(direct, mode: LaunchMode.externalApplication);
     }
   }
 
   Future<void> _logout(BuildContext context) async {
-    final locationService = Provider.of<LocationService>(context, listen: false);
+    final locationService = Provider.of<LocationService>(
+      context,
+      listen: false,
+    );
     await locationService.stopTracking();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('codigoGira');
     await prefs.remove('userPassword');
-    await prefs.clear();
+    await LabSession.clear(prefs);
+    await clearPreferencesPreservingLocationStops(prefs);
     if (!context.mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
@@ -79,10 +80,7 @@ class AppDrawerCoordinator extends StatelessWidget {
                     ),
                     Text(
                       login.tourTripulationIdentificationId,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black,
-                      ),
+                      style: const TextStyle(fontSize: 14, color: Colors.black),
                     ),
                   ],
                 ),
@@ -145,7 +143,9 @@ class AppDrawerCoordinator extends StatelessWidget {
               'Cerrar Sesión',
               style: TextStyle(color: Colors.grey[800]),
             ),
-            onTap: locationService.isChangingMode ? null : () => _logout(context),
+            onTap: locationService.isChangingMode
+                ? null
+                : () => _logout(context),
           ),
         ],
       ),

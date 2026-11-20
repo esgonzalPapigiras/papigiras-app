@@ -13,6 +13,8 @@ import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/provider/coordinatorProvider.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:papigiras_app/lab/preferences.dart';
+import 'package:papigiras_app/utils/location_callback.dart';
+import 'package:papigiras_app/lab/session.dart';
 import 'package:papigiras_app/lab/offline.dart';
 
 class ViewProgramScreen extends StatefulWidget {
@@ -114,7 +116,8 @@ class _ViewProgramScreenState extends State<ViewProgramScreen> {
 
   void logoutUser(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Borrar el estado de la sesión
+    await LabSession.clear(prefs);
+    await clearPreferencesPreservingLocationStops(prefs);
 
     // Redirigir al login o realizar otra acción
     Navigator.pushAndRemoveUntil(

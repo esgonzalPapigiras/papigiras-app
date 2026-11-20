@@ -17,6 +17,8 @@ enum LocationQueue { foreground, background }
 const maximumPendingLocations = 200;
 const nativeTrackingSessionKey = 'nativeTrackingSession';
 const nativeTrackingTourKey = 'nativeTrackingTour';
+const pendingLocationStopPrefix = 'pendingLocationStop:';
+const locationRejectionPrefix = 'rejectedLocationSession:';
 Future<void> _sendChain = Future<void>.value();
 String? _registeredTrackingSession;
 String? _registeredTrackingToken;
@@ -26,10 +28,92 @@ LabApiClient? locationClientForTests;
 
 /// Captured before local revocation; never send OFF using a later login/tour.
 class RemoteLocationStop {
-  const RemoteLocationStop(this._token, this.tourId, this.session);
+  const RemoteLocationStop(
+    this._token,
+    this.tourId,
+    this.session, {
+    this.ownerId,
+  });
   final String _token;
   final int tourId;
   final String session;
+  final int? ownerId;
+  String get storageKey =>
+      '$pendingLocationStopPrefix${Uri.encodeComponent(AppEnvironment.apiUrl)}:$ownerId:$tourId:$session';
+}
+
+int? _coordinatorOwner(SharedPreferences prefs) {
+  if (prefs.getString('userRole') != 'coordinator') return null;
+  try {
+    final data = jsonDecode(prefs.getString('coordinatorData') ?? '');
+    final id = data is Map ? data['coordinatorId'] : null;
+    return id is int && id > 0 ? id : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Each intent has its own key: background and UI isolates cannot overwrite
+/// each other's pending list. Only origin, account ID, tour and nonce persist.
+Future<void> rememberRemoteLocationStop(RemoteLocationStop target) async {
+  if (!AppEnvironment.connected || target.ownerId == null) return;
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(
+    target.storageKey,
+    jsonEncode({
+      'origin': AppEnvironment.apiUrl,
+      'ownerId': target.ownerId,
+      'tourId': target.tourId,
+      'session': target.session,
+    }),
+  );
+}
+
+Future<bool> retryPendingLocationStops(SharedPreferences prefs) async {
+  if (!AppEnvironment.connected) return true;
+  await prefs.reload();
+  final owner = _coordinatorOwner(prefs), token = prefs.getString('token');
+  if (owner == null || token == null || token.isEmpty) return true;
+  final keys = prefs
+      .getKeys()
+      .where((key) => key.startsWith(pendingLocationStopPrefix))
+      .toList();
+  var attempted = 0;
+  for (final key in keys) {
+    await prefs.reload();
+    if (_coordinatorOwner(prefs) != owner || prefs.getString('token') != token)
+      return false;
+    try {
+      final data = jsonDecode(prefs.getString(key) ?? '');
+      if (data is! Map ||
+          data['origin'] != AppEnvironment.apiUrl ||
+          data['ownerId'] != owner)
+        continue;
+      final tour = data['tourId'], session = data['session'];
+      if (tour is! int ||
+          tour <= 0 ||
+          session is! String ||
+          !RegExp(r'^[A-Za-z0-9_-]{16,96}$').hasMatch(session))
+        continue;
+      final target = RemoteLocationStop(token, tour, session, ownerId: owner);
+      if (target.storageKey != key) continue;
+      if (++attempted > 32 || !await stopRemoteLocationSharing(target))
+        return false;
+    } catch (_) {
+      /* Invalid recovery metadata never becomes a request. */
+    }
+  }
+  return true;
+}
+
+/// Legacy logout clears all preferences; retain only credential-free OFF intents.
+Future<void> clearPreferencesPreservingLocationStops(
+  SharedPreferences prefs,
+) async {
+  await prefs.reload();
+  for (final key in prefs.getKeys()) {
+    if (!key.startsWith(pendingLocationStopPrefix)) await prefs.remove(key);
+  }
 }
 
 RemoteLocationStop? captureRemoteLocationStop(SharedPreferences prefs) {
@@ -46,12 +130,18 @@ RemoteLocationStop? captureRemoteLocationStop(SharedPreferences prefs) {
       session == null ||
       session.isEmpty)
     return null;
-  return RemoteLocationStop(token, tour, session);
+  return RemoteLocationStop(
+    token,
+    tour,
+    session,
+    ownerId: _coordinatorOwner(prefs),
+  );
 }
 
 Future<bool> stopRemoteLocationSharing(RemoteLocationStop target) async {
   final client = locationClientForTests ?? LabApiClient();
   try {
+    await rememberRemoteLocationStop(target);
     await client
         .post(
           LabApi.uri('/app/services/coordinator/location-sharing'),
@@ -66,12 +156,40 @@ Future<bool> stopRemoteLocationSharing(RemoteLocationStop target) async {
           }),
         )
         .timeout(const Duration(seconds: 5));
+    if (target.ownerId != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(target.storageKey);
+      await prefs.remove('$locationRejectionPrefix${target.session}');
+    }
     return true;
   } catch (_) {
     return false;
   } finally {
     if (locationClientForTests == null) client.close();
   }
+}
+
+class LocationSendRejected implements Exception {
+  const LocationSendRejected(this.statusCode);
+  final int statusCode;
+  String get message => statusCode == 403
+      ? 'Ya no tienes permiso para compartir ubicación en esta gira.'
+      : statusCode == 409
+      ? 'Esta sesión de ubicación terminó. Activa de nuevo el envío si deseas compartir.'
+      : 'No se pudo iniciar el envío de ubicación. Inténtalo de nuevo más tarde.';
+  @override
+  String toString() => message;
+}
+
+LocationSendRejected? rejectedLocationSession(
+  SharedPreferences prefs,
+  String? session,
+) {
+  if (session == null) return null;
+  final code = prefs.getInt('$locationRejectionPrefix$session');
+  return const {400, 403, 404, 409}.contains(code)
+      ? LocationSendRejected(code!)
+      : null;
 }
 
 /// Exact local POST acknowledged by the existing API, without session secrets.
@@ -154,6 +272,7 @@ Future<CoordinatorLocationReceipt?> _sendCoordinatorLocation({
           (expectedTrackingSession != null &&
               prefs.getString(nativeTrackingSessionKey) ==
                   expectedTrackingSession &&
+              rejectedLocationSession(prefs, expectedTrackingSession) == null &&
               prefs.getBool('coordinatorLocationSharingEnabled') == true &&
               prefs.getInt(nativeTrackingTourKey) == tourId &&
               prefs.getInt('selectedTourId') == tourId)) &&
@@ -186,6 +305,8 @@ Future<CoordinatorLocationReceipt?> _sendCoordinatorLocation({
         remaining.addAll(pending.sublist(i));
         break;
       }
+    } on LocationSendRejected {
+      rethrow;
     } catch (_) {
       // Preserve the original behavior of discarding invalid serialized queue entries.
     }
@@ -261,6 +382,22 @@ Future<bool> _postLocation(
     );
     return true;
   } catch (error) {
+    if (AppEnvironment.connected &&
+        error is LabApiException &&
+        const {400, 403, 404, 409}.contains(error.statusCode)) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      if (prefs.getString('token') == token &&
+          prefs.getString(nativeTrackingSessionKey) ==
+              location['trackingSession']) {
+        // Per-nonce state cannot revoke a newer login or tracking period.
+        await prefs.setInt(
+          '$locationRejectionPrefix${location['trackingSession']}',
+          error.statusCode,
+        );
+      }
+      throw LocationSendRejected(error.statusCode);
+    }
     // Personal data and exception payloads are intentionally not logged.
     return false;
   } finally {

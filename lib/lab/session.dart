@@ -8,7 +8,10 @@ import 'preferences.dart';
 import '../utils/fcm_utils.dart';
 import '../runtime/api_destination.dart';
 import '../utils/location_callback.dart'
-    show captureRemoteLocationStop, stopRemoteLocationSharing;
+    show
+        captureRemoteLocationStop,
+        rememberRemoteLocationStop,
+        stopRemoteLocationSharing;
 
 abstract final class LabSession {
   static const revision = String.fromEnvironment('PAPIGIRAS_API_URL') != ''
@@ -48,10 +51,13 @@ abstract final class LabSession {
     // Revoke asynchronous work even if a future login receives the same token.
     _generation++;
     final locationStop = captureRemoteLocationStop(prefs);
+    // A crash during cleanup must not restore a saved ON choice on next launch.
+    await prefs.setBool('coordinatorLocationSharingEnabled', false);
+    await prefs.setBool('isLoggedIn', false);
+    if (locationStop != null) await rememberRemoteLocationStop(locationStop);
     // Revoke the background isolate before any slower native push cleanup.
     await prefs.remove('nativeTrackingSession');
     final pushCleanup = FcmUtils.stop();
-    await prefs.setBool('isLoggedIn', false);
     for (final key in keys) {
       await prefs.remove(key);
     }

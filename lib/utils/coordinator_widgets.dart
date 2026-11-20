@@ -15,6 +15,7 @@ import 'package:papigiras_app/pages/coordinator/coordinatorTourSelection.dart';
 import 'package:papigiras_app/pages/welcome.dart';
 import 'package:papigiras_app/ranking/coordinator_ranking_screen.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
+import 'package:papigiras_app/utils/location_callback.dart';
 import 'package:papigiras_app/utils/page_navigation.dart';
 import 'package:papigiras_app/utils/profile_photo_avatar.dart';
 import 'package:provider/provider.dart';
@@ -43,7 +44,7 @@ Future<void> logoutCoordinator(BuildContext context) async {
   await context.read<LocationService>().stopTracking();
   final prefs = await SharedPreferences.getInstance();
   await LabSession.clear(prefs);
-  await prefs.clear();
+  await clearPreferencesPreservingLocationStops(prefs);
   if (!context.mounted) return;
   _sessionNavigator(context).pushAndRemoveUntil(
     MaterialPageRoute(builder: (_) => WelcomeScreen()),

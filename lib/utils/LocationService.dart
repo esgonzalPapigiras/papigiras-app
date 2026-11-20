@@ -109,13 +109,26 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> initializeForCoordinatorSession() async {
     if (_disposed) return;
     final prefs = await SharedPreferences.getInstance();
+    if (_native != null) await prefs.reload();
     if (_disposed) return;
     if (_isChangingMode) {
       await _modeFuture;
       return;
     }
-    final enabled = prefs.getBool(sharingPreferenceKey) ?? false;
-    if (_pendingRemoteStop != null) unawaited(_flushRemoteStop());
+    final captured = captureRemoteLocationStop(prefs);
+    final pendingStop =
+        captured != null && prefs.containsKey(captured.storageKey);
+    final enabled =
+        !pendingStop && (prefs.getBool(sharingPreferenceKey) ?? false);
+    final rejection = rejectedLocationSession(
+      prefs,
+      prefs.getString(nativeTrackingSessionKey),
+    );
+    if (_native != null && rejection != null) {
+      await _stopRejectedSession(rejection);
+      return;
+    }
+    if (_native != null) unawaited(_flushRemoteStop());
     if (_initialized &&
         _sessionGeneration == LabSession.generation &&
         _sessionToken == prefs.getString('token') &&
@@ -278,6 +291,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     if (_native != null) {
       final previous = captureRemoteLocationStop(prefs);
       if (previous != null) {
+        await rememberRemoteLocationStop(previous);
         _pendingRemoteStop = previous;
         // A delayed OFF is bound to the old nonce and cannot stop a newer ON.
         if (enabled) unawaited(_flushRemoteStop());
@@ -324,11 +338,13 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> _flushRemoteStop() async {
     final target = _pendingRemoteStop;
-    if (target == null) return;
-    final confirmed = await stopRemoteLocationSharing(target);
+    final confirmed = target == null || await stopRemoteLocationSharing(target);
     if (_disposed || !identical(target, _pendingRemoteStop)) return;
-    if (confirmed) {
-      _pendingRemoteStop = null;
+    if (confirmed) _pendingRemoteStop = null;
+    final prefs = _preferences ?? await SharedPreferences.getInstance();
+    final recovered = confirmed && await retryPendingLocationStops(prefs);
+    if (_disposed) return;
+    if (recovered && _pendingRemoteStop == null) {
       if (_lastError == _remoteStopWarning) _lastError = null;
     } else if (!_isTracking) {
       _lastError ??= _remoteStopWarning;
@@ -426,11 +442,14 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foregroundActive = state == AppLifecycleState.resumed;
-    if (_foregroundActive && _pendingRemoteStop != null)
-      unawaited(_flushRemoteStop());
+    if (_foregroundActive && _native != null) unawaited(_flushRemoteStop());
     if (!_foregroundActive) {
       ++_sendRevision;
       _cancelHeartbeat();
+      return;
+    }
+    if (_native != null && _initialized && !_disposed) {
+      unawaited(_resumeNativeSharing());
       return;
     }
     if (!_initialized || !_isTracking || _disposed) return;
@@ -442,12 +461,22 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     final revision = _sendRevision;
     final session = _nativeSession;
     if (!_canSend(revision) || session == null) return;
-    final receipt = await sendCoordinatorLocation(
-      latitude: latitude,
-      longitude: longitude,
-      expectedTrackingSession: session,
-      canSend: () => _canSend(revision) && _nativeSession == session,
-    );
+    CoordinatorLocationReceipt? receipt;
+    try {
+      receipt = await sendCoordinatorLocation(
+        latitude: latitude,
+        longitude: longitude,
+        expectedTrackingSession: session,
+        canSend: () => _canSend(revision) && _nativeSession == session,
+      );
+    } on LocationSendRejected catch (error) {
+      if (_nativeSession == session &&
+          _sessionGeneration == LabSession.generation &&
+          _preferences?.getString('token') == _sessionToken) {
+        await _stopRejectedSession(error);
+      }
+      return;
+    }
     if (!_canSend(revision) || _nativeSession != session) return;
     _lastAttempt = DateTime.now();
     _pendingCount = _queuedCount(_preferences);
@@ -459,6 +488,34 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
         ? 'Sin conexión: $_pendingCount posiciones pendientes de envío.'
         : _native?.warning;
     _changed();
+  }
+
+  Future<void> _stopRejectedSession(LocationSendRejected rejection) async {
+    final stopping = _changeMode(false);
+    final revision = _modeRevision;
+    await stopping;
+    if (_currentMode(revision)) {
+      _lastError = rejection.message;
+      _changed();
+    }
+  }
+
+  Future<void> _resumeNativeSharing() async {
+    final prefs = _preferences;
+    if (prefs == null) return;
+    await prefs.reload();
+    if (_disposed ||
+        _sessionGeneration != LabSession.generation ||
+        prefs.getString('token') != _sessionToken)
+      return;
+    final rejection = rejectedLocationSession(prefs, _nativeSession);
+    if (rejection != null) {
+      await _stopRejectedSession(rejection);
+      return;
+    }
+    if (!_isTracking) return;
+    _startForegroundHeartbeat();
+    await sendSyntheticPositionNow();
   }
 
   @override

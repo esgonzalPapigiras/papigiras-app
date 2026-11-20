@@ -25,20 +25,26 @@ void nativeLocationCallback(LocationDto location) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.reload();
   if (prefs.getString(nativeTrackingSessionKey) != expected ||
+      rejectedLocationSession(prefs, expected) != null ||
       prefs.getBool('coordinatorLocationSharingEnabled') != true)
     return;
-  await sendCoordinatorLocation(
-    latitude: location.latitude,
-    longitude: location.longitude,
-    expectedTrackingSession: expected,
-    queue: LocationQueue.background,
-    recordedAt: location.time.isFinite && location.time > 0
-        ? DateTime.fromMillisecondsSinceEpoch(
-            location.time.round(),
-            isUtc: true,
-          )
-        : null,
-  );
+  try {
+    await sendCoordinatorLocation(
+      latitude: location.latitude,
+      longitude: location.longitude,
+      expectedTrackingSession: expected,
+      queue: LocationQueue.background,
+      recordedAt: location.time.isFinite && location.time > 0
+          ? DateTime.fromMillisecondsSinceEpoch(
+              location.time.round(),
+              isUtc: true,
+            )
+          : null,
+    );
+  } on LocationSendRejected {
+    // The per-session rejection marker stops subsequent background reports.
+    // The foreground owner reconciles native tracking and shows the reason.
+  }
 }
 
 abstract interface class NativeGpsDriver {
