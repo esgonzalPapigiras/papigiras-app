@@ -695,9 +695,13 @@ class _GalleryViewerState extends State<_GalleryViewer> {
         throw const FormatException('Foto no disponible');
       }
       if (action == _PhotoAction.share) {
-        await LabMedia.shareImage(bytes, buttonContext);
+        await LabMedia.shareImage(
+          bytes,
+          buttonContext,
+          isCurrent: () => _viewerIsVisible,
+        );
       } else {
-        await LabMedia.saveImage(bytes);
+        await LabMedia.saveImage(bytes, isCurrent: () => _viewerIsVisible);
         if (_viewerIsVisible) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Foto guardada en la galería.')),

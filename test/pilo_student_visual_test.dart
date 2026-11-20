@@ -1,3 +1,4 @@
+import 'support/visual_capture.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -75,7 +76,7 @@ void main() {
     ]);
   });
 
-  testWidgets('student dashboard and PDF loading/error visual fixture', (
+  captureTest('student dashboard and PDF loading/error visual fixture', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -136,7 +137,7 @@ void main() {
         final image = await render.toImage(pixelRatio: 2);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
         image.dispose();
-        final file = File(
+        final file = visualCaptureFile(
           'registro-local/PILO-ALUMNO-FICHA-COMPARTIR/evidencia/$name.png',
         );
         await file.parent.create(recursive: true);

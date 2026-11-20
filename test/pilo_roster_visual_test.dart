@@ -1,3 +1,4 @@
+import 'support/visual_capture.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -33,7 +34,7 @@ void main() {
         .load();
   });
 
-  testWidgets('nómina Pilo con fuentes reales y fixtures; sin red ni PII', (
+  captureTest('nómina Pilo con fuentes reales y fixtures; sin red ni PII', (
     tester,
   ) async {
     final previous = HttpOverrides.current;
@@ -114,7 +115,7 @@ void main() {
                 as RenderRepaintBoundary;
         final image = await boundary.toImage(pixelRatio: 2);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-        await File(
+        await visualCaptureFile(
           '/private/tmp/pilo-roster-fixture.png',
         ).writeAsBytes(bytes!.buffer.asUint8List());
         image.dispose();

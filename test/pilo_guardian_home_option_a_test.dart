@@ -1,3 +1,4 @@
+import 'support/visual_capture.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -38,7 +39,7 @@ void main() {
       final image = await render.toImage(pixelRatio: 2);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
-      await File(
+      await visualCaptureFile(
         'registro-local/PILO-APODERADO-INICIO-A/evidencia/$name.png',
       ).writeAsBytes(bytes!.buffer.asUint8List());
     });
@@ -50,7 +51,7 @@ void main() {
     (const Size(320, 568), 3.0),
     (const Size(844, 390), 1.0),
   ]) {
-    testWidgets('Option A home, gallery and details usable $size / $scale', (
+    captureTest('Option A home, gallery and details usable $size / $scale', (
       tester,
     ) async {
       tester.view.physicalSize = size;
@@ -212,7 +213,7 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   }
-  testWidgets(
+  captureTest(
     'dark trip summary preserves calendar dates and incomplete data',
     (tester) async {
       await tester.pumpWidget(

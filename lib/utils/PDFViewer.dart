@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:papigiras_app/lab/media.dart';
+import 'package:papigiras_app/lab/session.dart';
 
 class PDFViewer extends StatefulWidget {
   final String filePath;
@@ -52,6 +53,7 @@ class _PDFViewerState extends State<PDFViewer> {
           tooltip: 'Guardar PDF',
           icon: const Icon(Icons.download),
           onPressed: () => _action(() async {
+            final generation = LabSession.generation;
             final file = File(widget.filePath);
             await LabMedia.exportPdf(
               await file.readAsBytes(),
@@ -59,6 +61,7 @@ class _PDFViewerState extends State<PDFViewer> {
               dialogTitle: widget.isMedicalRecord
                   ? 'Guardar ficha médica'
                   : 'Guardar PDF',
+              isCurrent: () => mounted && generation == LabSession.generation,
             );
           }),
         ),
@@ -66,13 +69,15 @@ class _PDFViewerState extends State<PDFViewer> {
           tooltip: 'Compartir PDF',
           icon: const Icon(Icons.share),
           onPressed: () => _action(() async {
+            final generation = LabSession.generation;
             await LabMedia.sharePdf(
               File(widget.filePath),
               context: context,
               name: widget.documentName,
+              isCurrent: () => mounted && generation == LabSession.generation,
               text: widget.isMedicalRecord
                   ? 'Ficha médica'
-                  : 'Documento de Papigiras LAB',
+                  : 'Documento de PapiGiras',
             );
           }),
         ),
@@ -89,7 +94,7 @@ class _PDFViewerState extends State<PDFViewer> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                        'LAB: los enlaces externos del PDF están desactivados.',
+                        'Los enlaces externos de este PDF están desactivados.',
                       ),
                     ),
                   );

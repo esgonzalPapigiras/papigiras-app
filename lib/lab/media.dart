@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'offline.dart';
+import 'session.dart';
 
 export 'package:image_picker/image_picker.dart' show XFile, ImageSource;
 
@@ -36,7 +37,7 @@ class ImagePicker {
       if (source == native.ImageSource.camera &&
           error.code == 'camera_unavailable') {
         labNotice(
-          'Este simulador no tiene cámara. Selecciona una imagen ficticia desde Galería.',
+          'La cámara no está disponible. Selecciona una imagen desde Galería.',
         );
         return null;
       }
@@ -58,6 +59,16 @@ class ImagePicker {
 
 /// File-only native operations. This adapter never downloads or opens URLs.
 class LabMedia {
+  static void _requireCurrentExport(
+    int generation,
+    bool Function()? isCurrent,
+  ) {
+    if (generation != LabSession.generation ||
+        (isCurrent != null && !isCurrent())) {
+      throw StateError('La sesión o la vista del archivo cambió.');
+    }
+  }
+
   static String safePdfName(String name) {
     var leaf = name
         .split(RegExp(r'[/\\]'))
@@ -76,9 +87,7 @@ class LabMedia {
         bytes[2] != 68 ||
         bytes[3] != 70 ||
         bytes[4] != 45) {
-      throw const FormatException(
-        'El servidor local no devolvió un PDF válido.',
-      );
+      throw const FormatException('El servidor no devolvió un PDF válido.');
     }
   }
 
@@ -108,9 +117,11 @@ class LabMedia {
   static Future<String?> exportPdf(
     Uint8List bytes,
     String name, {
-    String dialogTitle = 'Guardar PDF de Papigiras LAB',
+    String dialogTitle = 'Guardar PDF de PapiGiras',
+    bool Function()? isCurrent,
   }) async {
     validatePdf(bytes);
+    _requireCurrentExport(LabSession.generation, isCurrent);
     return FilePicker.platform.saveFile(
       dialogTitle: dialogTitle,
       fileName: safePdfName(name),
@@ -135,13 +146,12 @@ class LabMedia {
     BuildContext? context,
     bool Function()? isCurrent,
     String? name,
-    String text = 'Documento de Papigiras LAB',
+    String text = 'Documento de PapiGiras',
   }) async {
+    final generation = LabSession.generation;
     final bytes = await file.readAsBytes();
     validatePdf(bytes);
-    if (isCurrent != null && !isCurrent()) {
-      throw StateError('The PDF session is no longer current.');
-    }
+    _requireCurrentExport(generation, isCurrent);
     Directory? exportDirectory;
     try {
       var sharedFile = file;
@@ -155,9 +165,7 @@ class LabMedia {
           '${exportDirectory.path}/${safePdfName(name)}',
         ).writeAsBytes(bytes, flush: true);
       }
-      if (isCurrent != null && !isCurrent()) {
-        throw StateError('The PDF session is no longer current.');
-      }
+      _requireCurrentExport(generation, isCurrent);
       return await Share.shareXFiles(
         [XFile(sharedFile.path, mimeType: 'application/pdf')],
         text: text,
@@ -170,17 +178,42 @@ class LabMedia {
     }
   }
 
-  static Future<Uint8List> _png(Uint8List bytes) async {
+  static Future<({Uint8List bytes, String extension, String mimeType})>
+  _imageForExport(Uint8List bytes) async {
     final codec = await ui.instantiateImageCodec(bytes);
     try {
       final frame = await codec.getNextFrame();
       try {
+        // The server's originals are JPEGs; historical PNGs are also retained.
+        // Decode to validate them, but do not re-encode or reduce their quality.
+        if (bytes.length >= 3 &&
+            bytes[0] == 0xff &&
+            bytes[1] == 0xd8 &&
+            bytes[2] == 0xff) {
+          return (bytes: bytes, extension: 'jpg', mimeType: 'image/jpeg');
+        }
+        if (bytes.length >= 8 &&
+            bytes[0] == 0x89 &&
+            bytes[1] == 0x50 &&
+            bytes[2] == 0x4e &&
+            bytes[3] == 0x47 &&
+            bytes[4] == 0x0d &&
+            bytes[5] == 0x0a &&
+            bytes[6] == 0x1a &&
+            bytes[7] == 0x0a) {
+          return (bytes: bytes, extension: 'png', mimeType: 'image/png');
+        }
+        // Preserve the reference's PNG fallback for other decodable formats.
         final data = await frame.image.toByteData(
           format: ui.ImageByteFormat.png,
         );
         if (data == null)
           throw const FormatException('No se pudo leer la imagen.');
-        return data.buffer.asUint8List();
+        return (
+          bytes: data.buffer.asUint8List(),
+          extension: 'png',
+          mimeType: 'image/png',
+        );
       } finally {
         frame.image.dispose();
       }
@@ -189,27 +222,43 @@ class LabMedia {
     }
   }
 
-  static Future<void> saveImage(Uint8List bytes) async {
-    final png = await _png(bytes);
+  static Future<void> saveImage(
+    Uint8List bytes, {
+    bool Function()? isCurrent,
+  }) async {
+    final generation = LabSession.generation;
+    final original = await _imageForExport(bytes);
+    _requireCurrentExport(generation, isCurrent);
     await Gal.putImageBytes(
-      png,
-      name: 'Papigiras_LAB_${DateTime.now().millisecondsSinceEpoch}',
+      original.bytes,
+      name: 'PapiGiras_${DateTime.now().microsecondsSinceEpoch}',
     );
   }
 
   static Future<ShareResult> shareImage(
     Uint8List bytes,
-    BuildContext context,
-  ) async {
-    final directory = await getTemporaryDirectory();
-    final file = await File(
-      '${directory.path}/Papigiras_LAB_${DateTime.now().millisecondsSinceEpoch}.png',
-    ).writeAsBytes(await _png(bytes), flush: true);
-    return Share.shareXFiles(
-      [XFile(file.path, mimeType: 'image/png')],
-      text: 'Imagen de Papigiras LAB',
-      sharePositionOrigin: _shareOrigin(context),
-    );
+    BuildContext context, {
+    bool Function()? isCurrent,
+  }) async {
+    final generation = LabSession.generation;
+    final original = await _imageForExport(bytes);
+    _requireCurrentExport(generation, isCurrent);
+    final root = await getTemporaryDirectory();
+    final directory = await root.createTemp('papigiras-image-share-');
+    try {
+      final file = await File(
+        '${directory.path}/PapiGiras.${original.extension}',
+      ).writeAsBytes(original.bytes, flush: true);
+      _requireCurrentExport(generation, isCurrent);
+      if (!context.mounted) throw StateError('La vista del archivo se cerró.');
+      return await Share.shareXFiles(
+        [XFile(file.path, mimeType: original.mimeType)],
+        text: 'Imagen de PapiGiras',
+        sharePositionOrigin: _shareOrigin(context),
+      );
+    } finally {
+      if (await directory.exists()) await directory.delete(recursive: true);
+    }
   }
 
   static Future<Uint8List> compressForUpload(native.XFile file) async {

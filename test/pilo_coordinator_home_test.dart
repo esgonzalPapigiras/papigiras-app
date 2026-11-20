@@ -1,3 +1,4 @@
+import 'support/visual_capture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -143,7 +144,7 @@ void main() {
   };
 
   for (final destination in destinations.entries) {
-    testWidgets(
+    captureTest(
       '${destination.key} opens its existing tool for the active tour',
       (tester) async {
         final before = session();
@@ -274,7 +275,7 @@ void main() {
   }
 
   for (final fromMenu in [false, true]) {
-    testWidgets(
+    captureTest(
       'ranking opens from ${fromMenu ? 'menu' : 'home'} and returns without losing session',
       (tester) async {
         final before = session();
@@ -313,7 +314,7 @@ void main() {
     );
   }
 
-  testWidgets(
+  captureTest(
     'trip details retain crew and exact dates without replacing home',
     (tester) async {
       await show(tester);
@@ -351,7 +352,7 @@ void main() {
     },
   );
 
-  testWidgets(
+  captureTest(
     'diet roster is reachable even when the summary count is unavailable',
     (tester) async {
       await show(tester);
@@ -384,7 +385,7 @@ void main() {
     (const Size(402, 874), 1.0),
     (const Size(320, 740), 1.5),
   ]) {
-    testWidgets(
+    captureTest(
       'home tools and tabs remain reachable at ${layout.$1.width}/${layout.$2}',
       (tester) async {
         await show(tester, size: layout.$1, textScale: layout.$2);
@@ -418,7 +419,7 @@ void main() {
     );
   }
 
-  testWidgets(
+  captureTest(
     '402-point first view shows preview, editable avatar, roster and primary tools',
     (tester) async {
       tour = TourSales.fromJson({
@@ -476,7 +477,7 @@ void main() {
         await tester.runAsync(() async {
           final image = await capture.toImage(pixelRatio: 2);
           final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-          final file = File(
+          final file = visualCaptureFile(
             '${Directory.current.path}/registro-local/PILO-COORDINADOR-INTEGRADO/inicio-fixture.png',
           );
           await file.parent.create(recursive: true);

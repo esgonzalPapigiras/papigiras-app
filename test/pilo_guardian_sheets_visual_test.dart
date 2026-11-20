@@ -1,3 +1,4 @@
+import 'support/visual_capture.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -67,7 +68,7 @@ void main() {
     ]);
   });
 
-  testWidgets('Option A medical, menu and profile sheets visual fixture', (
+  captureTest('Option A medical, menu and profile sheets visual fixture', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -169,7 +170,7 @@ void main() {
         final image = await render.toImage(pixelRatio: 2);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
         image.dispose();
-        final file = File(
+        final file = visualCaptureFile(
           'registro-local/PILO-APODERADO-INICIO-A/evidencia/$name.png',
         );
         await file.parent.create(recursive: true);

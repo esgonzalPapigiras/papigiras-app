@@ -517,7 +517,22 @@ void main() {
     final sharePhoto = enabledAction('Compartir foto');
     final sent = await tester.runAsync(() async {
       sharePhoto();
-      return shared.future.timeout(const Duration(seconds: 8));
+      final bytes = await shared.future.timeout(const Duration(seconds: 8));
+      // Cleanup continues after the native share result. Keep real I/O running
+      // until the UI becomes usable again, rather than freezing its busy state.
+      await (() async {
+        while (true) {
+          await tester.pump();
+          final button = find.ancestor(
+            of: find.byTooltip('Compartir foto'),
+            matching: find.byType(IconButton),
+          );
+          if (tester.widget<IconButton>(button).onPressed != null) break;
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      })().timeout(const Duration(seconds: 8));
+      expect(await root!.list().toList(), isEmpty);
+      return bytes;
     });
     await tester.pumpAndSettle();
     expect(sent, downloaded);

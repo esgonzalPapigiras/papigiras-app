@@ -19,7 +19,7 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
     if (_saving) return;
     setState(() => _saving = true);
     try {
-      await LabMedia.saveImage(widget.imageBytes);
+      await LabMedia.saveImage(widget.imageBytes, isCurrent: () => mounted);
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Imagen guardada en la galería')),
@@ -36,7 +36,11 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
 
   Future<void> _shareImage() async {
     try {
-      await LabMedia.shareImage(widget.imageBytes, context);
+      await LabMedia.shareImage(
+        widget.imageBytes,
+        context,
+        isCurrent: () => mounted,
+      );
     } catch (error) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(

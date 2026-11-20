@@ -54,7 +54,7 @@ class PapigirasLab extends StatelessWidget {
     create: (_) => LocationService(),
     child: _SessionBoundary(
       child: MaterialApp(
-        title: 'Papigiras LAB',
+        title: AppEnvironment.connected ? 'PapiGiras' : 'Papigiras LAB',
         theme: ThemeData(pageTransitionsTheme: papiPageTransitions),
         locale: papiLocale,
         supportedLocales: papiSupportedLocales,
@@ -68,10 +68,11 @@ class PapigirasLab extends StatelessWidget {
           '/login': (_) => WelcomeScreen(),
         },
         builder:
-            const bool.fromEnvironment(
-              'PILO_HIDE_LAB_BANNER',
-              defaultValue: true,
-            )
+            AppEnvironment.connected ||
+                const bool.fromEnvironment(
+                  'PILO_HIDE_LAB_BANNER',
+                  defaultValue: true,
+                )
             ? (_, child) => AnnotatedRegion<SystemUiOverlayStyle>(
                 value: SystemUiOverlayStyle.dark,
                 child: child ?? const SizedBox.shrink(),
