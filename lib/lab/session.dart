@@ -5,6 +5,7 @@ import '../dto/coordinator_session.dart';
 import '../dto/TourSales.dart';
 import '../dto/responseAttorney.dart';
 import 'preferences.dart';
+import '../utils/fcm_utils.dart';
 
 abstract final class LabSession {
   static const revision = String.fromEnvironment('PAPIGIRAS_API_URL') != ''
@@ -40,6 +41,7 @@ abstract final class LabSession {
   }) async {
     // Revoke asynchronous work even if a future login receives the same token.
     _generation++;
+    await FcmUtils.stop();
     for (final key in keys) {
       await prefs.remove(key);
     }

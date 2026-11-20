@@ -1,5 +1,6 @@
 import 'package:papigiras_app/maps/hito_location_draft.dart';
 import '../lab/session.dart';
+import '../runtime/api_destination.dart';
 import '../crew/crew_coordinator.dart';
 import '../dto/TourSales.dart';
 import '../documents/internal_documents_repository.dart';
@@ -160,24 +161,46 @@ class CoordinatorProviders
     }
   }
 
-  // LAB-only contract. No imported passwords, operator token or URL credentials.
+  // Keep the isolated reference contract; connected builds use official login
+  // endpoints. Family credentials go in the form body, never in URL parameters.
   Future<Map<String, dynamic>> _loginLocal(
     String role,
     String rut,
     String password,
   ) async {
     try {
-      final response = await _http.post(
-        LabApi.uri('/app/services/lab/mobile/login'),
-        body: jsonEncode({'role': role, 'rut': rut, 'password': password}),
-        headers: {'Content-Type': 'application/json'},
-      );
+      final http.Response response;
+      if (AppEnvironment.connected) {
+        if (!const {'coordinator', 'attorney', 'passenger'}.contains(role)) {
+          throw const FormatException('Perfil no válido.');
+        }
+        response = role == 'coordinator'
+            ? await _http.post(
+                LabApi.uri('/app/services/coordinator/login'),
+                body: jsonEncode({'rut': rut, 'password': password}),
+                headers: {'Content-Type': 'application/json'},
+              )
+            : await _http.post(
+                LabApi.uri('/app/services/$role/login'),
+                body: {'user': rut, 'password': password},
+              );
+      } else {
+        response = await _http.post(
+          LabApi.uri('/app/services/lab/mobile/login'),
+          body: jsonEncode({'role': role, 'rut': rut, 'password': password}),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
       return jsonDecode(utf8.decode(response.bodyBytes))
           as Map<String, dynamic>;
     } on LabApiException catch (error) {
-      if (error.statusCode == 401 || error.statusCode == 403) {
+      if (error.statusCode == 400 ||
+          error.statusCode == 401 ||
+          error.statusCode == 403) {
         throw Exception(
-          'Revisa el RUT y la contraseña. La cuenta debe estar habilitada en la copia local.',
+          AppEnvironment.connected
+              ? 'Revisa el RUT y la contraseña. La cuenta debe estar habilitada para este perfil.'
+              : 'Revisa el RUT y la contraseña. La cuenta debe estar habilitada en la copia local.',
         );
       }
       rethrow;

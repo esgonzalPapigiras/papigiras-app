@@ -21,11 +21,26 @@ import 'pages/alumns/indexpassenger.dart';
 import 'pages/attorney/indexFather.dart';
 import 'pages/welcome.dart';
 import 'utils/LocationService.dart';
+import 'runtime/api_destination.dart';
+import 'notifications/push_notifications.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = LabOfflineHttpOverrides();
-  await LabSyntheticLocation.instance.restore();
+  if (AppEnvironment.connected) {
+    // Validate the compiled destination before initializing external services.
+    AppEnvironment.destination;
+    try {
+      await PushNotifications.initialize();
+    } catch (_) {
+      // Login retries registration and reports failure without blocking access.
+      debugPrint(
+        'No se pudieron inicializar las notificaciones. Se reintentará al iniciar sesión.',
+      );
+    }
+  } else {
+    await LabSyntheticLocation.instance.restore();
+  }
   final startScreen = await determineLabStartScreen();
   runApp(PapigirasLab(startScreen: startScreen));
 }

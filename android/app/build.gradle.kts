@@ -8,6 +8,7 @@ plugins {
 }
 
 val previewBuild = providers.gradleProperty("piloPreview").orNull == "true"
+if (!previewBuild) apply(plugin = "com.google.gms.google-services")
 val previewKeyFile = System.getenv("PILO_PREVIEW_KEY_PROPERTIES")
 val previewKey = Properties()
 if (previewBuild && previewKeyFile != null) file(previewKeyFile).inputStream().use { previewKey.load(it) }
@@ -18,6 +19,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -27,9 +29,9 @@ android {
     }
 
     defaultConfig {
-        // Independent LAB application: never reuse the production application ID.
-        applicationId = if (previewBuild) "com.papigiras.lab.pruebas" else "com.papigiras.lab"
-        manifestPlaceholders["appLabel"] = if (previewBuild) "Pilo Pruebas" else "Papigiras LAB"
+        // Preserve the installed app/Firebase identity for connected builds.
+        applicationId = if (previewBuild) "com.papigiras.lab.pruebas" else "com.papigiras"
+        manifestPlaceholders["appLabel"] = if (previewBuild) "Pilo Pruebas" else "PapiGiras"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 25
@@ -56,4 +58,8 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

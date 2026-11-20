@@ -4,6 +4,7 @@ import 'package:papigiras_app/lab/preferences.dart';
 import 'package:papigiras_app/lab/session.dart';
 import 'package:papigiras_app/lab/synthetic_location.dart';
 import 'package:papigiras_app/utils/location_callback.dart';
+import '../runtime/api_destination.dart';
 
 /// Explicit opt-in to a fictional route while the LAB is in the foreground.
 /// It never requests GPS or claims native background location.
@@ -182,6 +183,11 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     int sessionGeneration,
   ) async {
     if (!_currentMode(revision)) return;
+    if (AppEnvironment.connected && enabled) {
+      // Interim integration guard: never publish the LAB's synthetic bus route
+      // to the real API. Replace with the native source in the GPS milestone.
+      throw StateError('El seguimiento GPS real aún está en integración.');
+    }
     final prefs = await SharedPreferences.getInstance();
     if (!_currentMode(revision)) return;
     _preferences = prefs;
