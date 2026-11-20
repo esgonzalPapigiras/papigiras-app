@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "PapiGiras - connected Android/iOS",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--dart-define=PAPIGIRAS_API_URL=https://stingray-app-9tqd9-djh6d.ondigitalocean.app"
+      ]
+    }
+  ]
+}

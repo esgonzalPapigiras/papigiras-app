@@ -2,6 +2,8 @@
 
 > **Estado de este checkout, 20/11/2026:** la rama `codex/pilo-integration-2026` contiene la integración local en curso. Conserva la interfaz Pilo y ya incorpora identidad oficial `com.papigiras`, Firebase/APNs, GPS nativo y contratos privados de la API. Las secciones originales de entrega que siguen describen la referencia del 16/11, no el estado completo de esta integración. No se ha desplegado ni verificado entrega de notificaciones en teléfonos.
 
+Para probar en Windows desde este checkout, usar `powershell -ExecutionPolicy Bypass -File .\scripts\run_connected.ps1`. El lanzador selecciona Flutter **3.38.10** del directorio de herramientas del backend y añade la URL oficial. Acepta `-Device ID`, `-FlutterSdk RUTA` y `-CheckOnly` (sólo comprueba configuración, sin compilar ni instalar). VS Code también tiene una configuración `PapiGiras - connected Android/iOS` con ese SDK y URL; requiere ambos repositorios como carpetas hermanas. Esto no cambia el Flutter global del equipo. Un `flutter run` escrito directamente en una terminal ya abierta puede seguir usando el SDK global y además omite el destino conectado.
+
 Para compilar el candidato conectado con Flutter **3.38.10**, después de preparar el backend compatible:
 
 ```sh
