@@ -17,11 +17,65 @@ enum LocationQueue { foreground, background }
 const maximumPendingLocations = 200;
 const nativeTrackingSessionKey = 'nativeTrackingSession';
 const nativeTrackingTourKey = 'nativeTrackingTour';
+const pendingNativeClaimKey = 'pendingNativeGpsClaim';
 const pendingLocationStopPrefix = 'pendingLocationStop:';
 const locationRejectionPrefix = 'rejectedLocationSession:';
 Future<void> _sendChain = Future<void>.value();
 String? _registeredTrackingSession;
 String? _registeredTrackingToken;
+
+Future<void> claimLocationSharing(
+  String token,
+  int tourId,
+  String session, {
+  int? expectedOwnerGeneration,
+  LabApiClient? transport,
+}) async {
+  final client = transport ?? locationClientForTests ?? LabApiClient();
+  try {
+    await client
+        .post(
+          LabApi.uri('/app/services/coordinator/location-sharing'),
+          headers: {'Content-Type': 'application/json', 'Authorization': token},
+          body: jsonEncode({
+            'tourId': tourId,
+            'session': session,
+            'enabled': true,
+            if (expectedOwnerGeneration != null)
+              'expectedOwnerGeneration': expectedOwnerGeneration,
+          }),
+        )
+        .timeout(const Duration(seconds: 12));
+    _registeredTrackingSession = session;
+    _registeredTrackingToken = token;
+  } finally {
+    if (transport == null && locationClientForTests == null) client.close();
+  }
+}
+
+Future<String?> coordinatorSharingOnServer(String token, int? tourId) async {
+  final client = locationClientForTests ?? LabApiClient();
+  try {
+    final response = await client
+        .get(
+          LabApi.uri(
+            '/app/services/coordinator/me/session',
+            tourId == null ? null : {'tourId': tourId.toString()},
+          ),
+          headers: {'Authorization': token},
+        )
+        .timeout(const Duration(seconds: 8));
+    final data = jsonDecode(response.body);
+    if (data is! Map ||
+        !data.containsKey('sharingSession') ||
+        (data['sharingSession'] != null && data['sharingSession'] is! String)) {
+      throw const FormatException('Respuesta de sesión no reconocida.');
+    }
+    return data['sharingSession'] as String?;
+  } finally {
+    if (locationClientForTests == null) client.close();
+  }
+}
 
 @visibleForTesting
 LabApiClient? locationClientForTests;
@@ -139,7 +193,8 @@ RemoteLocationStop? captureRemoteLocationStop(SharedPreferences prefs) {
 }
 
 Future<bool> stopRemoteLocationSharing(RemoteLocationStop target) async {
-  final client = locationClientForTests ?? LabApiClient();
+  final client =
+      locationClientForTests ?? LabApiClient(invalidateOnUnauthorized: false);
   try {
     await rememberRemoteLocationStop(target);
     await client
@@ -172,7 +227,9 @@ Future<bool> stopRemoteLocationSharing(RemoteLocationStop target) async {
 class LocationSendRejected implements Exception {
   const LocationSendRejected(this.statusCode);
   final int statusCode;
-  String get message => statusCode == 403
+  String get message => statusCode == 401
+      ? 'La sesión de este teléfono terminó. Vuelve a ingresar.'
+      : statusCode == 403
       ? 'Ya no tienes permiso para compartir ubicación en esta gira.'
       : statusCode == 409
       ? 'Esta sesión de ubicación terminó. Activa de nuevo el envío si deseas compartir.'
@@ -187,7 +244,7 @@ LocationSendRejected? rejectedLocationSession(
 ) {
   if (session == null) return null;
   final code = prefs.getInt('$locationRejectionPrefix$session');
-  return const {400, 403, 404, 409}.contains(code)
+  return const {400, 401, 403, 404, 409}.contains(code)
       ? LocationSendRejected(code!)
       : null;
 }
@@ -301,7 +358,7 @@ Future<CoordinatorLocationReceipt?> _sendCoordinatorLocation({
       if (AppEnvironment.connected &&
           location['trackingSession'] != expectedTrackingSession)
         continue;
-      if (!await _postLocation(location, token, stillPermitted)) {
+      if (!await _postLocation(location, token, stillPermitted, queue)) {
         remaining.addAll(pending.sublist(i));
         break;
       }
@@ -319,7 +376,7 @@ Future<CoordinatorLocationReceipt?> _sendCoordinatorLocation({
       'recordedAt': recordedAt.toIso8601String(),
       if (AppEnvironment.connected) 'trackingSession': expectedTrackingSession,
     };
-    if (!await _postLocation(location, token, stillPermitted)) {
+    if (!await _postLocation(location, token, stillPermitted, queue)) {
       remaining.add(jsonEncode(location));
     } else if (permitted() && prefs.getInt('selectedTourId') == tourId) {
       receipt = CoordinatorLocationReceipt(
@@ -348,9 +405,12 @@ Future<bool> _postLocation(
   Map<String, dynamic> location,
   String token,
   Future<bool> Function() stillPermitted,
+  LocationQueue queue,
 ) async {
   if (LabMode.fixturesForTests && locationClientForTests == null) return true;
-  final client = locationClientForTests ?? LabApiClient();
+  final client =
+      locationClientForTests ??
+      LabApiClient(invalidateOnUnauthorized: queue != LocationQueue.background);
   final url = LabApi.uri('/app/services/add-position-coordinator', {
     'latitud': location['latitude'].toString(),
     'longitud': location['longitude'].toString(),
@@ -363,17 +423,12 @@ Future<bool> _postLocation(
     if (AppEnvironment.connected &&
         (_registeredTrackingSession != location['trackingSession'] ||
             _registeredTrackingToken != token)) {
-      await client.post(
-        LabApi.uri('/app/services/coordinator/location-sharing'),
-        headers: {'Content-Type': 'application/json', 'Authorization': token},
-        body: jsonEncode({
-          'tourId': location['tourId'],
-          'session': location['trackingSession'],
-          'enabled': true,
-        }),
+      await claimLocationSharing(
+        token,
+        location['tourId'] as int,
+        location['trackingSession'] as String,
+        transport: client,
       );
-      _registeredTrackingSession = location['trackingSession'] as String;
-      _registeredTrackingToken = token;
     }
     if (!await stillPermitted()) return false;
     await client.post(
@@ -384,7 +439,7 @@ Future<bool> _postLocation(
   } catch (error) {
     if (AppEnvironment.connected &&
         error is LabApiException &&
-        const {400, 403, 404, 409}.contains(error.statusCode)) {
+        const {400, 401, 403, 404, 409}.contains(error.statusCode)) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.reload();
       if (prefs.getString('token') == token &&

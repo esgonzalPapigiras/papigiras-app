@@ -21,6 +21,7 @@ abstract final class LabSession {
       : 'preview-2026-11-16:' +
             String.fromEnvironment('PAPIGIRAS_PREVIEW_HOST');
   static final expired = ValueNotifier<int>(0);
+  static String? expiryMessage;
 
   /// Credential consumers rebind only after the complete credential is stored.
   static final changed = ValueNotifier<int>(0);
@@ -42,6 +43,7 @@ abstract final class LabSession {
     'coordinatorLocationSharingEnabled',
     'nativeTrackingSession',
     'nativeTrackingTour',
+    'pendingNativeGpsClaim',
   ];
 
   static Future<void> clear(
@@ -49,16 +51,19 @@ abstract final class LabSession {
     bool notifyChanged = true,
   }) async {
     // Revoke asynchronous work even if a future login receives the same token.
-    _generation++;
+    final clearing = ++_generation;
     final locationStop = captureRemoteLocationStop(prefs);
     // A crash during cleanup must not restore a saved ON choice on next launch.
     await prefs.setBool('coordinatorLocationSharingEnabled', false);
+    if (clearing != _generation) return;
     await prefs.setBool('isLoggedIn', false);
     if (locationStop != null) await rememberRemoteLocationStop(locationStop);
     // Revoke the background isolate before any slower native push cleanup.
+    if (clearing != _generation) return;
     await prefs.remove('nativeTrackingSession');
     final pushCleanup = FcmUtils.stop();
     for (final key in keys) {
+      if (clearing != _generation) break;
       await prefs.remove(key);
     }
     // Local identity is already revoked. A rejected cleanup cannot clear a new login.
@@ -66,12 +71,13 @@ abstract final class LabSession {
     await pushCleanup;
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
-    if (notifyChanged) changed.value++;
+    if (notifyChanged && clearing == _generation) changed.value++;
   }
 
   static Future<void> invalidateIfCurrent(
     String? requestToken, {
     bool notify = true,
+    String? message,
     int? expectedGeneration,
   }) async {
     final prefs = await SharedPreferences.getInstance();
@@ -89,8 +95,12 @@ abstract final class LabSession {
     if (token.isEmpty &&
         (expectedGeneration == null || prefs.getBool('isLoggedIn') != true))
       return;
+    final revocation = _generation + 1;
     await clear(prefs);
-    if (notify) expired.value++;
+    if (notify && revocation == _generation) {
+      expiryMessage = message;
+      expired.value++;
+    }
   }
 
   static Future<bool> hasActiveCoordinator(int coordinatorId) async {

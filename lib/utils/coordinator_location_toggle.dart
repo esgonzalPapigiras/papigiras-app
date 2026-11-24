@@ -3,7 +3,7 @@ import 'package:papigiras_app/design/pilo_family_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:papigiras_app/utils/LocationService.dart';
 
-/// Coordinator sharing control. The LAB service only emits synthetic positions.
+/// Sharing control common to the coordinator dashboard and map.
 class CoordinatorLocationToggle extends StatelessWidget {
   const CoordinatorLocationToggle({super.key, this.compact = false});
 
@@ -18,6 +18,31 @@ class CoordinatorLocationToggle extends StatelessWidget {
     try {
       await service.setSharingEnabled(enabled);
       if (!context.mounted) return;
+      final offer = service.takeover;
+      if (enabled && offer != null) {
+        final accepted = await showDialog<bool>(
+          context: context,
+          builder: (dialog) => AlertDialog(
+            title: const Text('¿Tomar el control de la ubicación?'),
+            content: const Text(
+              'Otro coordinador de esta gira ya comparte su ubicación. Si aceptas, el mapa mostrará tu ubicación y el otro teléfono dejará de compartir.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialog, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialog, true),
+                child: const Text('Tomar el control'),
+              ),
+            ],
+          ),
+        );
+        if (accepted != true || !context.mounted) return;
+        await service.confirmTakeover(offer);
+        if (!context.mounted) return;
+      }
       final error = service.lastError;
       if (error != null) {
         ScaffoldMessenger.of(
@@ -29,7 +54,7 @@ class CoordinatorLocationToggle extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'No se pudo cambiar la ubicación de prueba. Inténtalo de nuevo.',
+            'No se pudo cambiar el envío de ubicación. Inténtalo de nuevo.',
           ),
         ),
       );
@@ -166,7 +191,7 @@ class CoordinatorLocationToggle extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              service.isChangingMode
+                              (service.isChangingMode || service.awaitingClaim)
                                   ? 'Actualizando…'
                                   : service.isTracking
                                   ? 'Compartiendo'

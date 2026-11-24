@@ -65,15 +65,19 @@ class _MapLocationService extends LocationService {
   }
 }
 
-PositionCoordinator _point(int coordinator, {double latitude = -33.45}) =>
-    PositionCoordinator(
-      coordinatorId: coordinator,
-      coordinatorName: 'Coordinador ficticio',
-      coordinatorLastname: 'LAB',
-      latitude: latitude,
-      longitude: -70.65,
-      recordedAt: DateTime.now().toUtc().subtract(const Duration(seconds: 10)),
-    );
+PositionCoordinator _point(
+  int coordinator, {
+  double latitude = -33.45,
+  bool? sharingEnabled,
+}) => PositionCoordinator(
+  coordinatorId: coordinator,
+  coordinatorName: 'Coordinador ficticio',
+  sharingEnabled: sharingEnabled,
+  coordinatorLastname: 'LAB',
+  latitude: latitude,
+  longitude: -70.65,
+  recordedAt: DateTime.now().toUtc().subtract(const Duration(seconds: 10)),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -214,6 +218,18 @@ void main() {
     await bus.refresh();
     expect(bus.isRecent, isFalse);
   });
+
+  scenario(
+    'a newly elected GPS sender supersedes the local cached bus',
+    () async {
+      await service.setSharingEnabled(true);
+      expect(bus.position?.coordinatorId, 910001);
+      provider.rows = [_point(910002, sharingEnabled: true)];
+      await bus.refresh();
+      expect(bus.position?.coordinatorId, 910002);
+      expect(bus.isRecent, isTrue);
+    },
+  );
 
   scenario('own OFF does not turn a different coordinator offline', () async {
     provider.rows = [_point(910002)];

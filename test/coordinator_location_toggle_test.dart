@@ -27,6 +27,20 @@ class _FakeLocationService extends LocationService {
   bool busy = false;
   String? error;
   String? nextError;
+  LocationTakeover? offer;
+  int confirmations = 0;
+  @override
+  LocationTakeover? get takeover => offer;
+  @override
+  Future<void> confirmTakeover(LocationTakeover value) async {
+    expect(value, same(offer));
+    confirmations++;
+    offer = null;
+    error = null;
+    sharing = true;
+    notifyListeners();
+  }
+
   Completer<void>? pending;
   final requests = <bool>[];
 
@@ -135,6 +149,27 @@ void main() {
   Finder pin() => find.byWidgetPredicate(
     (widget) => widget is Icon && widget.color == _pinColor,
   );
+
+  testWidgets('losing a claim offers cancelar or an explicit takeover', (
+    tester,
+  ) async {
+    location.offer = const LocationTakeover(31, 10, 'test');
+    location.nextError = 'Otro coordinador comparte su ubicación.';
+    await show(tester);
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+    expect(find.text('¿Tomar el control de la ubicación?'), findsOneWidget);
+    await tester.tap(find.text('Cancelar'));
+    await tester.pumpAndSettle();
+    expect(location.confirmations, 0);
+    expect(location.sharing, isFalse);
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tomar el control'));
+    await tester.pumpAndSettle();
+    expect(location.confirmations, 1);
+    expect(location.sharing, isTrue);
+  });
 
   for (final enabled in [false, true]) {
     testWidgets(

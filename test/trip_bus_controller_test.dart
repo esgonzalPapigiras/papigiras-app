@@ -143,9 +143,9 @@ void main() {
   );
 
   testController(
-    'another active coordinator wins over a newer stopped sender',
+    'a handover between polls switches the marker even if the new GPS clock lags',
     (tester) async {
-      provider.rows = [_point(1, now, sharingEnabled: false)];
+      provider.rows = [_point(1, now, sharingEnabled: true)];
       controller.setVisible(true);
       await tester.pump();
       provider.rows = [

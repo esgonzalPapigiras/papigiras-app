@@ -2,6 +2,7 @@ import 'package:papigiras_app/utils/page_navigation.dart';
 import 'package:papigiras_app/design/papigiras_design.dart';
 import 'lab/session.dart';
 import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -173,27 +174,77 @@ class _SessionBoundary extends StatefulWidget {
   State<_SessionBoundary> createState() => _SessionBoundaryState();
 }
 
-class _SessionBoundaryState extends State<_SessionBoundary> {
+class _SessionBoundaryState extends State<_SessionBoundary>
+    with WidgetsBindingObserver {
+  Timer? _coordinatorCheck;
+  int _watchRevision = 0;
+
+  void _watchSession() async {
+    final revision = ++_watchRevision;
+    _coordinatorCheck?.cancel();
+    final state = WidgetsBinding.instance.lifecycleState;
+    if (!mounted ||
+        !AppEnvironment.connected ||
+        (state != null && state != AppLifecycleState.resumed))
+      return;
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted ||
+        revision != _watchRevision ||
+        prefs.getString('userRole') != 'coordinator' ||
+        prefs.getBool('isLoggedIn') != true)
+      return;
+    final service = context.read<LocationService>();
+    unawaited(service.checkCoordinatorSession());
+    _coordinatorCheck = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => unawaited(service.checkCoordinatorSession()),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) => _watchSession();
+
   @override
   void initState() {
     super.initState();
     LabSession.expired.addListener(_expired);
+    if (AppEnvironment.connected) {
+      WidgetsBinding.instance.addObserver(this);
+      LabSession.changed.addListener(_watchSession);
+      _watchSession();
+    }
   }
 
   @override
   void dispose() {
+    _coordinatorCheck?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    LabSession.changed.removeListener(_watchSession);
     LabSession.expired.removeListener(_expired);
     super.dispose();
   }
 
   void _expired() {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await context.read<LocationService>().stopTracking();
+    final generation = LabSession.generation;
+    final message = LabSession.expiryMessage;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || generation != LabSession.generation) return;
+      // Revocation has already cleared the local identity. A delayed native
+      // stop must not leave private screens on display.
+      unawaited(
+        context.read<LocationService>().stopTracking().catchError(
+          (Object _) {},
+        ),
+      );
       PapigirasLab.navigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => WelcomeScreen()),
         (_) => false,
       );
+      if (message != null) {
+        labMessengerKey.currentState?.showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
     });
     WidgetsBinding.instance.scheduleFrame();
   }

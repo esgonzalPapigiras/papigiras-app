@@ -26,9 +26,27 @@ void nativeLocationCallback(LocationDto location) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.reload();
   if (prefs.getString(nativeTrackingSessionKey) != expected ||
-      rejectedLocationSession(prefs, expected) != null ||
+      prefs.getString(pendingNativeClaimKey) == expected ||
       prefs.getBool('coordinatorLocationSharingEnabled') != true)
     return;
+  Future<void> stopRejected() async {
+    await prefs.reload();
+    if (_backgroundSession != expected ||
+        prefs.getString(nativeTrackingSessionKey) != expected ||
+        rejectedLocationSession(prefs, expected) == null)
+      return;
+    try {
+      await BackgroundLocator.unRegisterLocationUpdate();
+    } catch (_) {
+      // Some suspended engines cannot stop the native plugin until resume.
+      // The nonce marker still prevents every further report.
+    }
+  }
+
+  if (rejectedLocationSession(prefs, expected) != null) {
+    await stopRejected();
+    return;
+  }
   try {
     await sendCoordinatorLocation(
       latitude: location.latitude,
@@ -43,8 +61,7 @@ void nativeLocationCallback(LocationDto location) async {
           : null,
     );
   } on LocationSendRejected {
-    // The per-session rejection marker stops subsequent background reports.
-    // The foreground owner reconciles native tracking and shows the reason.
+    await stopRejected();
   }
 }
 

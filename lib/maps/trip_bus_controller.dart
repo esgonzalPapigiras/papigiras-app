@@ -162,6 +162,7 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
         coordinatorId: coordinatorId,
         coordinate: LatLng(accepted.latitude, accepted.longitude),
         recordedAt: accepted.recordedAt.toUtc(),
+        sharingEnabled: true,
       );
       _localObservation = reported;
       final latest = _preferLocal(_position);
@@ -177,10 +178,17 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  TripBusPosition? _preferLocal(TripBusPosition? remote) {
+  TripBusPosition? _preferLocal(
+    TripBusPosition? remote, {
+    bool freshRead = false,
+  }) {
     final local = _localObservation;
     if (local == null) return remote;
     if (remote == null) return local;
+    if (freshRead &&
+        remote.sharingEnabled == true &&
+        remote.coordinatorId != local.coordinatorId)
+      return remote;
     if (remote.coordinatorId == _localCoordinatorId &&
         (!_localSharingEnabled || _localReceipt == null))
       return local;
@@ -287,7 +295,7 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
     try {
       final rows = await _provider.uniqueID(tourId.toString());
       if (!_guardSession() || !_canRead || generation != _generation) return;
-      final latest = _preferLocal(_latestValid(rows));
+      final latest = _preferLocal(_latestValid(rows), freshRead: true);
       _position = _withHeading(latest);
       if (_position?.coordinatorId == _localCoordinatorId &&
           _localObservation == null &&
@@ -343,9 +351,10 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
     // An undated, repeated or out-of-order fix must not move the last known
     // position or alter its heading.
     final switchingToActiveSender =
-        previous?.sharingEnabled == false &&
         previous?.coordinatorId != next.coordinatorId &&
-        next.sharingEnabled != false &&
+        (next.sharingEnabled == true ||
+            (previous?.sharingEnabled == false &&
+                next.sharingEnabled != false)) &&
         nextVerified &&
         now.difference(nextTime) <= recentWindow;
     if (previousVerified &&

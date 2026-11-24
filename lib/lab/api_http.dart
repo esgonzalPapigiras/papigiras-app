@@ -59,7 +59,8 @@ abstract final class LabApi {
 
 class LabApiException implements Exception {
   final int statusCode;
-  const LabApiException(this.statusCode);
+  final int? gpsOwnerGeneration;
+  const LabApiException(this.statusCode, {this.gpsOwnerGeneration});
   @override
   String toString() => AppEnvironment.connected
       ? 'Papigiras: solicitud rechazada ($statusCode). Revisa la sesión y los permisos.'
@@ -77,9 +78,13 @@ class LabApiClient extends http.BaseClient {
   /// Only the composing-hito client defers navigation while reauthenticating.
   /// Unauthorized credentials are still revoked and never retried here.
   final bool notifyOnUnauthorized;
-  LabApiClient({http.Client? transport, this.notifyOnUnauthorized = true})
-    : _transport =
-          transport ?? IOClient(_LocalApiTransport().createHttpClient(null));
+  final bool invalidateOnUnauthorized;
+  LabApiClient({
+    http.Client? transport,
+    this.notifyOnUnauthorized = true,
+    this.invalidateOnUnauthorized = true,
+  }) : _transport =
+           transport ?? IOClient(_LocalApiTransport().createHttpClient(null));
 
   /// Bounded consumers can stream local bytes without constructing a separate
   /// transport. All destinations, headers, redirects and session checks still
@@ -134,18 +139,34 @@ class LabApiClient extends http.BaseClient {
         // with a credential remains a permission error, not a session expiry.
         final missingCredential =
             (request.headers['authorization'] ?? '').isEmpty;
-        if (response.statusCode == 401 ||
-            (response.statusCode == 403 && missingCredential)) {
+        if (invalidateOnUnauthorized &&
+            (response.statusCode == 401 ||
+                (response.statusCode == 403 && missingCredential))) {
           await LabSession.invalidateIfCurrent(
             request.headers['authorization'],
-            notify: notifyOnUnauthorized,
+            notify:
+                notifyOnUnauthorized ||
+                response.headers['x-papigiras-session'] == 'replaced',
+            message: response.headers['x-papigiras-session'] == 'replaced'
+                ? 'Tu sesión se cerró porque esta cuenta ingresó en otro dispositivo.'
+                : null,
             expectedGeneration: requestGeneration,
           );
         }
         await response.stream.drain<void>().timeout(
           const Duration(seconds: 12),
         );
-        throw LabApiException(response.statusCode);
+        final owner =
+            response.statusCode == 409 &&
+                request.url.path == '/app/services/coordinator/location-sharing'
+            ? int.tryParse(
+                response.headers['x-papigiras-gps-owner-generation'] ?? '',
+              )
+            : null;
+        throw LabApiException(
+          response.statusCode,
+          gpsOwnerGeneration: owner != null && owner > 0 ? owner : null,
+        );
       }
       return http.StreamedResponse(
         response.stream.timeout(const Duration(seconds: 20)),

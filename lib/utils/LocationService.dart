@@ -1,12 +1,21 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../lab/api_http.dart';
 import 'package:papigiras_app/lab/preferences.dart';
 import 'package:papigiras_app/lab/session.dart';
 import 'package:papigiras_app/lab/synthetic_location.dart';
 import 'package:papigiras_app/utils/location_callback.dart';
 import '../runtime/api_destination.dart';
 import '../tracking/native_gps_driver.dart';
+
+/// A prompt is valid for one login, tour and observed GPS owner.
+class LocationTakeover {
+  const LocationTakeover(this.ownerGeneration, this.tourId, this._token);
+  final int ownerGeneration;
+  final int tourId;
+  final String _token;
+}
 
 /// Explicit opt-in to native GPS in connected builds. The reference LAB keeps
 /// its separate foreground-only synthetic source for deterministic tests.
@@ -39,6 +48,8 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
   NativeGpsDriver? _native;
   String? _nativeSession;
   int? _nativeTourId;
+  String? _claimedSession;
+  bool _checkingSession = false;
   RemoteLocationStop? _pendingRemoteStop;
 
   LocationService({
@@ -54,7 +65,25 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     if (AppEnvironment.connected) _native = nativeDriver ?? DeviceGpsDriver();
   }
 
+  LocationTakeover? _takeover;
+  LocationTakeover? get takeover => _takeover;
+
+  Future<void> confirmTakeover(LocationTakeover offer) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (AppEnvironment.connected) await prefs.reload();
+    if (_disposed ||
+        _isChangingMode ||
+        !identical(offer, _takeover) ||
+        prefs.getString('token') != offer._token ||
+        prefs.getInt('selectedTourId') != offer.tourId ||
+        prefs.getString('userRole') != 'coordinator')
+      return;
+    await _changeMode(true, offer: offer);
+  }
+
   bool get isTracking => _isTracking;
+  bool get awaitingClaim =>
+      _native != null && _isTracking && _claimedSession == null;
   bool get backgroundTrackingEnabled => _native?.backgroundEnabled ?? false;
   bool get initialized => _initialized;
   bool get isChangingMode => _isChangingMode;
@@ -99,6 +128,8 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
       (_native == null ||
           _preferences?.getInt('selectedTourId') == _nativeTourId) &&
       _preferences?.getString('userRole') == 'coordinator' &&
+      (_native == null ||
+          (_nativeSession != null && _claimedSession == _nativeSession)) &&
       _preferences?.getBool(sharingPreferenceKey) == true;
 
   void _cancelHeartbeat() {
@@ -136,7 +167,20 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
         prefs.getString('userRole') == 'coordinator' &&
         _isTracking == enabled)
       return;
-    await _changeMode(enabled);
+    final restore =
+        enabled &&
+            _native != null &&
+            captured != null &&
+            prefs.getString(pendingNativeClaimKey) != captured.session
+        ? captured
+        : null;
+    await _changeMode(
+      enabled &&
+          (_native == null ||
+              (restore != null &&
+                  restore.tourId == prefs.getInt('selectedTourId'))),
+      restore: restore,
+    );
   }
 
   Future<void> setSharingEnabled(bool enabled) {
@@ -156,7 +200,13 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     return _changeMode(enabled);
   }
 
-  Future<void> _changeMode(bool enabled) {
+  Future<void> _changeMode(
+    bool enabled, {
+    LocationTakeover? offer,
+    RemoteLocationStop? restore,
+  }) {
+    _takeover = null;
+    _claimedSession = null;
     final revision = ++_modeRevision;
     final sessionGeneration = LabSession.generation;
     ++_sendRevision;
@@ -170,7 +220,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
       _cancelHeartbeat();
     }
     final setup = _modeChain.then(
-      (_) => _applyMode(enabled, revision, sessionGeneration),
+      (_) => _applyMode(enabled, revision, sessionGeneration, restore),
     );
     // Serialize preference writes, not HTTP. OFF can persist while an earlier
     // ON request is still in flight, and its revoked callback stops queue flush.
@@ -188,6 +238,20 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
         if (_currentMode(revision) && enabled && _isTracking) {
           if (_native != null) {
             final session = _nativeSession!;
+            final token = _sessionToken!;
+            final tour = _nativeTourId!;
+            final intent = captureRemoteLocationStop(_preferences!);
+            bool sameScope() =>
+                _currentMode(revision) &&
+                _sessionGeneration == LabSession.generation &&
+                _preferences?.getString('token') == token &&
+                _preferences?.getInt('selectedTourId') == tour;
+            if (offer != null &&
+                (offer._token != token || offer.tourId != tour)) {
+              throw StateError(
+                'La gira o la sesión cambió. Vuelve a activar la ubicación.',
+              );
+            }
             await _native!.start(
               session: session,
               isCurrent: () =>
@@ -211,6 +275,30 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
               backgroundTrackingEnabled,
             );
             _lastError = _native!.warning;
+            // Verify this phone can supply a fix before displacing a working sender.
+            final point = await _native!.currentPosition();
+            if (!sameScope()) return;
+            await claimLocationSharing(
+              token,
+              tour,
+              session,
+              expectedOwnerGeneration: offer?.ownerGeneration,
+            );
+            if (!sameScope()) {
+              // A tour change may have raced the acknowledgement. Release only
+              // the captured lease, never the session selected afterwards.
+              if (intent != null) await stopRemoteLocationSharing(intent);
+              return;
+            }
+            if (_preferences?.getString(pendingNativeClaimKey) == session) {
+              await _preferences?.remove(pendingNativeClaimKey);
+              if (!_currentMode(revision)) return;
+            }
+            _claimedSession = session;
+            _startForegroundHeartbeat();
+            if (_foregroundActive)
+              await _sendNativePosition(point.$1, point.$2);
+            return;
           }
           await sendSyntheticPositionNow();
         } else if (_currentMode(revision) && !enabled && _native != null) {
@@ -218,6 +306,8 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
           await _flushRemoteStop();
         }
       } catch (error) {
+        if (_native != null && sessionGeneration != LabSession.generation)
+          return;
         if (_currentMode(revision)) {
           _isTracking = false;
           _cancelHeartbeat();
@@ -226,6 +316,25 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
               : error is StateError
               ? error.message.toString()
               : 'No se pudo activar la ubicación. Revisa los permisos e inténtalo nuevamente.';
+          if (error is LabApiException &&
+              error.statusCode == 409 &&
+              error.gpsOwnerGeneration != null &&
+              _sessionToken != null &&
+              _nativeTourId != null &&
+              _sessionGeneration == LabSession.generation) {
+            if (restore == null) {
+              _takeover = LocationTakeover(
+                error.gpsOwnerGeneration!,
+                _nativeTourId!,
+                _sessionToken!,
+              );
+            }
+            _lastError = offer == null
+                ? 'Otro coordinador ya está compartiendo su ubicación en esta gira.'
+                : 'Cambió el coordinador que comparte mientras decidías. Vuelve a activar la ubicación para confirmar el traspaso.';
+          } else if (error is LabApiException) {
+            _lastError = LocationSendRejected(error.statusCode).message;
+          }
           if (_native != null) {
             final stop = _preferences == null
                 ? null
@@ -257,6 +366,7 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     bool enabled,
     int revision,
     int sessionGeneration,
+    RemoteLocationStop? restore,
   ) async {
     if (!_currentMode(revision)) return;
     final prefs = await SharedPreferences.getInstance();
@@ -290,7 +400,10 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
     await prefs.setBool(sharingPreferenceKey, enabled);
     if (_native != null) {
       final previous = captureRemoteLocationStop(prefs);
-      if (previous != null) {
+      if (previous != null &&
+          (restore == null ||
+              previous.session != restore.session ||
+              previous.tourId != restore.tourId)) {
         await rememberRemoteLocationStop(previous);
         _pendingRemoteStop = previous;
         // A delayed OFF is bound to the old nonce and cannot stop a newer ON.
@@ -301,12 +414,16 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
         if (_nativeTourId == null)
           throw StateError('Selecciona una gira antes de compartir ubicación.');
         _nativeSession =
+            restore?.session ??
             '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}';
+        if (restore == null)
+          await prefs.setString(pendingNativeClaimKey, _nativeSession!);
         await prefs.setString(nativeTrackingSessionKey, _nativeSession!);
         await prefs.setInt(nativeTrackingTourKey, _nativeTourId!);
       } else {
         await prefs.remove(nativeTrackingSessionKey);
         await prefs.remove(nativeTrackingTourKey);
+        await prefs.remove(pendingNativeClaimKey);
       }
     }
     await prefs.setBool('backgroundTrackingEnabled', false);
@@ -488,6 +605,43 @@ class LocationService extends ChangeNotifier with WidgetsBindingObserver {
         ? 'Sin conexión: $_pendingCount posiciones pendientes de envío.'
         : _native?.warning;
     _changed();
+  }
+
+  /// Called from every foreground coordinator screen, including tour selection.
+  Future<void> checkCoordinatorSession() async {
+    if (_disposed || !AppEnvironment.connected || _checkingSession) return;
+    _checkingSession = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      final token = prefs.getString('token');
+      if (_disposed ||
+          prefs.getString('userRole') != 'coordinator' ||
+          token == null ||
+          token.isEmpty)
+        return;
+      final revision = _modeRevision;
+      final session = _claimedSession;
+      final tour = prefs.getInt('selectedTourId');
+      final serverSession = await coordinatorSharingOnServer(token, tour);
+      if (_disposed ||
+          !_currentMode(revision) ||
+          !_isTracking ||
+          session == null ||
+          _claimedSession != session ||
+          _sessionGeneration != LabSession.generation ||
+          _sessionToken != token ||
+          _nativeTourId != tour ||
+          prefs.getInt('selectedTourId') != tour)
+        return;
+      if (serverSession != session) {
+        await _stopRejectedSession(const LocationSendRejected(409));
+      }
+    } catch (_) {
+      // HTTP 401 is handled by LabApiClient. Transport loss does not end a session.
+    } finally {
+      _checkingSession = false;
+    }
   }
 
   Future<void> _stopRejectedSession(LocationSendRejected rejection) async {

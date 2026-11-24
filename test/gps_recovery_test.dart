@@ -154,6 +154,146 @@ void main() {
       );
 
       test(
+        'a takeover is conditional on the owner shown to the user',
+        () async {
+          await service.initializeForCoordinatorSession();
+          var owner = 41;
+          transport((request) async {
+            if (!request.url.path.endsWith('location-sharing'))
+              return http.Response('', 204);
+            final body = jsonDecode(request.body);
+            if (body['enabled'] == false ||
+                body['expectedOwnerGeneration'] == owner)
+              return http.Response('', 204);
+            return http.Response(
+              '',
+              409,
+              headers: {'x-papigiras-gps-owner-generation': owner.toString()},
+            );
+          });
+          await service.setSharingEnabled(true);
+          final first = service.takeover!;
+          expect(first.ownerGeneration, 41);
+          expect(service.isTracking, isFalse);
+          expect(
+            requests.where(
+              (r) => r.url.path.endsWith('add-position-coordinator'),
+            ),
+            isEmpty,
+          );
+          owner = 42;
+          await service.confirmTakeover(first);
+          expect(service.isTracking, isFalse);
+          final second = service.takeover!;
+          expect(second.ownerGeneration, 42);
+          final count = requests.length;
+          await service.confirmTakeover(first);
+          expect(requests.length, count);
+          await service.confirmTakeover(second);
+          expect(service.isTracking, isTrue);
+          expect(
+            requests.where(
+              (r) => r.url.path.endsWith('add-position-coordinator'),
+            ),
+            hasLength(1),
+          );
+        },
+      );
+
+      test(
+        'a permission dialog cannot transfer ownership after a change of tour',
+        () async {
+          transport(
+            (request) async => jsonDecode(request.body)['enabled'] == true
+                ? http.Response(
+                    '',
+                    409,
+                    headers: {'x-papigiras-gps-owner-generation': '7'},
+                  )
+                : http.Response('', 204),
+          );
+          await service.setSharingEnabled(true);
+          final offer = service.takeover!;
+          await prefs.setInt('selectedTourId', 11);
+          final count = requests.length;
+          await service.confirmTakeover(offer);
+          expect(requests.length, count);
+          expect(service.isTracking, isFalse);
+        },
+      );
+
+      test(
+        'losing the GPS stops the phone but preserves the coordinator login',
+        () async {
+          await service.setSharingEnabled(true);
+          final session = prefs.getString(nativeTrackingSessionKey);
+          transport(
+            (request) async => request.method == 'GET'
+                ? http.Response('{"sharingSession":null}', 200)
+                : http.Response('', 204),
+          );
+          await service.checkCoordinatorSession();
+          expect(service.isTracking, isFalse);
+          expect(prefs.getString('token'), 'Bearer old-test-credential');
+          expect(prefs.getString(nativeTrackingSessionKey), isNull);
+          expect(requests.last.url.path, endsWith('/location-sharing'));
+          expect(
+            jsonDecode(requests.last.body),
+            containsPair('session', session),
+          );
+        },
+      );
+
+      test(
+        'idle login stays during a network error and exits when replaced',
+        () async {
+          final before = LabSession.expired.value;
+          transport((request) async => http.Response('', 503));
+          await service.checkCoordinatorSession();
+          expect(prefs.getString('token'), 'Bearer old-test-credential');
+          transport(
+            (request) async => http.Response(
+              '',
+              401,
+              headers: {'x-papigiras-session': 'replaced'},
+            ),
+          );
+          await service.checkCoordinatorSession();
+          expect(LabSession.expired.value, before + 1);
+          expect(LabSession.expiryMessage, contains('otro dispositivo'));
+          expect(prefs.getString('token'), isNull);
+        },
+      );
+
+      test(
+        'restoring a displaced sender checks the same nonce and cannot start a new one',
+        () async {
+          await prefs.setBool(LocationService.sharingPreferenceKey, true);
+          await prefs.setInt(nativeTrackingTourKey, 10);
+          await prefs.setString(nativeTrackingSessionKey, nonce);
+          transport(
+            (request) async => jsonDecode(request.body)['enabled'] == true
+                ? http.Response('', 409)
+                : http.Response('', 204),
+          );
+          await service.initializeForCoordinatorSession();
+          expect(jsonDecode(requests.first.body), {
+            'tourId': 10,
+            'session': nonce,
+            'enabled': true,
+          });
+          expect(service.takeover, isNull);
+          expect(service.isTracking, isFalse);
+          expect(
+            requests.where(
+              (r) => r.url.path.endsWith('add-position-coordinator'),
+            ),
+            isEmpty,
+          );
+        },
+      );
+
+      test(
         'permanent ON rejection stops locally and does not become a retry queue',
         () async {
           transport(
