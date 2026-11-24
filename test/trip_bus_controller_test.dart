@@ -328,8 +328,9 @@ void main() {
     await tester.pump();
     await first;
     expect(controller.isRecent, isTrue);
-    now = now.add(const Duration(seconds: 20));
-    await tester.pump(const Duration(seconds: 20));
+    expect(controller.pollInterval, const Duration(seconds: 5));
+    now = now.add(controller.pollInterval);
+    await tester.pump(controller.pollInterval);
     expect(provider.tours, ['910001', '910001']);
   });
 

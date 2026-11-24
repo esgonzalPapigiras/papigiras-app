@@ -2,7 +2,6 @@ package yukams.app.background_locator_2
 
 import android.content.Context
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import yukams.app.background_locator_2.provider.LocationClient
 
 class PreferencesManager {
@@ -16,7 +15,7 @@ class PreferencesManager {
 
             sharedPreferences.edit()
                     .putLong(Keys.ARG_CALLBACK_DISPATCHER,
-                            map[Keys.ARG_CALLBACK_DISPATCHER] as Long)
+                            (map[Keys.ARG_CALLBACK_DISPATCHER] as Number).toLong())
                     .apply()
         }
 
@@ -31,10 +30,10 @@ class PreferencesManager {
                             callback.toLong())
                     .apply()
 
-            if (map[Keys.ARG_NOTIFICATION_CALLBACK] as? Long != null) {
+            if ((map[Keys.ARG_NOTIFICATION_CALLBACK] as? Number)?.toLong() != null) {
                 sharedPreferences.edit()
                         .putLong(Keys.ARG_NOTIFICATION_CALLBACK,
-                                map[Keys.ARG_NOTIFICATION_CALLBACK] as Long)
+                                (map[Keys.ARG_NOTIFICATION_CALLBACK] as Number).toLong())
                         .apply()
             }
 
@@ -67,7 +66,7 @@ class PreferencesManager {
 
             sharedPreferences.edit()
                     .putLong(Keys.SETTINGS_ANDROID_NOTIFICATION_ICON_COLOR,
-                            settings[Keys.SETTINGS_ANDROID_NOTIFICATION_ICON_COLOR] as Long)
+                            (settings[Keys.SETTINGS_ANDROID_NOTIFICATION_ICON_COLOR] as Number).toLong())
                     .apply()
 
             sharedPreferences.edit()
@@ -204,8 +203,9 @@ class PreferencesManager {
         fun getDataCallback(context: Context, key: String): Map<*, *> {
             val initialDataStr = context.getSharedPreferences(Keys.SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
                     .getString(key, null)
-            val type = object : TypeToken<Map<*, *>>() {}.type
-            return Gson().fromJson(initialDataStr, type)
+            // The release shrinker can strip the generic signature of a TypeToken subclass.
+            // The init payload is a JSON object; decoding it requires no generic reflection.
+            return Gson().fromJson(initialDataStr, Map::class.java) ?: emptyMap<String, Any?>()
         }
     }
 }

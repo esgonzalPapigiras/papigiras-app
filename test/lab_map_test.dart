@@ -636,7 +636,7 @@ void main() {
       await tester.pumpAndSettle();
       final sharedBus = controller.bus;
       expect(provider.positionTours, ['910001']);
-      await tester.pump(const Duration(seconds: 20));
+      await tester.pump(sharedBus.pollInterval);
       await tester.pumpAndSettle();
       expect(provider.positionTours, ['910001', '910001']);
       await tester.tap(find.byKey(const ValueKey('trip-pin-2')));
@@ -648,7 +648,7 @@ void main() {
       expect(expanded.controller.bus, same(sharedBus));
       expect(controller.selectedId, 2);
       final afterExpand = provider.positionTours.length;
-      await tester.pump(const Duration(seconds: 20));
+      await tester.pump(sharedBus.pollInterval);
       await tester.pumpAndSettle();
       expect(provider.positionTours, hasLength(afterExpand + 1));
       await tester.tap(find.byKey(const ValueKey('trip-hito-card-tap')));
@@ -669,7 +669,7 @@ void main() {
       await tester.tap(find.byTooltip('Volver al inicio'));
       await tester.pumpAndSettle();
       final backToCompact = provider.positionTours.length;
-      await tester.pump(const Duration(seconds: 20));
+      await tester.pump(sharedBus.pollInterval);
       await tester.pumpAndSettle();
       expect(provider.positionTours, hasLength(backToCompact + 1));
       await tester.pumpWidget(const SizedBox.shrink());

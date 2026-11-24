@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:flutter/widgets.dart';
 import 'package:background_locator_2/background_locator.dart';
 import 'package:background_locator_2/location_dto.dart';
@@ -61,7 +62,7 @@ abstract interface class NativeGpsDriver {
   void dispose();
 }
 
-/// Keeps the official native plugin, 25m navigation accuracy, Android foreground
+/// Keeps the official native plugin, navigation accuracy, Android foreground
 /// service and iOS background indicator, behind Pilo's explicit sharing switch.
 class DeviceGpsDriver with WidgetsBindingObserver implements NativeGpsDriver {
   DeviceGpsDriver() {
@@ -114,14 +115,23 @@ class DeviceGpsDriver with WidgetsBindingObserver implements NativeGpsDriver {
         'Habilita el permiso de ubicación en Configuración para compartir tu posición.',
       );
     }
-    if (permission != geo.LocationPermission.always && !_askedForBackground) {
+    // Android can continue a user-started location foreground service with
+    // precise while-in-use permission. iOS uses its existing Always flow.
+    if (!Platform.isAndroid &&
+        permission != geo.LocationPermission.always &&
+        !_askedForBackground) {
       _askedForBackground = true;
       await permissions.Permission.locationAlways.request();
       if (!current()) return;
       permission = await geo.Geolocator.checkPermission();
     }
     if (!current()) return;
-    final background = permission == geo.LocationPermission.always;
+    final androidWhileVisible =
+        Platform.isAndroid &&
+        permission == geo.LocationPermission.whileInUse &&
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    final background =
+        permission == geo.LocationPermission.always || androidWhileVisible;
     _health?.cancel();
     await _foreground?.cancel();
     _foreground = null;
@@ -142,13 +152,14 @@ class DeviceGpsDriver with WidgetsBindingObserver implements NativeGpsDriver {
             initDataCallback: {'session': session},
             iosSettings: const IOSSettings(
               accuracy: LocationAccuracy.NAVIGATION,
-              distanceFilter: 25,
+              distanceFilter: 5,
               showsBackgroundLocationIndicator: true,
             ),
             androidSettings: const AndroidSettings(
+              client: LocationClient.android,
               accuracy: LocationAccuracy.NAVIGATION,
-              interval: 60,
-              distanceFilter: 25,
+              interval: 5,
+              distanceFilter: 0,
               androidNotificationSettings: AndroidNotificationSettings(
                 notificationChannelName: 'Location tracking',
                 notificationTitle: 'Ubicación de la gira activa',
@@ -171,8 +182,9 @@ class DeviceGpsDriver with WidgetsBindingObserver implements NativeGpsDriver {
     } catch (_) {
       if (!current()) return;
       _background = false;
-      _warning =
-          'No se pudo iniciar la ubicación en segundo plano. Se comparte mientras la app está abierta.';
+      _warning = Platform.isAndroid
+          ? 'Se comparte solo con la app abierta. Revisa que la ubicación precisa esté activa y vuelve a activar el envío desde la gira.'
+          : 'No se pudo iniciar la ubicación en segundo plano. Se comparte mientras la app está abierta.';
       // A failed native registration must not leave a half-started service
       // competing with the foreground fallback.
       await _serialize(() async {
@@ -190,7 +202,7 @@ class DeviceGpsDriver with WidgetsBindingObserver implements NativeGpsDriver {
           geo.Geolocator.getPositionStream(
             locationSettings: const geo.LocationSettings(
               accuracy: geo.LocationAccuracy.bestForNavigation,
-              distanceFilter: 25,
+              distanceFilter: 5,
             ),
           ).listen(
             (position) {
@@ -208,6 +220,10 @@ class DeviceGpsDriver with WidgetsBindingObserver implements NativeGpsDriver {
     }
     _restart = () async {
       if (!current()) return;
+      if (Platform.isAndroid && _background) {
+        final running = await BackgroundLocator.isServiceRunning();
+        if (!current() || running) return;
+      }
       await start(
         session: session,
         isCurrent: isCurrent,

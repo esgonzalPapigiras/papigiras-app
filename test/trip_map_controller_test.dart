@@ -288,10 +288,10 @@ void main() {
       await tester.pump();
       expect(controller.bus, same(reader));
       expect(provider.positionTours, ['910001']);
-      await tester.pump(const Duration(seconds: 20));
+      await tester.pump(reader.pollInterval);
       expect(provider.positionTours, hasLength(2));
       controller.setMapVisible(first, false);
-      await tester.pump(const Duration(seconds: 20));
+      await tester.pump(reader.pollInterval);
       expect(provider.positionTours, hasLength(3));
       controller.setMapVisible(second, false);
       await tester.pump(const Duration(minutes: 1));

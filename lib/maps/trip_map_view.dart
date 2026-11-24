@@ -19,6 +19,7 @@ import 'package:papigiras_app/maps/trip_map_controller.dart';
 import 'package:papigiras_app/maps/trip_map_data.dart';
 import 'package:papigiras_app/maps/trip_map_ui.dart';
 import 'trip_map_nearby_navigation.dart';
+import 'live_bus_motion.dart';
 
 /// Both sizes share the same controller, event selection and detail requests.
 class TripMapView extends StatefulWidget {
@@ -1542,6 +1543,15 @@ class _BusLayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final recent = controller.bus.isRecent;
+    return LiveBusMotion(
+      key: ValueKey(controller.tourCode),
+      position: position,
+      recent: recent,
+      builder: (coordinate) => _marker(context, coordinate, recent),
+    );
+  }
+
+  Widget _marker(BuildContext context, LatLng coordinate, bool recent) {
     final camera = MapCamera.of(context);
     if (pilo) {
       final iconSize = TripBusMarker.iconSize;
@@ -1554,7 +1564,7 @@ class _BusLayer extends StatelessWidget {
       return MarkerLayer(
         markers: [
           Marker(
-            point: position.coordinate,
+            point: coordinate,
             width: recent
                 ? iconSize
                 : labelWidth.clamp(iconSize, double.infinity),
@@ -1573,7 +1583,7 @@ class _BusLayer extends StatelessWidget {
         ],
       );
     }
-    final point = camera.latLngToScreenPoint(position.coordinate);
+    final point = camera.latLngToScreenPoint(coordinate);
     final overlaps = controller.data!.mappedEntries.any((entry) {
       final pin = camera.latLngToScreenPoint(entry.position!);
       return (pin - point).magnitude < 70;
@@ -1581,7 +1591,7 @@ class _BusLayer extends StatelessWidget {
     return MarkerLayer(
       markers: [
         Marker(
-          point: position.coordinate,
+          point: coordinate,
           width: overlaps ? 200 : 64,
           height: 64,
           child: Stack(

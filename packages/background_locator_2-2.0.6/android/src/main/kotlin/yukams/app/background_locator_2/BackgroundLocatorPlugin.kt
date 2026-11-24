@@ -55,14 +55,14 @@ class BackgroundLocatorPlugin
             Log.d("BackgroundLocatorPlugin",
                     "start locator with ${PreferencesManager.getLocationClient(context)} client")
 
-            val callbackHandle = args[Keys.ARG_CALLBACK] as Long
+            val callbackHandle = (args[Keys.ARG_CALLBACK] as Number).toLong()
             PreferencesManager.setCallbackHandle(context, Keys.CALLBACK_HANDLE_KEY, callbackHandle)
 
-            val notificationCallback = args[Keys.ARG_NOTIFICATION_CALLBACK] as? Long
+            val notificationCallback = (args[Keys.ARG_NOTIFICATION_CALLBACK] as? Number)?.toLong()
             PreferencesManager.setCallbackHandle(context, Keys.NOTIFICATION_CALLBACK_HANDLE_KEY, notificationCallback)
 
             // Call InitPluggable with initCallbackHandle
-            (args[Keys.ARG_INIT_CALLBACK] as? Long)?.let { initCallbackHandle ->
+            ((args[Keys.ARG_INIT_CALLBACK] as? Number)?.toLong())?.let { initCallbackHandle ->
                 val initPluggable = InitPluggable()
                 initPluggable.setCallback(context, initCallbackHandle)
 
@@ -73,7 +73,7 @@ class BackgroundLocatorPlugin
             }
 
             // Call DisposePluggable with disposeCallbackHandle
-            (args[Keys.ARG_DISPOSE_CALLBACK] as? Long)?.let {
+            ((args[Keys.ARG_DISPOSE_CALLBACK] as? Number)?.toLong())?.let {
                 val disposePluggable = DisposePluggable()
                 disposePluggable.setCallback(context, it)
             }
@@ -113,7 +113,7 @@ class BackgroundLocatorPlugin
             intent.putExtra(Keys.SETTINGS_ANDROID_NOTIFICATION_ICON,
                     settings[Keys.SETTINGS_ANDROID_NOTIFICATION_ICON] as? String)
             intent.putExtra(Keys.SETTINGS_ANDROID_NOTIFICATION_ICON_COLOR,
-                    settings[Keys.SETTINGS_ANDROID_NOTIFICATION_ICON_COLOR] as? Long)
+                    (settings[Keys.SETTINGS_ANDROID_NOTIFICATION_ICON_COLOR] as? Number)?.toLong())
             intent.putExtra(Keys.SETTINGS_INTERVAL, settings[Keys.SETTINGS_INTERVAL] as? Int)
             intent.putExtra(Keys.SETTINGS_ACCURACY, settings[Keys.SETTINGS_ACCURACY] as? Int)
             intent.putExtra(Keys.SETTINGS_DISTANCE_FILTER, settings[Keys.SETTINGS_DISTANCE_FILTER] as? Double)
@@ -143,7 +143,7 @@ class BackgroundLocatorPlugin
 
         @JvmStatic
         private fun initializeService(context: Context, args: Map<Any, Any>) {
-            val callbackHandle: Long = args[Keys.ARG_CALLBACK_DISPATCHER] as Long
+            val callbackHandle: Long = (args[Keys.ARG_CALLBACK_DISPATCHER] as Number).toLong()
             setCallbackDispatcherHandle(context, callbackHandle)
         }
 

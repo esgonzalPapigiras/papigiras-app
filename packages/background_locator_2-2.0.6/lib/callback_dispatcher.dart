@@ -36,7 +36,7 @@ void callbackDispatcher() {
           CallbackHandle.fromRawHandle(args[Keys.ARG_INIT_CALLBACK]));
       Map<dynamic, dynamic>? data = args[Keys.ARG_INIT_DATA_CALLBACK];
       if (initCallback != null) {
-        initCallback(data);
+        initCallback(Map<String, dynamic>.from(data ?? const {}));
       }
     } else if (Keys.BCM_DISPOSE == call.method) {
       final Map<dynamic, dynamic> args = call.arguments;

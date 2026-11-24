@@ -34,7 +34,7 @@ class TripBusController extends ChangeNotifier with WidgetsBindingObserver {
     required int tourId,
     CoordinatorProviders? provider,
     DateTime Function()? now,
-    this.pollInterval = const Duration(seconds: 20),
+    this.pollInterval = const Duration(seconds: 5),
   }) : assert(tourId > 0),
        assert(pollInterval > Duration.zero),
        _tourId = tourId,
