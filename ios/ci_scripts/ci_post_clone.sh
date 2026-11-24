@@ -3,10 +3,11 @@
 set -eu
 
 : "${CI_PRIMARY_REPOSITORY_PATH:?Xcode Cloud repository path is required}"
-: "${PAPIGIRAS_API_URL:?Set the official HTTPS API origin in the workflow}"
+# Use the documented connected endpoint unless the workflow supplies an override.
+export PAPIGIRAS_API_URL="${PAPIGIRAS_API_URL:-https://stingray-app-9tqd9-djh6d.ondigitalocean.app}"
 # Match the build number Xcode Cloud records in App Store Connect.
-export PAPIGIRAS_BUILD_NUMBER="${CI_BUILD_NUMBER:?Xcode Cloud build number is required}"
-set -- "--build-number=$PAPIGIRAS_BUILD_NUMBER"
+: "${CI_BUILD_NUMBER:?Xcode Cloud build number is required}"
+set -- "--build-number=$CI_BUILD_NUMBER"
 if [ -n "${PAPIGIRAS_BUILD_NAME:-}" ]; then
   case "$PAPIGIRAS_BUILD_NAME" in
     *[!0-9.]*) echo 'PAPIGIRAS_BUILD_NAME must be MAJOR.MINOR.PATCH.' >&2; exit 1 ;;
@@ -34,7 +35,7 @@ export COCOAPODS_DISABLE_STATS=true
 export HOMEBREW_NO_AUTO_UPDATE=1
 
 flutter --version
-dart tool/validate_connected_build.dart
+dart tool/validate_ios_cloud_build.dart
 flutter precache --ios
 flutter pub get --enforce-lockfile
 
@@ -74,7 +75,7 @@ cmp -s ios/Podfile.lock ios/Pods/Manifest.lock
 
 # Check the requested origin and build number really reached Xcode's settings.
 config=ios/Flutter/Generated.xcconfig
-grep -Fxq "FLUTTER_BUILD_NUMBER=$PAPIGIRAS_BUILD_NUMBER" "$config"
+grep -Fxq "FLUTTER_BUILD_NUMBER=$CI_BUILD_NUMBER" "$config"
 if [ -n "${PAPIGIRAS_BUILD_NAME:-}" ]; then
   grep -Fxq "FLUTTER_BUILD_NAME=$PAPIGIRAS_BUILD_NAME" "$config"
 fi
