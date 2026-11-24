@@ -32,6 +32,10 @@ export PATH="$papigiras_sdk/bin:$PATH"
 export CI=true
 export COCOAPODS_DISABLE_STATS=true
 export HOMEBREW_NO_AUTO_UPDATE=1
+# CocoaPods prefetches unrelated podspec versions on a cold CDN cache. Bound
+# request fan-out so short CDN timeouts do not exhaust the entire archive step.
+export COCOAPODS_CDN_MAX_CONCURRENCY="${COCOAPODS_CDN_MAX_CONCURRENCY:-8}"
+export COCOAPODS_CDN_MAX_NUMBER_OF_RETRIES="${COCOAPODS_CDN_MAX_NUMBER_OF_RETRIES:-3}"
 
 flutter --version
 dart tool/validate_ios_cloud_build.dart
@@ -49,17 +53,25 @@ configure() {
   flutter build ios --release --config-only --no-codesign \
     --dart-define="PAPIGIRAS_API_URL=$PAPIGIRAS_API_URL" "$@"
 }
-if configure "$@" > "$papigiras_temp/configure.log" 2>&1; then
-  cat "$papigiras_temp/configure.log"
+configure_log="$papigiras_temp/configure.log"
+if configure "$@" > "$configure_log" 2>&1; then
+  cat "$configure_log"
 else
-  cat "$papigiras_temp/configure.log"
-  # A cached CocoaPods CDN index can miss a pinned pod such as libwebp.
-  # Retry once, only for that known failure class, not for compile errors.
-  if ! grep -Fq "CocoaPods's specs repository is too out-of-date" "$papigiras_temp/configure.log" ||
-     [ ! -s ios/Flutter/Generated.xcconfig ]; then
+  cat "$configure_log"
+  if [ ! -s ios/Flutter/Generated.xcconfig ]; then
     exit 1
   fi
-  (cd ios && pod install --repo-update)
+  if grep -Fq 'CDN: trunk Repo update failed' "$configure_log" &&
+     grep -Eiq 'Timeout was reached|timed out|Response: 50[234]([[:space:]]|$)' "$configure_log"; then
+    # Keep the successfully fetched specs and never refresh the catalog for a
+    # transport failure. The second failure is terminal.
+    echo 'Retrying the locked CocoaPods configuration once after a CDN transport failure.'
+  elif grep -Fq "CocoaPods's specs repository is too out-of-date" "$configure_log"; then
+    # A cached index can miss an already-pinned pod (e.g. libwebp).
+    (cd ios && pod install --repo-update)
+  else
+    exit 1
+  fi
   configure "$@"
 fi
 
