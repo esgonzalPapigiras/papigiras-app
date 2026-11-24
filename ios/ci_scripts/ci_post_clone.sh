@@ -7,17 +7,16 @@ set -eu
 export PAPIGIRAS_API_URL="${PAPIGIRAS_API_URL:-https://stingray-app-9tqd9-djh6d.ondigitalocean.app}"
 # Match the build number Xcode Cloud records in App Store Connect.
 : "${CI_BUILD_NUMBER:?Xcode Cloud build number is required}"
-set -- "--build-number=$CI_BUILD_NUMBER"
-if [ -n "${PAPIGIRAS_BUILD_NAME:-}" ]; then
-  case "$PAPIGIRAS_BUILD_NAME" in
-    *[!0-9.]*) echo 'PAPIGIRAS_BUILD_NAME must be MAJOR.MINOR.PATCH.' >&2; exit 1 ;;
-  esac
-  if ! printf '%s\n' "$PAPIGIRAS_BUILD_NAME" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-    echo 'PAPIGIRAS_BUILD_NAME must be MAJOR.MINOR.PATCH.' >&2
-    exit 1
-  fi
-  set -- "$@" "--build-name=$PAPIGIRAS_BUILD_NAME"
+# iOS Cloud marketing version is independent of the shared Android pubspec.
+ios_build_name="${PAPIGIRAS_BUILD_NAME:-1.1.4}"
+case "$ios_build_name" in
+  *[!0-9.]*) echo 'PAPIGIRAS_BUILD_NAME must be MAJOR.MINOR.PATCH.' >&2; exit 1 ;;
+esac
+if ! printf '%s\n' "$ios_build_name" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+  echo 'PAPIGIRAS_BUILD_NAME must be MAJOR.MINOR.PATCH.' >&2
+  exit 1
 fi
+set -- "--build-number=$CI_BUILD_NUMBER" "--build-name=$ios_build_name"
 
 cd "$CI_PRIMARY_REPOSITORY_PATH"
 test -f pubspec.yaml
@@ -76,9 +75,7 @@ cmp -s ios/Podfile.lock ios/Pods/Manifest.lock
 # Check the requested origin and build number really reached Xcode's settings.
 config=ios/Flutter/Generated.xcconfig
 grep -Fxq "FLUTTER_BUILD_NUMBER=$CI_BUILD_NUMBER" "$config"
-if [ -n "${PAPIGIRAS_BUILD_NAME:-}" ]; then
-  grep -Fxq "FLUTTER_BUILD_NAME=$PAPIGIRAS_BUILD_NAME" "$config"
-fi
+grep -Fxq "FLUTTER_BUILD_NAME=$ios_build_name" "$config"
 encoded_origin="$(printf '%s' "PAPIGIRAS_API_URL=$PAPIGIRAS_API_URL" | base64 | tr -d '\n')"
 defines="$(sed -n 's/^DART_DEFINES=//p' "$config")"
 case ",$defines," in
