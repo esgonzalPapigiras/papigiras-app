@@ -9,21 +9,24 @@ func registerLocationPlugins(registry: FlutterPluginRegistry) {
 }
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GeneratedPluginRegistrant.register(with: self)
+    // Install the headless location callback before the scene creates its engine.
     BackgroundLocatorPlugin.setPluginRegistrantCallback(registerLocationPlugins)
-    if let controller = window?.rootViewController as? FlutterViewController {
-      let credentials = FlutterMethodChannel(
-        name: "com.papigiras.lab/credentials",
-        binaryMessenger: controller.binaryMessenger
-      )
-      credentials.setMethodCallHandler(Self.handleCredential)
-    }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    // UIScene owns the window; the launch callback must not look up its controller.
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    let credentials = FlutterMethodChannel(
+      name: "com.papigiras.lab/credentials",
+      binaryMessenger: engineBridge.applicationRegistrar.messenger()
+    )
+    credentials.setMethodCallHandler(Self.handleCredential)
   }
 
   /// One credential per role, encrypted by Keychain and readable only while
