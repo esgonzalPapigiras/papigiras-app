@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+  <base href="/familias/">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#f8f6ee">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Papigiras">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <title>Papigiras · Apoderados</title>
+  <style>
+    [hidden] { display: none !important }
+    * { box-sizing: border-box }
+    html, body { margin: 0; min-height: 100%; background: #f8f6ee; color: #18332f }
+    body { font: 1.125rem/1.5 system-ui, sans-serif }
+    main { min-height: 100vh; min-height: 100dvh; display: grid; align-content: center; justify-items: stretch; margin: auto; max-width: 29rem; padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom)) }
+    img { border-radius: 20%; width: 76px; height: 76px }
+    h1 { font-size: clamp(2.1rem, 8vw, 3rem); font-weight: 650; line-height: 1.08; letter-spacing: -.045em; margin: 1.2rem 0 .4rem }
+    p { margin: .45rem 0 1.1rem }
+    button { font: inherit; font-weight: 650; border-radius: 24px; min-height: 56px; padding: .6rem 1rem; width: 100%; cursor: pointer }
+    button:focus-visible { outline: 3px solid #176b61; outline-offset: 3px }
+    #instalar { background: #55c9b6; border: 0; color: #122e2a }
+    #ingresar { background: transparent; border: 1px solid #9aada7; color: #18332f; margin-top: .7rem }
+    #ayuda { background: #fff; border-radius: 16px; padding: .9rem 1rem; margin: .8rem 0 0 }
+    #ayuda ol { margin: .4rem 0 0; padding-inline-start: 1.5rem }
+    #ayuda li + li { margin-top: .35rem }
+    #ayuda details { margin-top: .5rem }
+    #ayuda summary { cursor: pointer; padding: .6rem 0 }
+    #ayuda details p { margin: .25rem 0 }
+    #carga { justify-items: center; text-align: center }
+  </style>
+  <script src="arranque.js" defer></script>
+</head>
+<body>
+  <main id="entrada" hidden>
+    <img src="icons/icon-192.png" alt="" width="76" height="76">
+    <h1>Papigiras</h1>
+    <p>Deja el ícono en tu celular para completar la ficha médica y seguir la gira.</p>
+    <button id="instalar" type="button">Instalar Papigiras</button>
+    <div id="ayuda" role="status" aria-live="polite" hidden></div>
+    <button id="ingresar" type="button">Entrar sin instalar</button>
+  </main>
+  <main id="carga" role="status" aria-live="polite">
+    <img src="icons/icon-192.png" alt="" width="76" height="76">
+    <p id="estado">Abriendo Papigiras…</p>
+    <noscript>Activa JavaScript para abrir Papigiras.</noscript>
+  </main>
+</body>
+</html>
